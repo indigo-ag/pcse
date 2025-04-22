@@ -1,0 +1,69 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+default_language_version:
+  python: python3.9
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+
+  - repo: https://github.com/zricethezav/gitleaks
+    rev: v8.16.2
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.3.1
+    hooks:
+      - id: pyupgrade
+
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.0.2
+    hooks:
+      - id: autoflake
+
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: isort (python)
+
+#  - repo: https://github.com/pre-commit/mirrors-mypy
+#    rev: 'v1.2.0'
+#    hooks:
+#      - id: mypy
+#        args:
+#          [
+#            --disallow-untyped-calls,
+#            --disallow-untyped-defs,
+#            --warn-redundant-casts,
+#            --namespace-packages,
+#            --explicit-package-bases,
+#            --warn-unused-ignores,
+#          ]
+#        files: \.py$
+#
+#  - repo: local
+#    hooks:
+#      - id: pylint
+#        name: pylint
+#        entry: pylint
+#        language: system
+#        types: [python]
+#        exclude: 'migrations/'
+#        args: [s
+#            '-rn', # Only display messages
+#            '-sn', # Don't display the score
+#            '--rcfile=.pylintrc',
+#          ]

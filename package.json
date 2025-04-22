@@ -1,0 +1,15 @@
+{
+  "name": "indigoag-pcse",
+  "version": "0.0.0",
+  "description": "Indigo variant of the PCSE ensemble quantification model.",
+  "scripts": {
+    "install:deps": "pip install -r requirements.txt",
+    "lint": "set -x && black --check --diff indigoag/",
+    "lint:fix": "mypy indigoag/ && yarn indigo-scripts",
+    "test": "pytest"
+  },
+  "dependencies": {
+    "yarn": "^1.22.19"
+  },
+  "license": "ISC"
+}

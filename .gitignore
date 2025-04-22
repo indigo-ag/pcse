@@ -1,43 +1,55 @@
-# Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
+.coverage
+coverage.xml
+.DS_Store
+.pytest_cache/
+.python-version
+node_modules
+tmp
+.vscode
+.env*
+.idea
+*.pyc
+.ipynb*
+atlas_sees.egg-info
+build
+dist
+*.gz
+*.csv
+*.xlsx
+.log
+.data
+pip.conf
+.pip/
+.aws/
+# Local cache for Soil Metrics auth
+*.sqlite
 
-# C extensions
-*.so
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+test_results
+*.save
+*.png
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+# For output of `pytest --cov=. --cov-report=html`:
+.coverage.*
 
-# Sphinx documentation
-docs/_build/
-doc/_build/
-doc/build.log
-
-# Sqlite DB
-*.db
-
-# Virtual environment files
-env/
-
-# PyCharm configuration files
-.idea/
-/org.eclipse.core.resources.prefs
-/.pydevproject
-/.project
-/lintul3-springwheat-test.py
-
-pcse/tests/test_data/*.cache
-
-# build environment
-PCSE.egg-info/*
-dist/*
-build/*
-.pytest_cache/*
-runfiles
-
-# zip files
-*.zip
-
-# Cache files from YAML experiments
-*.cache
+# For mypy caching
+.mypy_cache
