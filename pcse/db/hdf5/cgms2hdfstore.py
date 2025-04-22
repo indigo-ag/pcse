@@ -23,37 +23,67 @@ from pcse.util import wind10to2
 
 
 def create_parser():
-    parser = argparse.ArgumentParser(description='Convert part of CGMS12 DB structure to HDF5.')
-    parser.add_argument('--h5f', dest='h5fname', action='store', default=None,
-                        help='Name of HDF5 Container to write to.')
-    parser.add_argument('--dsn', dest='dsn', action='store', default=None,
-                        help="SQLAlchemy connection URL for CGMS DB to connect to. See also "
-                             "http://docs.sqlalchemy.org/en/latest/core/engines.html"
-                        )
-    parser.add_argument('--include_grid_weather', dest='incl_gw', action='store_true',
-                        help="Include the table with gridded weather in the HDF5 file."
-                        )
-    parser.add_argument('--include_initial_soil_water', dest='incl_isw', action='store_true',
-                        help="Include the table with values for initial soil water in the HDF5 file."
-                        )
-    parser.add_argument('--include_crop_soil_tables', dest='incl_cropsoil', action='store_true',
-                        help="Include the tables related to crop and soil parameters in the HDF5 file."
-                        )
-    parser.add_argument('--include_crop_calendar', dest='incl_calendar', action='store_true',
-                        help="Include the crop calendar table in the HDF5 file."
-                        )
-    parser.add_argument('--include_all', dest='incl_all', action='store_true',
-                        help="Include all tables in the HDF5 file (file size may become very large!)."
-                        )
-    parser.add_argument('--crop_no', dest='crop_no', action='store', default=None, type=int,
-                        help="Only include records for given crop_no. This can reduce file size considerably."
-                        )
+    parser = argparse.ArgumentParser(
+        description="Convert part of CGMS12 DB structure to HDF5."
+    )
+    parser.add_argument(
+        "--h5f",
+        dest="h5fname",
+        action="store",
+        default=None,
+        help="Name of HDF5 Container to write to.",
+    )
+    parser.add_argument(
+        "--dsn",
+        dest="dsn",
+        action="store",
+        default=None,
+        help="SQLAlchemy connection URL for CGMS DB to connect to. See also "
+        "http://docs.sqlalchemy.org/en/latest/core/engines.html",
+    )
+    parser.add_argument(
+        "--include_grid_weather",
+        dest="incl_gw",
+        action="store_true",
+        help="Include the table with gridded weather in the HDF5 file.",
+    )
+    parser.add_argument(
+        "--include_initial_soil_water",
+        dest="incl_isw",
+        action="store_true",
+        help="Include the table with values for initial soil water in the HDF5 file.",
+    )
+    parser.add_argument(
+        "--include_crop_soil_tables",
+        dest="incl_cropsoil",
+        action="store_true",
+        help="Include the tables related to crop and soil parameters in the HDF5 file.",
+    )
+    parser.add_argument(
+        "--include_crop_calendar",
+        dest="incl_calendar",
+        action="store_true",
+        help="Include the crop calendar table in the HDF5 file.",
+    )
+    parser.add_argument(
+        "--include_all",
+        dest="incl_all",
+        action="store_true",
+        help="Include all tables in the HDF5 file (file size may become very large!).",
+    )
+    parser.add_argument(
+        "--crop_no",
+        dest="crop_no",
+        action="store",
+        default=None,
+        type=int,
+        help="Only include records for given crop_no. This can reduce file size considerably.",
+    )
     return parser
 
 
 def fetch_grids(engine):
-    """retrieves the GRID table from a CGMS12 database.
-    """
+    """retrieves the GRID table from a CGMS12 database."""
     meta = MetaData(engine)
     tbl_grid = Table("grid", meta, autoload=True)
     s = tbl_grid.select()
@@ -62,20 +92,20 @@ def fetch_grids(engine):
 
 
 def store_small_tables(engine, fname_HDFstore):
-    """retrieves the a set of smaller tables from a CGMS12 database.
-    """
+    """retrieves the a set of smaller tables from a CGMS12 database."""
     meta = MetaData(engine)
-    tables = {"suitability": ["cropgroup_no"],
-              "soil_typologic_unit": ["stu_no"],
-              "rooting_depth": ["class"],
-              "soil_physical_group": ["soil_group_no"],
-              "emu": ["grid_no","smu_no"],
-              "soil_association_composition":["smu_no", "stu_no"],
-              "crop": ["crop_no"],
-              "crop_parameter_value":["crop_no"],
-              "variety_parameter_value":["crop_no", "variety_no"],
-              "site":[]
-              }
+    tables = {
+        "suitability": ["cropgroup_no"],
+        "soil_typologic_unit": ["stu_no"],
+        "rooting_depth": ["class"],
+        "soil_physical_group": ["soil_group_no"],
+        "emu": ["grid_no", "smu_no"],
+        "soil_association_composition": ["smu_no", "stu_no"],
+        "crop": ["crop_no"],
+        "crop_parameter_value": ["crop_no"],
+        "variety_parameter_value": ["crop_no", "variety_no"],
+        "site": [],
+    }
 
     with pd.io.pytables.HDFStore(fname_HDFstore) as store:
         for tbl_name, dcolumns in tables.items():
@@ -101,7 +131,10 @@ def store_crop_calendar(engine, fname_HDFstore, args):
     # Check if only one crop type should be selected from DB
     if args.crop_no is not None:
         if args.crop_no not in crops:
-            print("Crop ID specified with --cropno (%s) not found in CROP_CALENDAR table! Returning..." % args.crop_no)
+            print(
+                "Crop ID specified with --cropno (%s) not found in CROP_CALENDAR table! Returning..."
+                % args.crop_no
+            )
             sys.exit()
         crops = [args.crop_no]
 
@@ -110,12 +143,19 @@ def store_crop_calendar(engine, fname_HDFstore, args):
     with pd.io.pytables.HDFStore(fname_HDFstore) as store:
         for crop in crops:
             print("Storing crop_calendar for crop %i" % crop)
-            s = tbl_cal.select().where(tbl_cal.c.crop_no==crop)
+            s = tbl_cal.select().where(tbl_cal.c.crop_no == crop)
             df_cal = pd.read_sql(s, engine)
             if dataset_name in store:
-                store.append(dataset_name, df_cal, data_columns=["grid_no", "crop_no", "year"])
+                store.append(
+                    dataset_name, df_cal, data_columns=["grid_no", "crop_no", "year"]
+                )
             else:
-                store.put(dataset_name, df_cal, format="table", data_columns=["grid_no", "crop_no", "year"])
+                store.put(
+                    dataset_name,
+                    df_cal,
+                    format="table",
+                    data_columns=["grid_no", "crop_no", "year"],
+                )
 
 
 def store_initial_soil_water(engine, fname_HDFstore, args):
@@ -132,7 +172,10 @@ def store_initial_soil_water(engine, fname_HDFstore, args):
         s = sa.select([tbl_isw.c.crop_no]).distinct()
         crops = [row[0] for row in s.execute()]
         if args.crop_no not in crops:
-            print("Crop ID specified with --cropno (%s) not found in INITIAL_SOIL_WATER table! Returning..." % args.crop_no)
+            print(
+                "Crop ID specified with --cropno (%s) not found in INITIAL_SOIL_WATER table! Returning..."
+                % args.crop_no
+            )
             sys.exit()
 
     # Select distinct years to iterate over
@@ -140,19 +183,32 @@ def store_initial_soil_water(engine, fname_HDFstore, args):
     years = s.execute()
     dataset_name = "/initial_soil_water"
     with pd.io.pytables.HDFStore(fname_HDFstore) as store:
-        for yr, in sorted(years):
+        for (yr,) in sorted(years):
             if args.crop_no:
-                s = tbl_isw.select().where(sa.and_(tbl_isw.c.year == yr,
-                                                   tbl_isw.c.crop_no == args.crop_no))
-                print("Storing initial_soil_water for crop %i and year %i" % (args.crop_no, yr))
+                s = tbl_isw.select().where(
+                    sa.and_(tbl_isw.c.year == yr, tbl_isw.c.crop_no == args.crop_no)
+                )
+                print(
+                    "Storing initial_soil_water for crop %i and year %i"
+                    % (args.crop_no, yr)
+                )
             else:
                 s = tbl_isw.select().where(tbl_isw.c.year == yr)
                 print("Storing initial_soil_water for year %i" % yr)
             df_isw = pd.read_sql(s, engine)
             if dataset_name in store:
-                store.append(dataset_name, df_isw, data_columns=["grid_no", "stu_no", "crop_no", "year"])
+                store.append(
+                    dataset_name,
+                    df_isw,
+                    data_columns=["grid_no", "stu_no", "crop_no", "year"],
+                )
             else:
-                store.put(dataset_name, df_isw, format="table", data_columns=["grid_no", "stu_no", "crop_no", "year"])
+                store.put(
+                    dataset_name,
+                    df_isw,
+                    format="table",
+                    data_columns=["grid_no", "stu_no", "crop_no", "year"],
+                )
 
 
 def store_gridded_weather(engine, fname_HDFstore, args):
@@ -163,9 +219,9 @@ def store_gridded_weather(engine, fname_HDFstore, args):
     """
     df_grids = fetch_grids(engine)
     ngrids = len(df_grids)
-    warnings.filterwarnings('ignore', category=tables.NaturalNameWarning)
+    warnings.filterwarnings("ignore", category=tables.NaturalNameWarning)
     with pd.io.pytables.HDFStore(fname_HDFstore) as store:
-        store.put('/grid', df_grids, format='table', data_columns=True)
+        store.put("/grid", df_grids, format="table", data_columns=True)
         for grid_row in df_grids.itertuples():
             grid_done = False
             while not grid_done:
@@ -174,13 +230,15 @@ def store_gridded_weather(engine, fname_HDFstore, args):
                         engine = connect_to_db(args.dsn)
 
                     if grid_row.Index % 100 == 0:
-                        print("\nProcessing %i out of %i grids" % (grid_row.Index, ngrids))
+                        print(
+                            "\nProcessing %i out of %i grids" % (grid_row.Index, ngrids)
+                        )
                     else:
                         print(".", end="")
                         sys.stdout.flush()  # directly print "." to terminal
                     df_meteo_raw = fetch_weather_from_db(engine, int(grid_row.grid_no))
                     df_meteo_pro = process_meteo(df_meteo_raw)
-                    store.put('%i/data' % grid_row.grid_no, df_meteo_pro)
+                    store.put("%i/data" % grid_row.grid_no, df_meteo_pro)
                     grid_done = True
                 except sa.exc.SQLAlchemyError as e:  # DB connection failure
                     engine = None
@@ -191,37 +249,39 @@ def store_gridded_weather(engine, fname_HDFstore, args):
 
 
 def fetch_weather_from_db(engine, grid_no):
-    """Retrieves the meteo data from table 'weather_obs_grid'
-    """
+    """Retrieves the meteo data from table 'weather_obs_grid'"""
 
     # if start_date/end_date are None, define a date in the far past/future
     meta = MetaData(engine)
     table_db = Table("weather_obs_grid", meta, autoload=True)
-    s = select([table_db], and_(table_db.c.grid_no == grid_no)
-               )
+    s = select([table_db], and_(table_db.c.grid_no == grid_no))
     df_meteo = pd.read_sql(s, engine)
     df_meteo = df_meteo.set_index("day")
     return df_meteo
 
 
 def process_meteo(df_meteo):
-    """ Converts the meteo table into a structure directly usable by PCSE.
+    """Converts the meteo table into a structure directly usable by PCSE.
     :param df_meteo: a data frame with records from a CGMS12 WEATHER_OBS_GRID
     :return: a new dataframe with the appropriate structure.
     """
 
-    df_new = pd.DataFrame({"TMAX": df_meteo.temperature_max.astype(np.float32),
-                           "TMIN": df_meteo.temperature_min.astype(np.float32),
-                           "TEMP": df_meteo.temperature_avg.astype(np.float32),
-                           "VAP": df_meteo.vapourpressure.astype(np.float32),
-                           "WIND": df_meteo.windspeed.apply(wind10to2).astype(np.float32),
-                           "RAIN": (df_meteo.precipitation / 10.).astype(np.float32),
-                           "IRRAD": (df_meteo.radiation * 1000.).astype(np.float32),
-                           "SNOWDEPTH": df_meteo.snowdepth.astype(np.float32),
-                           "E0": (df_meteo.e0 / 10.).astype(np.float32),
-                           "ES0": (df_meteo.es0 / 10.).astype(np.float32),
-                           "ET0": (df_meteo.et0 / 10.).astype(np.float32)},
-                          index=df_meteo.index)
+    df_new = pd.DataFrame(
+        {
+            "TMAX": df_meteo.temperature_max.astype(np.float32),
+            "TMIN": df_meteo.temperature_min.astype(np.float32),
+            "TEMP": df_meteo.temperature_avg.astype(np.float32),
+            "VAP": df_meteo.vapourpressure.astype(np.float32),
+            "WIND": df_meteo.windspeed.apply(wind10to2).astype(np.float32),
+            "RAIN": (df_meteo.precipitation / 10.0).astype(np.float32),
+            "IRRAD": (df_meteo.radiation * 1000.0).astype(np.float32),
+            "SNOWDEPTH": df_meteo.snowdepth.astype(np.float32),
+            "E0": (df_meteo.e0 / 10.0).astype(np.float32),
+            "ES0": (df_meteo.es0 / 10.0).astype(np.float32),
+            "ET0": (df_meteo.et0 / 10.0).astype(np.float32),
+        },
+        index=df_meteo.index,
+    )
     return df_new
 
 

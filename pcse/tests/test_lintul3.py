@@ -1,8 +1,9 @@
-'''
+"""
 Created on 30 Apr 2015
 
 @author: winte005
-'''
+"""
+
 from __future__ import print_function
 import os, sys
 import unittest
@@ -15,18 +16,21 @@ from ..fileinput import PCSEFileReader, CABOWeatherDataProvider
 
 test_data_dir = os.path.join(os.path.dirname(__file__), "test_data")
 
+
 class TestLINTUL3_SpringWheat(unittest.TestCase):
     write_ref_results = False
 
     def setUp(self):
-        amgt = yaml.safe_load(open(os.path.join(test_data_dir, "lintul3_springwheat.agro")))['AgroManagement']
+        amgt = yaml.safe_load(
+            open(os.path.join(test_data_dir, "lintul3_springwheat.agro"))
+        )["AgroManagement"]
         soil = PCSEFileReader(os.path.join(test_data_dir, "lintul3_springwheat.soil"))
         site = PCSEFileReader(os.path.join(test_data_dir, "lintul3_springwheat.site"))
         crop = PCSEFileReader(os.path.join(test_data_dir, "lintul3_springwheat.crop"))
         weather = CABOWeatherDataProvider("NL1", test_data_dir, ETmodel="P")
 
         parvalues = ParameterProvider(sitedata=site, soildata=soil, cropdata=crop)
-        lintul3 = Engine(parvalues,  weather, agromanagement=amgt, config="Lintul3.conf")
+        lintul3 = Engine(parvalues, weather, agromanagement=amgt, config="Lintul3.conf")
         lintul3.run(days=300)
         self.output = lintul3.get_output()
         if self.write_ref_results:
@@ -78,11 +82,11 @@ class TestLINTUL3_SpringWheat(unittest.TestCase):
 
 
 def suite():
-    """ This defines all the tests of a module"""
+    """This defines all the tests of a module"""
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestLINTUL3_SpringWheat))
     return suite
 
-if __name__ == '__main__':
-   unittest.TextTestRunner(verbosity=2).run(suite())
 
+if __name__ == "__main__":
+    unittest.TextTestRunner(verbosity=2).run(suite())

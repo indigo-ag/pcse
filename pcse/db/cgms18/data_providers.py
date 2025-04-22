@@ -27,8 +27,6 @@ from ..cgms14.data_providers import SoilDataProviderSingleLayer
 
 
 class SoilDataIterator(SoilDataIterator14):
-    """Soil data iterator for CGMS18.
+    """Soil data iterator for CGMS18."""
 
-    """
     tbl_link_sm_grid_cover = "link_cover_grid_smu"
-

@@ -19,7 +19,6 @@ from .. import exceptions as exc
 
 
 class Respiration(SimulationObject):
-
     class Parameters(ParamTemplate):
         Q10 = Float()
         MSOTB = AfgenTrait()
@@ -44,14 +43,13 @@ class Respiration(SimulationObject):
         MAINRT = p.MRTTB(k.DVS)
         MAINTS = MAINLV * k.WLV + MAINRT * k.WRT + MAINSO * k.WSO
 
-        TEFF = p.Q10 ** ((drv.TEMP - 20.) / 10.)
+        TEFF = p.Q10 ** ((drv.TEMP - 20.0) / 10.0)
         MNDVS = 1.0
         r.MAINT = min(k.GPHOT, MAINTS * TEFF * MNDVS)
         return r.MAINT
 
 
 class Assimilation(SimulationObject):
-
     class Parameters(ParamTemplate):
         AMX = Float()
         EFF = Float()
@@ -76,13 +74,23 @@ class Assimilation(SimulationObject):
         AMDVS = p.AMDVST(k.DVS)
         AMTMP = p.AMTMPT(drv.DTEMP)
         AMAX = p.AMX * AMDVS * AMTMP
-        DTGA = totass(a.DAYL, AMAX, p.EFF, k.LAI, p.KDIF, drv.IRRAD, a.DIFPP, a.DSINBE, a.SINLD, a.COSLD)
-        r.GPHOT = DTGA * 30./44.
+        DTGA = totass(
+            a.DAYL,
+            AMAX,
+            p.EFF,
+            k.LAI,
+            p.KDIF,
+            drv.IRRAD,
+            a.DIFPP,
+            a.DSINBE,
+            a.SINLD,
+            a.COSLD,
+        )
+        r.GPHOT = DTGA * 30.0 / 44.0
         return r.GPHOT
 
 
 class Partitioning(SimulationObject):
-
     class Parameters(ParamTemplate):
         FLVTB = AfgenTrait()
         FSHTB = AfgenTrait()
@@ -95,7 +103,7 @@ class Partitioning(SimulationObject):
 
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)
-        self.rates = self.RateVariables(kiosk, publish=["FSH","FLV","FRT","FSO"])
+        self.rates = self.RateVariables(kiosk, publish=["FSH", "FLV", "FRT", "FSO"])
 
     @prepare_rates
     def __call__(self, day, drv):
@@ -103,20 +111,19 @@ class Partitioning(SimulationObject):
         p = self.params
         k = self.kiosk
         r.FSH = p.FSHTB(k.DVS)
-        r.FRT = 1. - r.FSH
+        r.FRT = 1.0 - r.FSH
         r.FLV = p.FLVTB(k.DVS)
-        r.FSO = 1. - r.FLV
+        r.FSO = 1.0 - r.FLV
 
 
 class Phenology(SimulationObject):
-
     class Parameters(ParamTemplate):
         TBAS = Float()
         DAGTB = AfgenTrait()
         RVRTB = AfgenTrait()
         BOL50 = Float()
         FALL50 = Float()
-        TSOPK = Float() # TSUM until emergence (tsum opkomst)
+        TSOPK = Float()  # TSUM until emergence (tsum opkomst)
         TBASE = Float()
         CROP_START_TYPE = Unicode()
         CROP_END_TYPE = Unicode()
@@ -152,9 +159,19 @@ class Phenology(SimulationObject):
             stage = "vegetative"
             dos = None
             doe = day
-        self.states = self.StateVariables(kiosk, DVS=0., BULBSUM=0., STAGE=stage,
-                                          BULB=0., EMERGE=0., DOS=dos, DOE=doe,
-                                          DOB50=None, DOF50=None, publish="DVS", )
+        self.states = self.StateVariables(
+            kiosk,
+            DVS=0.0,
+            BULBSUM=0.0,
+            STAGE=stage,
+            BULB=0.0,
+            EMERGE=0.0,
+            DOS=dos,
+            DOE=doe,
+            DOB50=None,
+            DOF50=None,
+            publish="DVS",
+        )
 
     @prepare_rates
     def calc_rates(self, day, drv):
@@ -165,22 +182,22 @@ class Phenology(SimulationObject):
 
         if s.STAGE == "emerging":
             r.DEMERGE = max(0, drv.TEMP - p.TBASE)
-            r.DTSUM = 0.
-            r.DVR = 0.
+            r.DTSUM = 0.0
+            r.DVR = 0.0
         elif s.STAGE == "vegetative":
-            r.DTDEV = max(0., drv.TEMP - p.TBAS)
+            r.DTDEV = max(0.0, drv.TEMP - p.TBAS)
             DL = daylength(day, drv.LAT)
             r.DAYFAC = p.DAGTB(DL)
             r.RFR = exp(-0.222 * k.LAI)
             r.RFRFAC = p.RVRTB(r.RFR)
-            r.DEMERGE = 0.
+            r.DEMERGE = 0.0
             r.DTSUM = r.DTDEV * r.DAYFAC * r.RFRFAC
-            r.DVR = r.DTSUM/p.BOL50
+            r.DVR = r.DTSUM / p.BOL50
         else:
-            r.DEMERGE = 0.
-            r.DTDEV = max(0., drv.TEMP - p.TBAS)
+            r.DEMERGE = 0.0
+            r.DTDEV = max(0.0, drv.TEMP - p.TBAS)
             r.DTSUM = r.DTDEV
-            r.DVR = r.DTSUM/p.FALL50
+            r.DVR = r.DTSUM / p.FALL50
 
     @prepare_states
     def integrate(self, day, delt=1.0):
@@ -188,7 +205,7 @@ class Phenology(SimulationObject):
         r = self.rates
         p = self.params
 
-        BULB = 0.
+        BULB = 0.0
         s.EMERGE += r.DEMERGE * delt
         s.BULBSUM += r.DTSUM * delt
         s.DVS += r.DVR * delt
@@ -197,23 +214,27 @@ class Phenology(SimulationObject):
                 s.STAGE = "vegetative"
                 s.DOE = day
         elif s.STAGE == "vegetative":
-            BULB = 0.3 + 100.45 * (exp(-exp(-0.0293*(s.BULBSUM - 91.9))))
+            BULB = 0.3 + 100.45 * (exp(-exp(-0.0293 * (s.BULBSUM - 91.9))))
             if s.DVS >= 1.0:
                 s.STAGE = "reproductive"
                 s.DOB50 = day
         elif s.STAGE == "reproductive":
-            BULB = 0.3 + 100.45 * (exp(-exp(-0.0293*(s.BULBSUM - 91.9))))
+            BULB = 0.3 + 100.45 * (exp(-exp(-0.0293 * (s.BULBSUM - 91.9))))
             if s.DVS >= 2.0:
                 print("Reached maturity at day %s" % day)
                 s.STAGE = "mature"
                 s.DOF50 = day
                 if p.CROP_END_TYPE == "maturity":
-                    self._send_signal(signal=signals.crop_finish, day=day,
-                                      finish_type="MATURITY", crop_delete=True)
+                    self._send_signal(
+                        signal=signals.crop_finish,
+                        day=day,
+                        finish_type="MATURITY",
+                        crop_delete=True,
+                    )
         else:  # Maturity not more changes in phenological stage
-            BULB = 0.3 + 100.45 * (exp(-exp(-0.0293*(s.BULBSUM - 91.9))))
+            BULB = 0.3 + 100.45 * (exp(-exp(-0.0293 * (s.BULBSUM - 91.9))))
 
-        s.BULB = limit(0., 100., BULB)
+        s.BULB = limit(0.0, 100.0, BULB)
 
 
 class LeafDynamics(SimulationObject):
@@ -324,10 +345,10 @@ class LeafDynamics(SimulationObject):
         AGEB = Float(-99)
         AGEC = Float(-99)
         AGED = Float(-99)
-        LAGR = Float(-99.)  # Grens tot waar LAI berekend wordt met exp. functie
-        GEGR = Float(-99.)  # Totaal droge stof bij LAGR
-        LA0 = Float(-99)    # LAI bij opkomst afhankelijk van plantdichtheid (NPL)
-        NPL = Float(-99)    # Plant dichtheid
+        LAGR = Float(-99.0)  # Grens tot waar LAI berekend wordt met exp. functie
+        GEGR = Float(-99.0)  # Totaal droge stof bij LAGR
+        LA0 = Float(-99)  # LAI bij opkomst afhankelijk van plantdichtheid (NPL)
+        NPL = Float(-99)  # Plant dichtheid
         RGRL = Float(-99)
         GTSLA = Float(-99)
         TTOP = Float(-99)
@@ -340,21 +361,21 @@ class LeafDynamics(SimulationObject):
         SLABC = Instance(deque)
         LVAGE = Instance(deque)
         SPAN = Instance(deque)
-        LAIMAX = Float(-99.)
-        LAI = Float(-99.)
-        WLVG = Float(-99.)
-        WLVD = Float(-99.)
-        WLV = Float(-99.)
+        LAIMAX = Float(-99.0)
+        LAI = Float(-99.0)
+        WLVG = Float(-99.0)
+        WLVD = Float(-99.0)
+        WLV = Float(-99.0)
         TSUMEM = Float(-99)
 
     class RateVariables(RatesTemplate):
-        GLV = Float(-99.)
-        GLAD = Float(-99.)
-        GLA = Float(-99.)
-        DLV = Float(-99.)
-        SLAT = Float(-99.)
-        FYSAGE = Float(-99.)
-        SPANT = Float(-99.)
+        GLV = Float(-99.0)
+        GLAD = Float(-99.0)
+        GLA = Float(-99.0)
+        DLV = Float(-99.0)
+        SLAT = Float(-99.0)
+        FYSAGE = Float(-99.0)
+        SPANT = Float(-99.0)
         DTSUMM = Float(-99)
 
     def initialize(self, day, kiosk, parvalues):
@@ -371,31 +392,45 @@ class LeafDynamics(SimulationObject):
 
         # CALCULATE INITIAL STATE VARIABLES
         p = self.params
-        self.LAII = p.NPL * p.LA0 * 1.E-4
+        self.LAII = p.NPL * p.LA0 * 1.0e-4
         self.SLAN = p.SLANTB(p.NPL)
         self.SLAR = p.SLARTB(p.NPL)
 
         # Initial leaf biomass
-        WLVG = 0.
-        WLVD = 0.
+        WLVG = 0.0
+        WLVD = 0.0
         WLV = WLVG + WLVD
 
         # First leaf class (SLA, age and weight)
         LV = deque([WLV])
-        LVAGE = deque([0.])
-        SLABC = deque([0.])
-        SPAN = deque([0.])
+        LVAGE = deque([0.0])
+        SLABC = deque([0.0])
+        SPAN = deque([0.0])
 
         # Initialize StateVariables object
-        self.states = self.StateVariables(kiosk, publish=["LAI", "WLV", "WLVG", "WLVD"],
-                                          LV=LV, LVAGE=LVAGE, SPAN=SPAN, SLABC=SLABC,
-                                          LAIMAX=0., TSUMEM=0., LAI=self.LAII, WLV=WLV,
-                                          WLVD=WLVD, WLVG=WLVG)
+        self.states = self.StateVariables(
+            kiosk,
+            publish=["LAI", "WLV", "WLVG", "WLVD"],
+            LV=LV,
+            LVAGE=LVAGE,
+            SPAN=SPAN,
+            SLABC=SLABC,
+            LAIMAX=0.0,
+            TSUMEM=0.0,
+            LAI=self.LAII,
+            WLV=WLV,
+            WLVD=WLVD,
+            WLVG=WLVG,
+        )
 
     def calc_SPAN(self):
         p = self.params
         k = self.kiosk
-        SPAN = p.AGECOR * p.METCOR * (p.AGEA + p.AGEB / (1 + p.AGED * k.DVS) + p.AGEC * k.DVS)
+        SPAN = (
+            p.AGECOR
+            * p.METCOR
+            * (p.AGEA + p.AGEB / (1 + p.AGED * k.DVS) + p.AGEC * k.DVS)
+        )
         return SPAN
 
     @prepare_rates
@@ -440,16 +475,16 @@ class LeafDynamics(SimulationObject):
         states = self.states
 
         # --------- leave death ---------
-        tLV = array('d', states.LV)
-        tSLABC = array('d', states.SLABC)
-        tLVAGE = array('d', states.LVAGE)
-        tSPAN = array('d', states.SPAN)
+        tLV = array("d", states.LV)
+        tSLABC = array("d", states.SLABC)
+        tLVAGE = array("d", states.LVAGE)
+        tSPAN = array("d", states.SPAN)
         tDLV = rates.DLV
 
         # leaf death is imposed on leaves by removing leave classes from the
         # right side of the deque.
         for LVweigth in reversed(states.LV):
-            if tDLV > 0.:
+            if tDLV > 0.0:
                 if tDLV >= LVweigth:  # remove complete leaf class from deque
                     tDLV -= LVweigth
                     tLV.pop()
@@ -458,7 +493,7 @@ class LeafDynamics(SimulationObject):
                     tSPAN.pop()
                 else:  # Decrease value of oldest (rightmost) leave class
                     tLV[-1] -= tDLV
-                    tDLV = 0.
+                    tDLV = 0.0
             else:
                 break
 
@@ -472,11 +507,11 @@ class LeafDynamics(SimulationObject):
         # new leaves in class 1
         tLV.appendleft(rates.GLV)
         tSLABC.appendleft(rates.SLAT)
-        tLVAGE.appendleft(0.)
+        tLVAGE.appendleft(0.0)
         tSPAN.appendleft(rates.SPANT)
 
         # calculation of new leaf area
-#        states.LAI = sum([lv * sla for lv, sla in zip(tLV, tSLABC)])
+        #        states.LAI = sum([lv * sla for lv, sla in zip(tLV, tSLABC)])
         states.LAI += rates.GLA
         states.LAIMAX = max(states.LAI, states.LAIMAX)
 
@@ -503,21 +538,21 @@ class LeafDynamics(SimulationObject):
         DTEFF = limit(p.TBASE, p.TTOP, drv.TEMP)
         DTR = drv.IRRAD
         if DTEFF > 0:
-            r.DTSUMM = 1./((1./DTEFF) + p.CORFAC*(1/(0.5*0.000001*DTR)))
+            r.DTSUMM = 1.0 / ((1.0 / DTEFF) + p.CORFAC * (1 / (0.5 * 0.000001 * DTR)))
         else:
-            r.DTSUMM = 0.
+            r.DTSUMM = 0.0
 
         if s.LAI < p.LAGR and k.TADRW < p.GEGR:
             # leaf growth during juvenile growth:
-            SLA = (self.SLAN + self.SLAR * p.GTSLA ** k.DVS) * 1/100000.
+            SLA = (self.SLAN + self.SLAR * p.GTSLA**k.DVS) * 1 / 100000.0
             GLA = self.LAII * p.RGRL * r.DTSUMM * exp(p.RGRL * s.TSUMEM)
             # Adjust SLA for youngest leaves under exponential growth conditions
-            if r.GLV > 0.:
-                SLA = GLA/r.GLV
+            if r.GLV > 0.0:
+                SLA = GLA / r.GLV
         else:
             # leaf growth during mature plant growth:
-            SLA = (self.SLAN + self.SLAR * p.GTSLA ** k.DVS) * 1/100000.
-            GLA = (SLA * r.GLV)
+            SLA = (self.SLAN + self.SLAR * p.GTSLA**k.DVS) * 1 / 100000.0
+            GLA = SLA * r.GLV
 
         # correct for leaf death
         GLA = GLA - r.GLAD
@@ -526,7 +561,6 @@ class LeafDynamics(SimulationObject):
 
 
 class RootDynamics(SimulationObject):
-
     class RateVariables(RatesTemplate):
         GRT = Float()
 
@@ -535,7 +569,7 @@ class RootDynamics(SimulationObject):
 
     def initialize(self, day, kiosk, parvalues):
         self.rates = self.RateVariables(kiosk, publish=["GRT"])
-        self.states = self.StateVariables(kiosk, WRT=0., publish=["WRT"])
+        self.states = self.StateVariables(kiosk, WRT=0.0, publish=["WRT"])
 
     @prepare_rates
     def calc_rates(self, day, drv):
@@ -551,7 +585,6 @@ class RootDynamics(SimulationObject):
 
 
 class BulbDynamics(SimulationObject):
-
     class RateVariables(RatesTemplate):
         GSO = Float()
 
@@ -560,7 +593,7 @@ class BulbDynamics(SimulationObject):
 
     def initialize(self, day, kiosk, parvalues):
         self.rates = self.RateVariables(kiosk, publish=["GSO"])
-        self.states = self.StateVariables(kiosk, WSO=0., publish=["WSO"])
+        self.states = self.StateVariables(kiosk, WSO=0.0, publish=["WSO"])
 
     @prepare_rates
     def calc_rates(self, day, drv):
@@ -609,7 +642,7 @@ class ALCEPAS(SimulationObject):
 
         self.params = self.Parameters(parvalues)
         self.rates = self.RateVariables(kiosk, publish=["GTW"])
-        self.states = self.StateVariables(kiosk, TADRW=0., publish=["TADRW"])
+        self.states = self.StateVariables(kiosk, TADRW=0.0, publish=["TADRW"])
 
     @prepare_rates
     def calc_rates(self, day, drv):

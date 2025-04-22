@@ -17,6 +17,7 @@ references:
 
 jobs:
   lint:
+    working_directory: ~/circleci
     resource_class: small
     executor:
       name: shared/language-executor
@@ -69,6 +70,7 @@ jobs:
 #            - shared/save_workspace_cache
 
   release:
+    working_directory: ~/circleci
     resource_class: small
     executor:
       name: shared/language-executor

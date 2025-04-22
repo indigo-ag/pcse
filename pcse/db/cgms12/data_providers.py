@@ -21,6 +21,7 @@ from ...base import WeatherDataContainer, WeatherDataProvider
 from ... import settings
 from .. import wofost_parameters
 
+
 def fetch_crop_name(engine, crop_no):
     """Retrieves the name of the crop from the CROP table for
     given crop_no.
@@ -30,8 +31,7 @@ def fetch_crop_name(engine, crop_no):
     """
     metadata = MetaData(engine)
     table_crop = Table("crop", metadata, autoload=True)
-    r = select([table_crop],
-               table_crop.c.crop_no == crop_no).execute()
+    r = select([table_crop], table_crop.c.crop_no == crop_no).execute()
     row = r.fetchone()
     r.close()
     if row is None:
@@ -51,7 +51,7 @@ class STU_Suitability(set):
         self.crop_no = int(crop_no)
 
         metadata = MetaData(engine)
-        table_crop = Table('crop', metadata, autoload=True)
+        table_crop = Table("crop", metadata, autoload=True)
         r = select([table_crop], table_crop.c.crop_no == self.crop_no).execute()
         row = r.fetchone()
         if row is None:
@@ -60,8 +60,14 @@ class STU_Suitability(set):
         self.cropgroup_no = int(row.cropgroup_no)
         self.crop_name = row.crop_name
 
-        table_ss = Table('suitability', metadata, autoload=True, )
-        r = select([table_ss.c.stu_no], table_ss.c.cropgroup_no == self.cropgroup_no).execute()
+        table_ss = Table(
+            "suitability",
+            metadata,
+            autoload=True,
+        )
+        r = select(
+            [table_ss.c.stu_no], table_ss.c.cropgroup_no == self.cropgroup_no
+        ).execute()
         rows = r.fetchall()
         set.__init__(self, [int(row.stu_no) for row in rows])
 
@@ -89,12 +95,21 @@ class WeatherObsGridDataProvider(WeatherDataProvider):
     If start_date and end_date are not provided then the entire time-series
     for the grid is retrieved.
     """
+
     # default values for the Angstrom parameters in the sunshine duration model
     angstA = 0.29
     angstB = 0.49
 
-    def __init__(self, engine, grid_no, start_date=None, end_date=None,
-                 recalc_ET=False, recalc_TEMP=False, use_cache=True):
+    def __init__(
+        self,
+        engine,
+        grid_no,
+        start_date=None,
+        end_date=None,
+        recalc_ET=False,
+        recalc_TEMP=False,
+        use_cache=True,
+    ):
 
         WeatherDataProvider.__init__(self)
 
@@ -155,7 +170,7 @@ class WeatherObsGridDataProvider(WeatherDataProvider):
                     pass
         return False
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def _fetch_location_from_db(self, metadata):
         """Retrieves latitude, longitude, elevation from "grid" table and
         assigns them to self.latitude, self.longitude, self.elevation."""
@@ -163,9 +178,10 @@ class WeatherObsGridDataProvider(WeatherDataProvider):
         # Pull Latitude value for grid nr from database
 
         table_grid = Table("grid", metadata, autoload=True)
-        r = select([table_grid.c.latitude, table_grid.c.longitude,
-                    table_grid.c.altitude],
-                   table_grid.c.grid_no == self.grid_no).execute()
+        r = select(
+            [table_grid.c.latitude, table_grid.c.longitude, table_grid.c.altitude],
+            table_grid.c.grid_no == self.grid_no,
+        ).execute()
         row = r.fetchone()
         r.close()
         if row is None:
@@ -176,38 +192,54 @@ class WeatherObsGridDataProvider(WeatherDataProvider):
         self.longitude = float(row.longitude)
         self.elevation = float(row.altitude)
 
-        msg = ("Succesfully retrieved location information from 'grid' table "
-               "for grid %s")
+        msg = (
+            "Succesfully retrieved location information from 'grid' table "
+            "for grid %s"
+        )
         self.logger.info(msg, self.grid_no)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def _fetch_weather_from_db(self, metadata):
-        """Retrieves the meteo data from table 'weather_obs_grid'
-        """
+        """Retrieves the meteo data from table 'weather_obs_grid'"""
 
         try:
             # if start_date/end_date are None, define a date in the far past/future
-            start_date = self.start_date if self.start_date is not None else dt.date(1, 1, 1)
-            end_date = self.end_date if self.end_date is not None else dt.date(9999, 1, 1)
+            start_date = (
+                self.start_date if self.start_date is not None else dt.date(1, 1, 1)
+            )
+            end_date = (
+                self.end_date if self.end_date is not None else dt.date(9999, 1, 1)
+            )
             table_db = Table("weather_obs_grid", metadata, autoload=True)
-            r = select([table_db], and_(table_db.c.grid_no == self.grid_no,
-                                        table_db.c.day >= start_date,
-                                        table_db.c.day <= end_date)
-                       ).execute()
+            r = select(
+                [table_db],
+                and_(
+                    table_db.c.grid_no == self.grid_no,
+                    table_db.c.day >= start_date,
+                    table_db.c.day <= end_date,
+                ),
+            ).execute()
             rows = r.fetchall()
 
             c = len(rows)
             if self.time_interval is not None:
                 if c < self.time_interval:
-                    msg = ("Only %i records selected from table 'WEATHER_OBS_GRID' "
-                           "for grid %i, period %s -- %s.")
-                    self.logger.warn(msg, c, self.grid_no, self.start_date,
-                                     self.end_date)
+                    msg = (
+                        "Only %i records selected from table 'WEATHER_OBS_GRID' "
+                        "for grid %i, period %s -- %s."
+                    )
+                    self.logger.warn(
+                        msg, c, self.grid_no, self.start_date, self.end_date
+                    )
 
             for row in rows:
                 DAY = self.check_keydate(row.day)
-                t = {"DAY": DAY, "LAT": self.latitude,
-                     "LON": self.longitude, "ELEV": self.elevation}
+                t = {
+                    "DAY": DAY,
+                    "LAT": self.latitude,
+                    "LON": self.longitude,
+                    "ELEV": self.elevation,
+                }
                 wdc = self._make_WeatherDataContainer(row, t)
                 self._store_WeatherDataContainer(wdc, DAY)
         except Exception:
@@ -215,37 +247,44 @@ class WeatherObsGridDataProvider(WeatherDataProvider):
             self.logger.exception(msg, self.grid_no)
             raise exc.PCSEError(msg, self.grid_no)
 
-        msg = ("Successfully retrieved weather data from 'WEATHER_OBS_GRID' table "
-               "for grid %s between %s and %s")
+        msg = (
+            "Successfully retrieved weather data from 'WEATHER_OBS_GRID' table "
+            "for grid %s between %s and %s"
+        )
         self.logger.info(msg, self.grid_no, self.start_date, self.end_date)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def _make_WeatherDataContainer(self, row, t):
         """Process record from 'weather_obs_grid' including unit conversion."""
 
-        t.update({"TMAX": float(row.temperature_max),
-                  "TMIN": float(row.temperature_min),
-                  "TEMP": float(row.temperature_avg),
-                  "VAP":  float(row.vapourpressure),
-                  "WIND": wind10to2(float(row.windspeed)),
-                  "RAIN": float(row.precipitation)/10.,
-                  "IRRAD": float(row.radiation)*1000.,
-                  "SNOWDEPTH": safe_float(row.snowdepth)})
+        t.update(
+            {
+                "TMAX": float(row.temperature_max),
+                "TMIN": float(row.temperature_min),
+                "TEMP": float(row.temperature_avg),
+                "VAP": float(row.vapourpressure),
+                "WIND": wind10to2(float(row.windspeed)),
+                "RAIN": float(row.precipitation) / 10.0,
+                "IRRAD": float(row.radiation) * 1000.0,
+                "SNOWDEPTH": safe_float(row.snowdepth),
+            }
+        )
 
         if not self.recalc_ET:
-            t.update({"E0":  float(row.e0)/10.,
-                      "ES0": float(row.es0)/10.,
-                      "ET0": float(row.et0)/10.})
+            t.update(
+                {
+                    "E0": float(row.e0) / 10.0,
+                    "ES0": float(row.es0) / 10.0,
+                    "ET0": float(row.et0) / 10.0,
+                }
+            )
         else:
-            e0, es0, et0 = reference_ET(ANGSTA=self.angstA,
-                                        ANGSTB=self.angstB, **t)
+            e0, es0, et0 = reference_ET(ANGSTA=self.angstA, ANGSTB=self.angstB, **t)
 
-            t.update({"E0":  e0/10.,
-                      "ES0": es0/10.,
-                      "ET0": et0/10.})
+            t.update({"E0": e0 / 10.0, "ES0": es0 / 10.0, "ET0": et0 / 10.0})
 
         if self.recalc_TEMP:
-            t["TEMP"] = (float(row.temperature_max) + float(row.temperature_min))/2.
+            t["TEMP"] = (float(row.temperature_max) + float(row.temperature_min)) / 2.0
 
         wdc = WeatherDataContainer(**t)
         return wdc
@@ -272,6 +311,7 @@ class AgroManagementDataProvider(list):
     For adjusting the campaign_start_Date, see also the `set_campaign_start_date(date)` method
     to update the campaign_start_date on an existing AgroManagementDataProvider.
     """
+
     agro_management_template = """
           - {campaign_start_date}:
                 CropCalendar:
@@ -297,13 +337,21 @@ class AgroManagementDataProvider(list):
         metadata = MetaData(engine)
         table_cc = Table("crop_calendar", metadata, autoload=True)
 
-        r = select([table_cc], and_(table_cc.c.grid_no == self.grid_no,
-                                    table_cc.c.crop_no == self.crop_no,
-                                    table_cc.c.year == self.campaign_year)).execute()
+        r = select(
+            [table_cc],
+            and_(
+                table_cc.c.grid_no == self.grid_no,
+                table_cc.c.crop_no == self.crop_no,
+                table_cc.c.year == self.campaign_year,
+            ),
+        ).execute()
         row = r.fetchone()
         r.close()
         if row is None:
-            msg = "Failed deriving crop calendar for grid_no %s, crop_no %s " % (grid_no, crop_no)
+            msg = "Failed deriving crop calendar for grid_no %s, crop_no %s " % (
+                grid_no,
+                crop_no,
+            )
             raise exc.PCSEError(msg)
 
         # Determine the start date/type. Only sowing|emergence is accepted by PCSE/WOFOST
@@ -329,8 +377,10 @@ class AgroManagementDataProvider(list):
                 if campaign_start <= self.crop_start_date:
                     self.campaign_start_date = campaign_start
                 else:
-                    msg = "Date (%s) specified by keyword 'campaign_start' in call to AgroManagementDataProvider " \
-                          "is later then crop_start_date defined in the CGMS database."
+                    msg = (
+                        "Date (%s) specified by keyword 'campaign_start' in call to AgroManagementDataProvider "
+                        "is later then crop_start_date defined in the CGMS database."
+                    )
                     raise exc.PCSEError(msg % campaign_start)
             except KeyError as e:
                 msg = "Value (%s) of keyword 'campaign_start' not recognized in call to AgroManagementDataProvider."
@@ -339,8 +389,10 @@ class AgroManagementDataProvider(list):
         # Determine crop end date/type and the end of the campaign
         self.crop_end_type = str(row.end_type).strip().lower()
         if self.crop_end_type not in ["harvest", "earliest", "maturity"]:
-            msg = ("Unrecognized option for END_TYPE in table "
-                   "CROP_CALENDAR: %s" % row.end_type)
+            msg = (
+                "Unrecognized option for END_TYPE in table "
+                "CROP_CALENDAR: %s" % row.end_type
+            )
             raise exc.PCSEError(msg)
 
         # Determine crop_end_date and campaign_end_date
@@ -348,7 +400,9 @@ class AgroManagementDataProvider(list):
         if self.crop_end_type == "maturity":
             self.crop_end_date = "null"
             self.max_duration = int(row.max_duration)
-            self.campaign_end_date = self.crop_start_date + dt.timedelta(days=self.max_duration + 1)
+            self.campaign_end_date = self.crop_start_date + dt.timedelta(
+                days=self.max_duration + 1
+            )
         else:
             self.crop_end_date = check_date(row.end_date)
             self.campaign_end_date = self.crop_end_date + dt.timedelta(days=1)
@@ -362,16 +416,17 @@ class AgroManagementDataProvider(list):
         # We do not get a variety_name from the CGMS database, so we make one
         # as <crop_name>_<grid>_<year>
         variety_name = "%s_%s_%s" % (self.crop_name, self.grid_no, self.campaign_year)
-        input = self.agro_management_template.format(campaign_start_date=self.campaign_start_date,
-                                                     crop_name=self.crop_name,
-                                                     variety_name=variety_name,
-                                                     crop_start_date=self.crop_start_date,
-                                                     crop_start_type=self.crop_start_type,
-                                                     crop_end_date=self.crop_end_date,
-                                                     crop_end_type=self.crop_end_type,
-                                                     max_duration=self.max_duration,
-                                                     campaign_end_date=self.campaign_end_date
-                                                     )
+        input = self.agro_management_template.format(
+            campaign_start_date=self.campaign_start_date,
+            crop_name=self.crop_name,
+            variety_name=variety_name,
+            crop_start_date=self.crop_start_date,
+            crop_start_type=self.crop_start_type,
+            crop_end_date=self.crop_end_date,
+            crop_end_type=self.crop_end_type,
+            max_duration=self.max_duration,
+            campaign_end_date=self.campaign_end_date,
+        )
         return input
 
     def _parse_yaml(self, input):
@@ -395,8 +450,11 @@ class AgroManagementDataProvider(list):
         self._parse_yaml(input)
 
     def __str__(self):
-        msg1 = ("Agromanagement data for crop_no=%i (%s) derived from: %s" %
-               (self.crop_no, self.crop_name, self.db_resource))
+        msg1 = "Agromanagement data for crop_no=%i (%s) derived from: %s" % (
+            self.crop_no,
+            self.crop_name,
+            self.db_resource,
+        )
         msg2 = self._build_yaml_agromanagement()
         msg = "  %s:\n %s" % (msg1, msg2)
         return msg
@@ -416,13 +474,15 @@ class SoilDataProviderSingleLayer(dict):
     to field capacity (SMFCF)
     """
 
-    soil_parameters = [("CRAIRC", "CRITICAL_AIR_CONTENT"),
-                       ("K0", "HYDR_CONDUCT_SATUR"),
-                       ("SOPE", "MAX_PERCOL_ROOT_ZONE"),
-                       ("KSUB", "MAX_PERCOL_SUBSOIL"),
-                       ("SMFCF", "SOIL_MOISTURE_CONTENT_FC"),
-                       ("SM0", "SOIL_MOISTURE_CONTENT_SAT"),
-                       ("SMW", "SOIL_MOISTURE_CONTENT_WP")]
+    soil_parameters = [
+        ("CRAIRC", "CRITICAL_AIR_CONTENT"),
+        ("K0", "HYDR_CONDUCT_SATUR"),
+        ("SOPE", "MAX_PERCOL_ROOT_ZONE"),
+        ("KSUB", "MAX_PERCOL_SUBSOIL"),
+        ("SMFCF", "SOIL_MOISTURE_CONTENT_FC"),
+        ("SM0", "SOIL_MOISTURE_CONTENT_SAT"),
+        ("SMW", "SOIL_MOISTURE_CONTENT_WP"),
+    ]
 
     def __init__(self, engine, stu_no):
         dict.__init__(self)
@@ -446,12 +506,16 @@ class SoilDataProviderSingleLayer(dict):
         table_stu = Table("soil_typologic_unit", metadata, autoload=True)
 
         # first get the soil_group_no and rooting depth class
-        s = select([table_stu.c.soil_group_no, table_stu.c.calculated_rooting_depth],
-                   table_stu.c.stu_no == stu_no).execute()
+        s = select(
+            [table_stu.c.soil_group_no, table_stu.c.calculated_rooting_depth],
+            table_stu.c.stu_no == stu_no,
+        ).execute()
         row = s.fetchone()
         if row is None:
-            msg = ("No record found for stu_no=%i in table "
-                   "SOIL_TYPOLOGIC_UNIT." % stu_no)
+            msg = (
+                "No record found for stu_no=%i in table "
+                "SOIL_TYPOLOGIC_UNIT." % stu_no
+            )
             raise exc.PCSEError(msg)
         soil_group_no = int(row.soil_group_no)
         rd_class = int(row.calculated_rooting_depth)
@@ -476,8 +540,10 @@ class SoilDataProviderSingleLayer(dict):
             if rd_class == c:
                 break
         else:
-            msg = ("No record found for rooting_depth_class=%i in table "
-                   "ROOTING_DEPTH." % rd_class)
+            msg = (
+                "No record found for rooting_depth_class=%i in table "
+                "ROOTING_DEPTH." % rd_class
+            )
             raise exc.PCSEError(msg)
 
         self["RDMSOL"] = float(root_depth)
@@ -491,13 +557,19 @@ class SoilDataProviderSingleLayer(dict):
         """
         table_spg = Table("soil_physical_group", metadata, autoload=True)
 
-        for (wofost_soil_par, db_soil_par) in self.soil_parameters:
-            r = select([table_spg],
-                       and_(table_spg.c.soil_group_no == spg_no,
-                            table_spg.c.parameter_code == db_soil_par)).execute()
+        for wofost_soil_par, db_soil_par in self.soil_parameters:
+            r = select(
+                [table_spg],
+                and_(
+                    table_spg.c.soil_group_no == spg_no,
+                    table_spg.c.parameter_code == db_soil_par,
+                ),
+            ).execute()
             row = r.fetchone()
             if row is None:
-                msg = "Parameter %s not found in table SOIL_PHYSICAL_GROUP" % db_soil_par
+                msg = (
+                    "Parameter %s not found in table SOIL_PHYSICAL_GROUP" % db_soil_par
+                )
                 raise exc.PCSEError(msg)
             self[wofost_soil_par] = float(row.parameter_xvalue)
 
@@ -547,12 +619,15 @@ class SoilDataIterator(list):
         table EMU.
         """
         table_emu = Table(self.emu_table_name, metadata, autoload=True)
-        r = select([table_emu.c.smu_no, table_emu.c.area],
-                   table_emu.c.grid_no == grid_no).execute()
+        r = select(
+            [table_emu.c.smu_no, table_emu.c.area], table_emu.c.grid_no == grid_no
+        ).execute()
         rows = r.fetchall()
         if rows is None:
-            msg = ("No soil mapping units (SMU) found for grid_no=%i "
-                   "in table %s" % (grid_no, self.emu_table_name))
+            msg = "No soil mapping units (SMU) found for grid_no=%i " "in table %s" % (
+                grid_no,
+                self.emu_table_name,
+            )
             raise exc.PCSEError(msg)
 
         return rows
@@ -562,8 +637,9 @@ class SoilDataIterator(list):
         SOIL_ASSOCIATION_COMPOSITION
         """
         table_sac = Table("soil_association_composition", metadata, autoload=True)
-        r = select([table_sac.c.stu_no, table_sac.c.percentage],
-                   table_sac.c.smu_no == smu_no).execute()
+        r = select(
+            [table_sac.c.stu_no, table_sac.c.percentage], table_sac.c.smu_no == smu_no
+        ).execute()
         rows = r.fetchall()
         if rows is None:
             msg = "No soil typologic units (STU) found for smu_no=%i" % smu_no
@@ -572,11 +648,15 @@ class SoilDataIterator(list):
         return rows
 
     def __str__(self):
-        msg = "Soil data for grid_no=%i derived from %s\n" % (self.grid_no, self.db_resource)
+        msg = "Soil data for grid_no=%i derived from %s\n" % (
+            self.grid_no,
+            self.db_resource,
+        )
         template = "  smu_no=%i, area=%.0f, stu_no=%i covering %i%% of smu.\n    Soil parameters %s\n"
         for t in self:
             msg += template % t
         return msg
+
 
 class CropDataProvider(dict):
     """Retrieves the crop parameters for the given grid_no, crop_no and year
@@ -611,11 +691,15 @@ class CropDataProvider(dict):
         metadata = MetaData(engine)
 
         # Get crop variety from crop_calendar;
-        table_cc = Table('crop_calendar', metadata, autoload=True)
-        r = select([table_cc],
-                   and_(table_cc.c.grid_no == self.grid_no,
-                        table_cc.c.crop_no == self.crop_no,
-                        table_cc.c.year == self.campaign_year)).execute()
+        table_cc = Table("crop_calendar", metadata, autoload=True)
+        r = select(
+            [table_cc],
+            and_(
+                table_cc.c.grid_no == self.grid_no,
+                table_cc.c.crop_no == self.crop_no,
+                table_cc.c.year == self.campaign_year,
+            ),
+        ).execute()
         row = r.fetchone()
         if row is None:
             msg = "No entry found in CROP_CALENDAR for grid_no=%s, crop_no=%s, year=%s."
@@ -636,17 +720,23 @@ class CropDataProvider(dict):
         """
 
         # Pull single value parameters from CROP_PARAMETER_VALUE
-        table_crop_pv = Table('crop_parameter_value', metadata, autoload=True)
+        table_crop_pv = Table("crop_parameter_value", metadata, autoload=True)
         for parameter_code in self.parameter_codes_single:
-            r = select([table_crop_pv],
-                       and_(table_crop_pv.c.crop_no == crop_no,
-                            table_crop_pv.c.parameter_code == parameter_code)).execute()
+            r = select(
+                [table_crop_pv],
+                and_(
+                    table_crop_pv.c.crop_no == crop_no,
+                    table_crop_pv.c.parameter_code == parameter_code,
+                ),
+            ).execute()
             row = r.fetchone()
             if row is None:
                 if parameter_code in self.parameters_optional:
                     continue
                 else:
-                    msg = "No parameter value found for crop_no=%s, parameter_code='%s'."
+                    msg = (
+                        "No parameter value found for crop_no=%s, parameter_code='%s'."
+                    )
                     raise exc.PCSEError(msg % (self.crop_no, parameter_code))
             if parameter_code not in self.single2tabular:
                 self[parameter_code] = float(row.parameter_xvalue)
@@ -657,23 +747,33 @@ class CropDataProvider(dict):
 
         # Pull tabular parameters from CROP_PARAMETER_VALUE
         for parameter_code in self.parameter_codes_tabular:
-            pattern = parameter_code + r'%'
-            r = select([table_crop_pv],
-                       and_(table_crop_pv.c.crop_no == crop_no,
-                            table_crop_pv.c.parameter_code.like(pattern)),
-                       order_by=[table_crop_pv.c.parameter_code]).execute()
+            pattern = parameter_code + r"%"
+            r = select(
+                [table_crop_pv],
+                and_(
+                    table_crop_pv.c.crop_no == crop_no,
+                    table_crop_pv.c.parameter_code.like(pattern),
+                ),
+                order_by=[table_crop_pv.c.parameter_code],
+            ).execute()
             rows = r.fetchall()
             if not rows:
                 if parameter_code not in self.parameters_optional:
-                    msg = "No parameter value found for crop_no=%s, parameter_code='%s'."
+                    msg = (
+                        "No parameter value found for crop_no=%s, parameter_code='%s'."
+                    )
                     raise exc.PCSEError(msg % (self.crop_no, parameter_code))
             if len(rows) == 1:
-                msg = ("Single parameter value found for crop_no=%s, parameter_code='%s' while "
-                       "tabular parameter expected." % (crop_no, parameter_code))
+                msg = (
+                    "Single parameter value found for crop_no=%s, parameter_code='%s' while "
+                    "tabular parameter expected." % (crop_no, parameter_code)
+                )
                 raise exc.PCSEError(msg)
             values = []
             for row in rows:
-                values.extend([float(row.parameter_xvalue), float(row.parameter_yvalue)])
+                values.extend(
+                    [float(row.parameter_xvalue), float(row.parameter_yvalue)]
+                )
             self[parameter_code] = values
 
     def _fetch_variety_parameter_values(self, metadata, crop_no, variety_no):
@@ -682,12 +782,16 @@ class CropDataProvider(dict):
         """
 
         # Pull single value parameters from VARIETY_PARAMETER_VALUE
-        table_crop_vpv = Table('variety_parameter_value', metadata, autoload=True)
+        table_crop_vpv = Table("variety_parameter_value", metadata, autoload=True)
         for parameter_code in self.parameter_codes_single:
-            r = select([table_crop_vpv],
-                       and_(table_crop_vpv.c.crop_no == crop_no,
-                            table_crop_vpv.c.variety_no == variety_no,
-                            table_crop_vpv.c.parameter_code == parameter_code)).execute()
+            r = select(
+                [table_crop_vpv],
+                and_(
+                    table_crop_vpv.c.crop_no == crop_no,
+                    table_crop_vpv.c.variety_no == variety_no,
+                    table_crop_vpv.c.parameter_code == parameter_code,
+                ),
+            ).execute()
             row = r.fetchone()
             if row is None:
                 continue
@@ -701,38 +805,53 @@ class CropDataProvider(dict):
 
         # Pull tabular parameters from CROP_PARAMETER_VALUE
         for parameter_code in self.parameter_codes_tabular:
-            pattern = parameter_code + r'%'
-            r = select([table_crop_vpv],
-                       and_(table_crop_vpv.c.crop_no == crop_no,
-                            table_crop_vpv.c.variety_no == variety_no,
-                            table_crop_vpv.c.parameter_code.like(pattern)),
-                       order_by=[table_crop_vpv.c.parameter_code]).execute()
+            pattern = parameter_code + r"%"
+            r = select(
+                [table_crop_vpv],
+                and_(
+                    table_crop_vpv.c.crop_no == crop_no,
+                    table_crop_vpv.c.variety_no == variety_no,
+                    table_crop_vpv.c.parameter_code.like(pattern),
+                ),
+                order_by=[table_crop_vpv.c.parameter_code],
+            ).execute()
             rows = r.fetchall()
             if not rows:
                 continue
 
             if len(rows) == 1:
-                msg = ("Single parameter value found for crop_no=%s, parameter_code='%s' while "
-                       "tabular parameter expected." % (crop_no, parameter_code))
+                msg = (
+                    "Single parameter value found for crop_no=%s, parameter_code='%s' while "
+                    "tabular parameter expected." % (crop_no, parameter_code)
+                )
                 raise exc.PCSEError(msg)
             values = []
             for row in rows:
-                values.extend([float(row.parameter_xvalue), float(row.parameter_yvalue)])
+                values.extend(
+                    [float(row.parameter_xvalue), float(row.parameter_yvalue)]
+                )
             self[parameter_code] = values
 
     def _convert_single2tabular(self, parameter_code, pvalue):
-        """Converts the single parameter into a tabular parameter.
-        """
+        """Converts the single parameter into a tabular parameter."""
         tabular_parameter_code, template = self.single2tabular[parameter_code]
         tabular_values = [pvalue if v is None else v for v in template]
 
         return tabular_parameter_code, tabular_values
 
     def __str__(self):
-        msg = ("Crop parameter values for grid_no=%s, crop_no=%s (%s), variety_no=%s, "
-               "campaign_year=%i derived from %s\n" %
-               (self.grid_no, self.crop_no, self.crop_name, self.variety_no,
-                self.campaign_year, self.db_resource))
+        msg = (
+            "Crop parameter values for grid_no=%s, crop_no=%s (%s), variety_no=%s, "
+            "campaign_year=%i derived from %s\n"
+            % (
+                self.grid_no,
+                self.crop_no,
+                self.crop_name,
+                self.variety_no,
+                self.campaign_year,
+                self.db_resource,
+            )
+        )
         msg += dict.__str__(self)
         return msg
 
@@ -766,44 +885,62 @@ class SiteDataProvider(dict):
         self.db_resource = str(engine)[7:-1]
 
         metadata = MetaData(engine)
-        table_isw = Table('initial_soil_water', metadata, autoload=True)
-        r = select([table_isw], and_(table_isw.c.grid_no == self.grid_no,
-                                     table_isw.c.crop_no == self.crop_no,
-                                     table_isw.c.year == self.campaign_year,
-                                     table_isw.c.stu_no == self.stu_no)).execute()
+        table_isw = Table("initial_soil_water", metadata, autoload=True)
+        r = select(
+            [table_isw],
+            and_(
+                table_isw.c.grid_no == self.grid_no,
+                table_isw.c.crop_no == self.crop_no,
+                table_isw.c.year == self.campaign_year,
+                table_isw.c.stu_no == self.stu_no,
+            ),
+        ).execute()
         row = r.fetchone()
         r.close()
         if row is None:
-            msg = ("Failed retrieving site data for grid_no=%s, crop_no=%s, "
-                   "campaign_year=%s, stu_no=%s" % (self.grid_no, self.crop_no,
-                                                    self.campaign_year, self.stu_no))
+            msg = (
+                "Failed retrieving site data for grid_no=%s, crop_no=%s, "
+                "campaign_year=%s, stu_no=%s"
+                % (self.grid_no, self.crop_no, self.campaign_year, self.stu_no)
+            )
             raise exc.PCSEError(msg)
         # Initial amount of soil water
         self["WAV"] = float(row.wav)
 
         # Raise an error in case simulation with ground water influence
         if int(row.zti) != 999 or int(row.dd) != 999:
-            msg = ("Simulation with ground water for grid_no=%s, crop_no=%s, "
-                   "campaign_year=%s, stu_no=%s. Not implemented in PCSE/WOFOST (yet)."
-                   % (self.grid_no, self.crop_no, self.campaign_year, self.stu_no))
+            msg = (
+                "Simulation with ground water for grid_no=%s, crop_no=%s, "
+                "campaign_year=%s, stu_no=%s. Not implemented in PCSE/WOFOST (yet)."
+                % (self.grid_no, self.crop_no, self.campaign_year, self.stu_no)
+            )
             raise exc.PCSEError(msg)
 
         # Start date water balance
         self.start_date_waterbalance = check_date(row.given_startdate_watbal)
 
         # Derived global parameters from table SITE
-        table_site = Table('site', metadata, autoload=True)
+        table_site = Table("site", metadata, autoload=True)
         r = select([table_site]).execute()
         row = r.fetchone()
         self["IFUNRN"] = int(row.ifunrn)
         self["NOTINF"] = float(row.notinf)
         self["SSMAX"] = float(row.max_surface_storage)
-        self["SSI"] = 0.
+        self["SSI"] = 0.0
 
     def __str__(self):
-        msg = ("Site parameter values for grid_no=%s, crop_no=%s (%s), stu_no=%s, "
-               "campaign_year=%i derived from %s\n" % (self.grid_no, self.crop_no,
-                self.crop_name, self.stu_no, self.campaign_year, self.db_resource))
+        msg = (
+            "Site parameter values for grid_no=%s, crop_no=%s (%s), stu_no=%s, "
+            "campaign_year=%i derived from %s\n"
+            % (
+                self.grid_no,
+                self.crop_no,
+                self.crop_name,
+                self.stu_no,
+                self.campaign_year,
+                self.db_resource,
+            )
+        )
         msg += "    %s" % dict.__str__(self)
 
         return msg

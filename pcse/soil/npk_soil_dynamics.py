@@ -5,10 +5,10 @@
 
 from pcse.traitlets import Float
 from pcse.decorators import prepare_rates, prepare_states
-from pcse.base import ParamTemplate, StatesTemplate, RatesTemplate, \
-    SimulationObject
+from pcse.base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 from pcse import signals
 import math
+
 
 class NPK_PotentialProduction(SimulationObject):
     """Provides unlimited soil N/P/K for potential production simulations.
@@ -17,9 +17,9 @@ class NPK_PotentialProduction(SimulationObject):
     """
 
     class StateVariables(StatesTemplate):
-        NAVAIL = Float(-99.)  # total mineral N from soil and fertiliser  kg N ha-1
-        PAVAIL = Float(-99.)  # total mineral P from soil and fertiliser  kg N ha-1
-        KAVAIL = Float(-99.)  # total mineral K from soil and fertiliser  kg N ha-1
+        NAVAIL = Float(-99.0)  # total mineral N from soil and fertiliser  kg N ha-1
+        PAVAIL = Float(-99.0)  # total mineral P from soil and fertiliser  kg N ha-1
+        KAVAIL = Float(-99.0)  # total mineral K from soil and fertiliser  kg N ha-1
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -27,8 +27,13 @@ class NPK_PotentialProduction(SimulationObject):
         :param kiosk: variable kiosk of this PCSE instance
         :param cropdata: dictionary with WOFOST cropdata key/value pairs
         """
-        self.states = self.StateVariables(kiosk, publish=["NAVAIL", "PAVAIL", "KAVAIL"],
-                                          NAVAIL=100., PAVAIL=100., KAVAIL=100.)
+        self.states = self.StateVariables(
+            kiosk,
+            publish=["NAVAIL", "PAVAIL", "KAVAIL"],
+            NAVAIL=100.0,
+            PAVAIL=100.0,
+            KAVAIL=100.0,
+        )
 
     def calc_rates(self, day, drv):
         pass
@@ -141,24 +146,36 @@ class NPK_Soil_Dynamics(SimulationObject):
     =========  =================================== ===================  ==============
     """
 
-    NSOILI = Float(-99.) # initial soil N amount
-    PSOILI = Float(-99.) # initial soil P amount
-    KSOILI = Float(-99.) # initial soil K amount
+    NSOILI = Float(-99.0)  # initial soil N amount
+    PSOILI = Float(-99.0)  # initial soil P amount
+    KSOILI = Float(-99.0)  # initial soil K amount
 
     # placeholders for FERT_N/P/K_SUPPLY
-    _FERT_N_SUPPLY = Float(0.)
-    _FERT_P_SUPPLY = Float(0.)
-    _FERT_K_SUPPLY = Float(0.)
+    _FERT_N_SUPPLY = Float(0.0)
+    _FERT_P_SUPPLY = Float(0.0)
+    _FERT_K_SUPPLY = Float(0.0)
 
     class Parameters(ParamTemplate):
-        NSOILBASE = Float(-99.)  # total mineral soil N available at start of growth period [kg N/ha]
-        NSOILBASE_FR = Float(-99.)  # fraction of soil mineral N coming available per day [day-1]
+        NSOILBASE = Float(
+            -99.0
+        )  # total mineral soil N available at start of growth period [kg N/ha]
+        NSOILBASE_FR = Float(
+            -99.0
+        )  # fraction of soil mineral N coming available per day [day-1]
 
-        PSOILBASE = Float(-99.)  # total mineral soil P available at start of growth period [kg N/ha]
-        PSOILBASE_FR = Float(-99.)  # fraction of soil mineral P coming available per day [day-1]
-        
-        KSOILBASE = Float(-99.)  # total mineral soil K available at start of growth period [kg N/ha]
-        KSOILBASE_FR = Float(-99.)  # fraction of soil mineral K coming available per day [day-1]
+        PSOILBASE = Float(
+            -99.0
+        )  # total mineral soil P available at start of growth period [kg N/ha]
+        PSOILBASE_FR = Float(
+            -99.0
+        )  # fraction of soil mineral P coming available per day [day-1]
+
+        KSOILBASE = Float(
+            -99.0
+        )  # total mineral soil K available at start of growth period [kg N/ha]
+        KSOILBASE_FR = Float(
+            -99.0
+        )  # fraction of soil mineral K coming available per day [day-1]
 
         # Initial values of available nutrients which is different from the previous ones
         #
@@ -172,22 +189,22 @@ class NPK_Soil_Dynamics(SimulationObject):
         BG_K_SUPPLY = Float()
 
     class StateVariables(StatesTemplate):
-        NSOIL = Float(-99.)  # mineral N available from soil for crop    kg N ha-1
-        PSOIL = Float(-99.)  # mineral N available from soil for crop    kg N ha-1
-        KSOIL = Float(-99.)  # mineral N available from soil for crop    kg N ha-1
+        NSOIL = Float(-99.0)  # mineral N available from soil for crop    kg N ha-1
+        PSOIL = Float(-99.0)  # mineral N available from soil for crop    kg N ha-1
+        KSOIL = Float(-99.0)  # mineral N available from soil for crop    kg N ha-1
 
-        NAVAIL = Float(-99.)  # total mineral N from soil and fertiliser  kg N ha-1
-        PAVAIL = Float(-99.)  # total mineral P from soil and fertiliser  kg N ha-1
-        KAVAIL = Float(-99.)  # total mineral K from soil and fertiliser  kg N ha-1
-      
+        NAVAIL = Float(-99.0)  # total mineral N from soil and fertiliser  kg N ha-1
+        PAVAIL = Float(-99.0)  # total mineral P from soil and fertiliser  kg N ha-1
+        KAVAIL = Float(-99.0)  # total mineral K from soil and fertiliser  kg N ha-1
+
     class RateVariables(RatesTemplate):
-        RNSOIL = Float(-99.)
-        RPSOIL = Float(-99.)
-        RKSOIL = Float(-99.)
-        
-        RNAVAIL = Float(-99.)
-        RPAVAIL = Float(-99.)
-        RKAVAIL = Float(-99.)
+        RNSOIL = Float(-99.0)
+        RPSOIL = Float(-99.0)
+        RKSOIL = Float(-99.0)
+
+        RNAVAIL = Float(-99.0)
+        RPAVAIL = Float(-99.0)
+        RKAVAIL = Float(-99.0)
 
         # Rate of fertilizer supply for N/P/K [kg/ha/day]
         FERT_N_SUPPLY = Float()
@@ -204,20 +221,26 @@ class NPK_Soil_Dynamics(SimulationObject):
         self.params = self.Parameters(parvalues)
         self.rates = self.RateVariables(kiosk)
         self.kiosk = kiosk
-        
+
         # INITIAL STATES
         p = self.params
         self.NSOILI = p.NSOILBASE
         self.PSOILI = p.PSOILBASE
         self.KSOILI = p.KSOILBASE
-        
-        self.states = self.StateVariables(kiosk,
+
+        self.states = self.StateVariables(
+            kiosk,
             publish=["NAVAIL", "PAVAIL", "KAVAIL"],
-            NSOIL=p.NSOILBASE, PSOIL=p.PSOILBASE, KSOIL=p.KSOILBASE,
-            NAVAIL=p.NAVAILI, PAVAIL=p.PAVAILI, KAVAIL=p.KAVAILI)
+            NSOIL=p.NSOILBASE,
+            PSOIL=p.PSOILBASE,
+            KSOIL=p.KSOILBASE,
+            NAVAIL=p.NAVAILI,
+            PAVAIL=p.PAVAILI,
+            KAVAIL=p.KAVAILI,
+        )
 
         self._connect_signal(self._on_APPLY_NPK, signals.apply_npk)
-        
+
     @prepare_rates
     def calc_rates(self, day, drv):
         r = self.rates
@@ -229,23 +252,23 @@ class NPK_Soil_Dynamics(SimulationObject):
         r.FERT_N_SUPPLY = self._FERT_N_SUPPLY
         r.FERT_P_SUPPLY = self._FERT_P_SUPPLY
         r.FERT_K_SUPPLY = self._FERT_K_SUPPLY
-        self._FERT_N_SUPPLY = 0.
-        self._FERT_P_SUPPLY = 0.
-        self._FERT_K_SUPPLY = 0.
+        self._FERT_N_SUPPLY = 0.0
+        self._FERT_P_SUPPLY = 0.0
+        self._FERT_K_SUPPLY = 0.0
 
-        r.RNSOIL = -max(0., min(p.NSOILBASE_FR * self.NSOILI, s.NSOIL))
-        r.RPSOIL = -max(0., min(p.PSOILBASE_FR * self.PSOILI, s.PSOIL))
-        r.RKSOIL = -max(0., min(p.KSOILBASE_FR * self.KSOILI, s.KSOIL))
+        r.RNSOIL = -max(0.0, min(p.NSOILBASE_FR * self.NSOILI, s.NSOIL))
+        r.RPSOIL = -max(0.0, min(p.PSOILBASE_FR * self.PSOILI, s.PSOIL))
+        r.RKSOIL = -max(0.0, min(p.KSOILBASE_FR * self.KSOILI, s.KSOIL))
 
         # Check uptake rates from crop, if a crop is actually growing
-        RNuptake = k.RNuptake if "RNuptake" in self.kiosk else 0.
-        RPuptake = k.RPuptake if "RPuptake" in self.kiosk else 0.
-        RKuptake = k.RKuptake if "RKuptake" in self.kiosk else 0.
+        RNuptake = k.RNuptake if "RNuptake" in self.kiosk else 0.0
+        RPuptake = k.RPuptake if "RPuptake" in self.kiosk else 0.0
+        RKuptake = k.RKuptake if "RKuptake" in self.kiosk else 0.0
 
         r.RNAVAIL = r.FERT_N_SUPPLY + p.BG_N_SUPPLY - RNuptake - r.RNSOIL
         r.RPAVAIL = r.FERT_P_SUPPLY + p.BG_P_SUPPLY - RPuptake - r.RPSOIL
         r.RKAVAIL = r.FERT_K_SUPPLY + p.BG_K_SUPPLY - RKuptake - r.RKSOIL
-        
+
     @prepare_states
     def integrate(self, day, delt=1.0):
         rates = self.rates
@@ -255,19 +278,26 @@ class NPK_Soil_Dynamics(SimulationObject):
         states.NSOIL += rates.RNSOIL * delt
         states.PSOIL += rates.RPSOIL * delt
         states.KSOIL += rates.RKSOIL * delt
-        
+
         # total (soil + fertilizer) NPK amount in soil
         states.NAVAIL += rates.RNAVAIL * delt
         states.PAVAIL += rates.RPAVAIL * delt
         states.KAVAIL += rates.RKAVAIL * delt
 
-    def _on_APPLY_NPK(self, N_amount=None, P_amount=None, K_amount=None, N_recovery=None,
-                      P_recovery=None, K_recovery=None):
+    def _on_APPLY_NPK(
+        self,
+        N_amount=None,
+        P_amount=None,
+        K_amount=None,
+        N_recovery=None,
+        P_recovery=None,
+        K_recovery=None,
+    ):
 
         self._FERT_N_SUPPLY = N_amount * N_recovery
         self._FERT_P_SUPPLY = P_amount * P_recovery
         self._FERT_K_SUPPLY = K_amount * K_recovery
-        
+
 
 class Indigo_NPK_Soil_Dynamics(SimulationObject):
     """A simple module for soil N/P/K dynamics.
@@ -372,24 +402,36 @@ class Indigo_NPK_Soil_Dynamics(SimulationObject):
     =========  =================================== ===================  ==============
     """
 
-    NSOILI = Float(-99.) # initial soil N amount
-    PSOILI = Float(-99.) # initial soil P amount
-    KSOILI = Float(-99.) # initial soil K amount
+    NSOILI = Float(-99.0)  # initial soil N amount
+    PSOILI = Float(-99.0)  # initial soil P amount
+    KSOILI = Float(-99.0)  # initial soil K amount
 
     # placeholders for FERT_N/P/K_SUPPLY
-    _FERT_N_SUPPLY = Float(0.)
-    _FERT_P_SUPPLY = Float(0.)
-    _FERT_K_SUPPLY = Float(0.)
+    _FERT_N_SUPPLY = Float(0.0)
+    _FERT_P_SUPPLY = Float(0.0)
+    _FERT_K_SUPPLY = Float(0.0)
 
     class Parameters(ParamTemplate):
-        NSOILBASE = Float(-99.)  # total mineral soil N available at start of growth period [kg N/ha]
-        NSOILBASE_FR = Float(-99.)  # fraction of soil mineral N coming available per day [day-1]
+        NSOILBASE = Float(
+            -99.0
+        )  # total mineral soil N available at start of growth period [kg N/ha]
+        NSOILBASE_FR = Float(
+            -99.0
+        )  # fraction of soil mineral N coming available per day [day-1]
 
-        PSOILBASE = Float(-99.)  # total mineral soil P available at start of growth period [kg N/ha]
-        PSOILBASE_FR = Float(-99.)  # fraction of soil mineral P coming available per day [day-1]
-        
-        KSOILBASE = Float(-99.)  # total mineral soil K available at start of growth period [kg N/ha]
-        KSOILBASE_FR = Float(-99.)  # fraction of soil mineral K coming available per day [day-1]
+        PSOILBASE = Float(
+            -99.0
+        )  # total mineral soil P available at start of growth period [kg N/ha]
+        PSOILBASE_FR = Float(
+            -99.0
+        )  # fraction of soil mineral P coming available per day [day-1]
+
+        KSOILBASE = Float(
+            -99.0
+        )  # total mineral soil K available at start of growth period [kg N/ha]
+        KSOILBASE_FR = Float(
+            -99.0
+        )  # fraction of soil mineral K coming available per day [day-1]
 
         # Initial values of available nutrients which is different from the previous ones
         #
@@ -403,22 +445,22 @@ class Indigo_NPK_Soil_Dynamics(SimulationObject):
         BG_K_SUPPLY = Float()
 
     class StateVariables(StatesTemplate):
-        NSOIL = Float(-99.)  # mineral N available from soil for crop    kg N ha-1
-        PSOIL = Float(-99.)  # mineral N available from soil for crop    kg N ha-1
-        KSOIL = Float(-99.)  # mineral N available from soil for crop    kg N ha-1
+        NSOIL = Float(-99.0)  # mineral N available from soil for crop    kg N ha-1
+        PSOIL = Float(-99.0)  # mineral N available from soil for crop    kg N ha-1
+        KSOIL = Float(-99.0)  # mineral N available from soil for crop    kg N ha-1
 
-        NAVAIL = Float(-99.)  # total mineral N from soil and fertiliser  kg N ha-1
-        PAVAIL = Float(-99.)  # total mineral P from soil and fertiliser  kg N ha-1
-        KAVAIL = Float(-99.)  # total mineral K from soil and fertiliser  kg N ha-1
-      
+        NAVAIL = Float(-99.0)  # total mineral N from soil and fertiliser  kg N ha-1
+        PAVAIL = Float(-99.0)  # total mineral P from soil and fertiliser  kg N ha-1
+        KAVAIL = Float(-99.0)  # total mineral K from soil and fertiliser  kg N ha-1
+
     class RateVariables(RatesTemplate):
-        RNSOIL = Float(-99.)
-        RPSOIL = Float(-99.)
-        RKSOIL = Float(-99.)
-        
-        RNAVAIL = Float(-99.)
-        RPAVAIL = Float(-99.)
-        RKAVAIL = Float(-99.)
+        RNSOIL = Float(-99.0)
+        RPSOIL = Float(-99.0)
+        RKSOIL = Float(-99.0)
+
+        RNAVAIL = Float(-99.0)
+        RPAVAIL = Float(-99.0)
+        RKAVAIL = Float(-99.0)
 
         # Rate of fertilizer supply for N/P/K [kg/ha/day]
         FERT_N_SUPPLY = Float()
@@ -435,20 +477,26 @@ class Indigo_NPK_Soil_Dynamics(SimulationObject):
         self.params = self.Parameters(parvalues)
         self.rates = self.RateVariables(kiosk)
         self.kiosk = kiosk
-        
+
         # INITIAL STATES
         p = self.params
         self.NSOILI = p.NSOILBASE
         self.PSOILI = p.PSOILBASE
         self.KSOILI = p.KSOILBASE
-        
-        self.states = self.StateVariables(kiosk,
+
+        self.states = self.StateVariables(
+            kiosk,
             publish=["NAVAIL", "PAVAIL", "KAVAIL"],
-            NSOIL=p.NSOILBASE, PSOIL=p.PSOILBASE, KSOIL=p.KSOILBASE,
-            NAVAIL=p.NAVAILI, PAVAIL=p.PAVAILI, KAVAIL=p.KAVAILI)
+            NSOIL=p.NSOILBASE,
+            PSOIL=p.PSOILBASE,
+            KSOIL=p.KSOILBASE,
+            NAVAIL=p.NAVAILI,
+            PAVAIL=p.PAVAILI,
+            KAVAIL=p.KAVAILI,
+        )
 
         self._connect_signal(self._on_APPLY_NPK, signals.apply_npk)
-        
+
     @prepare_rates
     def calc_rates(self, day, drv):
         r = self.rates
@@ -460,32 +508,29 @@ class Indigo_NPK_Soil_Dynamics(SimulationObject):
         r.FERT_N_SUPPLY = self._FERT_N_SUPPLY
         r.FERT_P_SUPPLY = self._FERT_P_SUPPLY
         r.FERT_K_SUPPLY = self._FERT_K_SUPPLY
-        self._FERT_N_SUPPLY = 0.
-        self._FERT_P_SUPPLY = 0.
-        self._FERT_K_SUPPLY = 0.
+        self._FERT_N_SUPPLY = 0.0
+        self._FERT_P_SUPPLY = 0.0
+        self._FERT_K_SUPPLY = 0.0
 
-        r.RNSOIL = -max(0., min(p.NSOILBASE_FR * self.NSOILI, s.NSOIL))
-        r.RPSOIL = -max(0., min(p.PSOILBASE_FR * self.PSOILI, s.PSOIL))
-        r.RKSOIL = -max(0., min(p.KSOILBASE_FR * self.KSOILI, s.KSOIL))
+        r.RNSOIL = -max(0.0, min(p.NSOILBASE_FR * self.NSOILI, s.NSOIL))
+        r.RPSOIL = -max(0.0, min(p.PSOILBASE_FR * self.PSOILI, s.PSOIL))
+        r.RKSOIL = -max(0.0, min(p.KSOILBASE_FR * self.KSOILI, s.KSOIL))
 
         # Check uptake rates from crop, if a crop is actually growing
-        RNuptake = k.RNuptake if "RNuptake" in self.kiosk else 0.
-        RPuptake = k.RPuptake if "RPuptake" in self.kiosk else 0.
-        RKuptake = k.RKuptake if "RKuptake" in self.kiosk else 0.
-        
+        RNuptake = k.RNuptake if "RNuptake" in self.kiosk else 0.0
+        RPuptake = k.RPuptake if "RPuptake" in self.kiosk else 0.0
+        RKuptake = k.RKuptake if "RKuptake" in self.kiosk else 0.0
+
         if "total_mineralized_N" in self.kiosk:
-            min_N= self.kiosk["total_mineralized_N"]
+            min_N = self.kiosk["total_mineralized_N"]
         else:
             min_N = 0.0
-        
-        r.RNSOIL+= min_N
-        
+
+        r.RNSOIL += min_N
+
         r.RNAVAIL = r.FERT_N_SUPPLY + p.BG_N_SUPPLY - RNuptake - r.RNSOIL
         r.RPAVAIL = r.FERT_P_SUPPLY + p.BG_P_SUPPLY - RPuptake - r.RPSOIL
         r.RKAVAIL = r.FERT_K_SUPPLY + p.BG_K_SUPPLY - RKuptake - r.RKSOIL
-        
-        
-        
 
     @prepare_states
     def integrate(self, day, delt=1.0):
@@ -496,22 +541,29 @@ class Indigo_NPK_Soil_Dynamics(SimulationObject):
         states.NSOIL += rates.RNSOIL * delt
         states.PSOIL += rates.RPSOIL * delt
         states.KSOIL += rates.RKSOIL * delt
-        
+
         # total (soil + fertilizer) NPK amount in soil
         states.NAVAIL += rates.RNAVAIL * delt
         states.PAVAIL += rates.RPAVAIL * delt
         states.KAVAIL += rates.RKAVAIL * delt
-        #print(f"{day}: RNAVAIL {rates.RNAVAIL} r.FERT_N_SUPPLY {rates.FERT_N_SUPPLY} RNSOIL {rates.RNSOIL} NAVAIl {states.NAVAIL} NSOIL {states.NSOIL}")
+        # print(f"{day}: RNAVAIL {rates.RNAVAIL} r.FERT_N_SUPPLY {rates.FERT_N_SUPPLY} RNSOIL {rates.RNSOIL} NAVAIl {states.NAVAIL} NSOIL {states.NSOIL}")
 
-    def _on_APPLY_NPK(self, N_amount=None, P_amount=None, K_amount=None, N_recovery=None,
-                      P_recovery=None, K_recovery=None):
+    def _on_APPLY_NPK(
+        self,
+        N_amount=None,
+        P_amount=None,
+        K_amount=None,
+        N_recovery=None,
+        P_recovery=None,
+        K_recovery=None,
+    ):
 
-        #print(f"Indigo_NPK_Soil_Dynamics: N_amount {N_amount} P_amount {P_amount} K_amount {K_amount} N_recovery {N_recovery} P_recovery {P_recovery} K_recovery {K_recovery}")
+        # print(f"Indigo_NPK_Soil_Dynamics: N_amount {N_amount} P_amount {P_amount} K_amount {K_amount} N_recovery {N_recovery} P_recovery {P_recovery} K_recovery {K_recovery}")
         P_amount = P_amount or 0.0
         K_amount = K_amount or 0.0
         K_recovery = K_recovery or 0.0
         P_recovery = P_recovery or 0.0
-                    
+
         self._FERT_N_SUPPLY = N_amount * N_recovery
         self._FERT_P_SUPPLY = P_amount * P_recovery
         self._FERT_K_SUPPLY = K_amount * K_recovery

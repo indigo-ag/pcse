@@ -19,9 +19,14 @@ import datetime
 import gc
 
 from .traitlets import Instance, Bool, List, Dict
-from .base import (VariableKiosk, WeatherDataProvider,
-                           AncillaryObject, SimulationObject,
-                           BaseEngine, ParameterProvider)
+from .base import (
+    VariableKiosk,
+    WeatherDataProvider,
+    AncillaryObject,
+    SimulationObject,
+    BaseEngine,
+    ParameterProvider,
+)
 from .util import ConfigurationLoader, check_date
 from .timer import Timer
 from . import signals
@@ -52,29 +57,29 @@ class Engine(BaseEngine):
     "CROP_START" signal from the AgroManagement unit. From that point onward,
     the combined soil-crop is simulated including the interactions between
     the soil and crop such as root growth and transpiration.
-    
+
     Similarly, the crop simulation is finalized when receiving a "CROP_FINISH"
     signal. At that moment the `finalize()` section on the cropsimulation is
     executed. Moreover, the "CROP_FINISH" signal can specify that the
     crop simulation object should be deleted from the hierarchy. The latter is
     useful for further extensions of PCSE for running crop rotations.
-    
+
     Finally, the entire simulation is terminated when a "TERMINATE" signal is
     received. At that point, the `finalize()` section on the water balance is
     executed and the simulation stops.
 
     **Signals handled by Engine:**
-    
+
     `Engine` handles the following signals:
         * CROP_START: Starts an instance of `CropSimulation` for simulating crop
           growth. See the `_on_CROP_START` handler for details.
-        * CROP_FINISH: Runs the `finalize()` section an instance of 
+        * CROP_FINISH: Runs the `finalize()` section an instance of
           `CropSimulation` and optionally deletes the cropsimulation instance.
           See the `_on_CROP_FINISH` handler for details.
         * TERMINATE: Runs the `finalize()` section on the waterbalance module
           and terminates the entire simulation.
           See the `_on_TERMINATE` handler for details.
-        * OUTPUT:  Preserves a copy of the value of selected state/rate 
+        * OUTPUT:  Preserves a copy of the value of selected state/rate
           variables during simulation for later use.
           See the `_on_OUTPUT` handler for details.
         * SUMMARY_OUTPUT:  Preserves a copy of the value of selected state/rate
@@ -83,6 +88,7 @@ class Engine(BaseEngine):
           See the `_on_SUMMARY_OUTPUT` handler for details.
 
     """
+
     # system configuration
     mconf = Instance(ConfigurationLoader)
     parameterprovider = Instance(ParameterProvider)
@@ -104,13 +110,15 @@ class Engine(BaseEngine):
     flag_crop_delete = Bool(False)
     flag_output = Bool(False)
     flag_summary_output = Bool(False)
-    
+
     # placeholders for variables saved during model execution
     _saved_output = List()
     _saved_summary_output = List()
     _saved_terminal_output = Dict()
 
-    def __init__(self, parameterprovider, weatherdataprovider, agromanagement, config=None):
+    def __init__(
+        self, parameterprovider, weatherdataprovider, agromanagement, config=None
+    ):
 
         BaseEngine.__init__(self)
 
@@ -192,8 +200,7 @@ class Engine(BaseEngine):
         self.kiosk.flush_rates()
 
     def _run(self):
-        """Make one time step of the simulation.
-        """
+        """Make one time step of the simulation."""
 
         # Update timer
         self.day, delt = self.timer()
@@ -248,11 +255,11 @@ class Engine(BaseEngine):
     def _on_CROP_FINISH(self, day, crop_delete=False):
         """Sets the variable 'flag_crop_finish' to True when the signal
         CROP_FINISH is received.
-        
+
         The flag is needed because finishing the crop simulation is deferred to
         the correct place in the processing loop and is done by the routine
         _finish_cropsimulation().
-        
+
         If crop_delete=True the CropSimulation object will be deleted from the
         hierarchy in _finish_cropsimulation().
 
@@ -262,21 +269,29 @@ class Engine(BaseEngine):
         self.flag_crop_finish = True
         self.flag_crop_delete = crop_delete
 
-    def _on_CROP_START(self, day, crop_name=None, variety_name=None,
-                       crop_start_type=None, crop_end_type=None):
-        """Starts the crop
-        """
+    def _on_CROP_START(
+        self,
+        day,
+        crop_name=None,
+        variety_name=None,
+        crop_start_type=None,
+        crop_end_type=None,
+    ):
+        """Starts the crop"""
         self.logger.debug("Received signal 'CROP_START' on day %s" % day)
 
         if self.crop is not None:
-            msg = ("A CROP_START signal was received while self.cropsimulation "
-                   "still holds a valid cropsimulation object. It looks like "
-                   "you forgot to send a CROP_FINISH signal with option "
-                   "crop_delete=True")
+            msg = (
+                "A CROP_START signal was received while self.cropsimulation "
+                "still holds a valid cropsimulation object. It looks like "
+                "you forgot to send a CROP_FINISH signal with option "
+                "crop_delete=True"
+            )
             raise exc.PCSEError(msg)
 
-        self.parameterprovider.set_active_crop(crop_name, variety_name, crop_start_type,
-                                               crop_end_type)
+        self.parameterprovider.set_active_crop(
+            crop_name, variety_name, crop_start_type, crop_end_type
+        )
         self.crop = self.mconf.CROP(day, self.kiosk, self.parameterprovider)
 
     def _on_TERMINATE(self):
@@ -284,13 +299,13 @@ class Engine(BaseEngine):
         was received.
         """
         self.flag_terminate = True
-        
+
     def _on_OUTPUT(self):
         """Sets the variable 'flag_output to True' when the signal OUTPUT
         was received.
         """
         self.flag_output = True
-        
+
     def _finish_cropsimulation(self, day):
         """Finishes the CropSimulation object when variable 'flag_crop_finish'
         has been set to True based on the signal 'CROP_FINISH' being
@@ -318,7 +333,7 @@ class Engine(BaseEngine):
             # that the standard python GC did not garbage collect the crop
             # simulation object. This caused signals to be received by crop simulation
             # objects that were supposed to be garbage collected already.
-            #gc.collect()
+            # gc.collect()
 
     def _terminate_simulation(self, day):
         """Terminates the entire simulation.
@@ -332,38 +347,35 @@ class Engine(BaseEngine):
         self._save_terminal_output()
 
     def _get_driving_variables(self, day):
-        """Get driving variables, compute derived properties and return it.
-        """
+        """Get driving variables, compute derived properties and return it."""
         try:
-            #print(day)
+            # print(day)
             drv = self.weatherdataprovider(day)
         except KeyError as e:
             msg = "No weather data available for date %s" % day
             raise exc.PCSEError(msg)
-        
+
         # average temperature and average daytemperature (if needed)
         if not hasattr(drv, "TEMP"):
-            drv.add_variable("TEMP", (drv.TMIN + drv.TMAX)/2., "Celcius")
+            drv.add_variable("TEMP", (drv.TMIN + drv.TMAX) / 2.0, "Celcius")
         if not hasattr(drv, "DTEMP"):
-            drv.add_variable("DTEMP", (drv.TEMP + drv.TMAX)/2., "Celcius")
+            drv.add_variable("DTEMP", (drv.TEMP + drv.TMAX) / 2.0, "Celcius")
 
         return drv
 
     def _save_output(self, day):
-        """Appends selected model variables to self._saved_output for this day.
-        """
+        """Appends selected model variables to self._saved_output for this day."""
         # Switch off the flag for generating output
         self.flag_output = False
 
         # find current value of variables to are to be saved
-        states = {"day":day}
+        states = {"day": day}
         for var in self.mconf.OUTPUT_VARS:
             states[var] = self.get_variable(var)
         self._saved_output.append(states)
 
     def _save_summary_output(self):
-        """Appends selected model variables to self._saved_summary_output.
-        """
+        """Appends selected model variables to self._saved_summary_output."""
         # find current value of variables to are to be saved
         states = {}
         for var in self.mconf.SUMMARY_OUTPUT_VARS:
@@ -371,8 +383,7 @@ class Engine(BaseEngine):
         self._saved_summary_output.append(states)
 
     def _save_terminal_output(self):
-        """Appends selected model variables to self._saved_terminal_output.
-        """
+        """Appends selected model variables to self._saved_terminal_output."""
         # find current value of variables to are to be saved
         for var in self.mconf.TERMINAL_OUTPUT_VARS:
             self._saved_terminal_output[var] = self.get_variable(var)
@@ -417,19 +428,17 @@ class Engine(BaseEngine):
 
         If no output is stored an empty list is returned. Otherwise, the output is
         returned as a list of dictionaries in chronological order. Each dictionary is
-        a set of stored model variables for a certain date. """
+        a set of stored model variables for a certain date."""
 
         return self._saved_output
 
     def get_summary_output(self):
-        """Returns the summary variables have have been stored during the simulation.
-        """
+        """Returns the summary variables have have been stored during the simulation."""
 
         return self._saved_summary_output
 
     def get_terminal_output(self):
-        """Returns the terminal output variables have have been stored during the simulation.
-        """
+        """Returns the terminal output variables have have been stored during the simulation."""
 
         return self._saved_terminal_output
 
@@ -490,8 +499,7 @@ class CGMSEngine(Engine):
             self._run()
 
     def _run(self):
-        """Make one time step of the simulation.
-        """
+        """Make one time step of the simulation."""
 
         # Update timer
         self.day, delt = self.timer()

@@ -18,4 +18,5 @@ class SoilDataIterator(SoilDataIterator_CGMS12):
     The only difference is that in CGMS8 the table is called 'ELEMENTARY_MAPPING_UNIT' and
     in CGMS12 it is called 'EMU'
     """
+
     emu_table_name = "elementary_mapping_unit"

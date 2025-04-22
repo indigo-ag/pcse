@@ -4,7 +4,7 @@
   "description": "Indigo variant of the PCSE ensemble quantification model.",
   "scripts": {
     "install:deps": "pip install -r requirements.txt",
-    "lint": "set -x && black --check --diff indigoag/",
+    "lint": "set -x && black --check --diff pcse/",
     "lint:fix": "mypy indigoag/ && yarn indigo-scripts",
     "test": "pytest"
   },

@@ -12,7 +12,7 @@ from ..models import Wofost80_PP_beta, Wofost80_NWLP_FD_beta
 from ..base import ParameterProvider
 from ..fileinput import CABOFileReader, CABOWeatherDataProvider
 
-test_data_dir =  os.path.join(os.path.dirname(__file__), "test_data")
+test_data_dir = os.path.join(os.path.dirname(__file__), "test_data")
 
 
 class TestWOFOST80_Potential_WinterWheat(unittest.TestCase):
@@ -20,14 +20,16 @@ class TestWOFOST80_Potential_WinterWheat(unittest.TestCase):
     model = Wofost80_PP_beta
 
     def setUp(self):
-        agro = yaml.safe_load(open(os.path.join(test_data_dir, "wofost_npk.agro")))['AgroManagement']
+        agro = yaml.safe_load(open(os.path.join(test_data_dir, "wofost_npk.agro")))[
+            "AgroManagement"
+        ]
         soil = CABOFileReader(os.path.join(test_data_dir, "wofost_npk.soil"))
         site = CABOFileReader(os.path.join(test_data_dir, "wofost_npk.site"))
         crop = CABOFileReader(os.path.join(test_data_dir, "wofost_npk.crop"))
         weather = CABOWeatherDataProvider("NL1", test_data_dir)
 
         parvalues = ParameterProvider(sitedata=site, soildata=soil, cropdata=crop)
-        wofost = self.model(parvalues,  weather, agromanagement=agro)
+        wofost = self.model(parvalues, weather, agromanagement=agro)
         wofost.run(days=300)
         self.output = wofost.get_output()
 
@@ -72,11 +74,12 @@ class TestWOFOST80_WaterLimited_WinterWheat(TestWOFOST80_Potential_WinterWheat):
 
 
 def suite():
-    """ This defines all the tests of a module"""
+    """This defines all the tests of a module"""
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestWOFOST80_Potential_WinterWheat))
     suite.addTest(unittest.makeSuite(TestWOFOST80_WaterLimited_WinterWheat))
     return suite
 
-if __name__ == '__main__':
-   unittest.TextTestRunner(verbosity=2).run(suite())
+
+if __name__ == "__main__":
+    unittest.TextTestRunner(verbosity=2).run(suite())

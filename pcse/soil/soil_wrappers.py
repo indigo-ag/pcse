@@ -6,7 +6,11 @@ within the same model.
 """
 from pcse.base import SimulationObject
 from .classic_waterbalance import WaterbalanceFD, WaterbalancePP, IndigoWaterbalanceFD
-from .npk_soil_dynamics import NPK_Soil_Dynamics, NPK_PotentialProduction,Indigo_NPK_Soil_Dynamics
+from .npk_soil_dynamics import (
+    NPK_Soil_Dynamics,
+    NPK_PotentialProduction,
+    Indigo_NPK_Soil_Dynamics,
+)
 from .n_soil_dynamics import N_PotentialProduction, N_Soil_Dynamics
 from ..traitlets import Instance
 from ..decorators import prepare_states
@@ -18,8 +22,8 @@ from .SOCMineralization import SOCMineralization_Indigo
 
 
 class SoilModuleWrapper_PP(SimulationObject):
-    """This wraps the soil water balance and soil NPK balance for potential production.
-    """
+    """This wraps the soil water balance and soil NPK balance for potential production."""
+
     WaterbalancePP = Instance(SimulationObject)
     NPK_PotentialProduction = Instance(SimulationObject)
 
@@ -45,6 +49,7 @@ class SoilModuleWrapper_WLP_FD(SimulationObject):
     """This wraps the soil water balance for free drainage conditions and NPK balance
     for production conditions limited by soil water only.
     """
+
     WaterbalanceFD = Instance(SimulationObject)
     NPK_Soil_Dynamics = Instance(SimulationObject)
 
@@ -70,6 +75,7 @@ class SoilModuleWrapper_NPK_WLP_FD(SimulationObject):
     """This wraps the soil water balance for free drainage conditions and NPK balance
     for production conditions limited by both soil water and NPK.
     """
+
     WaterbalanceFD = Instance(SimulationObject)
     NPK_Soil_Dynamics = Instance(SimulationObject)
 
@@ -95,6 +101,7 @@ class SoilModuleWrapper_N_WLP_FD(SimulationObject):
     """This wraps the soil water balance for free drainage conditions and N balance
     for production conditions limited by both soil water and N.
     """
+
     WaterbalanceFD = Instance(SimulationObject)
     N_Soil_Dynamics = Instance(SimulationObject)
 
@@ -117,11 +124,11 @@ class SoilModuleWrapper_N_WLP_FD(SimulationObject):
 
 
 class SoilModuleWrapper_Indigo(SimulationObject):
-    
     """This wraps the soil water balance for free drainage conditions and NPK balance
     for production conditions limited by both soil water and NPK. Built by Indigo Ag.
     We are also working on adding the soil carbon dynamics.
     """
+
     IndigoWaterbalanceFD = Instance(SimulationObject)
     NPK_Soil_Dynamics = Instance(SimulationObject)
     SoilTemperature = Instance(SimulationObject)
@@ -145,7 +152,7 @@ class SoilModuleWrapper_Indigo(SimulationObject):
     def calc_rates(self, day, drv):
         self.IndigoWaterbalanceFD.calc_rates(day, drv)
         self.SoilTemperature.calc_states(day, drv)
-        self.TillageSignal.calc_rates(day, drv)# this doesn't have the cal_rate
+        self.TillageSignal.calc_rates(day, drv)  # this doesn't have the cal_rate
         self.Ensemble_SOC_Indigo.calc_rates(day, drv)
         self.SOCMineralization_Indigo.calc_rates(day, drv)
         self.NPK_Soil_Dynamics.calc_rates(day, drv)
@@ -153,8 +160,7 @@ class SoilModuleWrapper_Indigo(SimulationObject):
     def integrate(self, day, delt=1.0):
         self.IndigoWaterbalanceFD.integrate(day, delt)
         self.NPK_Soil_Dynamics.integrate(day, delt)
-        # SoilTemperature directly estimates the states without the need for integration, we put 
+        # SoilTemperature directly estimates the states without the need for integration, we put
         # in the rates to let it use the drivers
         self.TillageSignal.integrate(day, delt)
         self.Ensemble_SOC_Indigo.integrate(day, delt)
-        

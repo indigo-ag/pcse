@@ -7,8 +7,7 @@ import array
 
 from ..traitlets import Float, Int, Instance, Bool, List
 from ..decorators import prepare_rates, prepare_states
-from ..base import ParamTemplate, StatesTemplate, RatesTemplate, \
-                         SimulationObject
+from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 from ..util import limit, merge_dict, AfgenTrait
 
 
@@ -17,7 +16,7 @@ def SWEAF(ET0, DEPNR):
 
     :param ET0: The evapotranpiration from a reference crop.
     :param DEPNR: The crop dependency number.
-    
+
     The fraction of easily available soil water between field capacity and
     wilting point is a function of the potential evapotranspiration rate
     (for a closed canopy) in cm/day, ET0, and the crop group number, DEPNR
@@ -29,11 +28,11 @@ def SWEAF(ET0, DEPNR):
     A = 0.76
     B = 1.5
     # curve for CGNR 5, and other curves at fixed distance below it
-    sweaf = 1./(A+B*ET0) - (5.-DEPNR)*0.10
+    sweaf = 1.0 / (A + B * ET0) - (5.0 - DEPNR) * 0.10
 
     # Correction for lower curves (CGNR less than 3)
-    if (DEPNR < 3.):
-        sweaf += (ET0-0.6)/(DEPNR*(DEPNR+3.))
+    if DEPNR < 3.0:
+        sweaf += (ET0 - 0.6) / (DEPNR * (DEPNR + 3.0))
 
     return limit(0.10, 0.95, sweaf)
 
@@ -41,9 +40,9 @@ def SWEAF(ET0, DEPNR):
 class Evapotranspiration(SimulationObject):
     """Calculation of potential evaporation (water and soil) rates and actual
     crop transpiration rate.
-        
+
     *Simulation parameters*:
-    
+
     =======  ============================================= =======  ============
      Name     Description                                   Type     Unit
     =======  ============================================= =======  ============
@@ -63,10 +62,10 @@ class Evapotranspiration(SimulationObject):
              capacity
     SM0      Soil porosity                                   SSo       -
     =======  ============================================= =======  ============
-    
+
 
     *State variables*
-    
+
     Note that these state variables are only assigned after finalize() has been
     run.
 
@@ -76,8 +75,8 @@ class Evapotranspiration(SimulationObject):
     IDWST     Nr of days with water stress.                      N    -
     IDOST     Nr of days with oxygen stress.                     N    -
     =======  ================================================= ==== ============
-    
-    
+
+
     *Rate variables*
 
     =======  ================================================= ==== ============
@@ -94,13 +93,13 @@ class Evapotranspiration(SimulationObject):
     RFOS     Reduction factor for oxygen stress                 N     -
     RFTRA    Reduction factor for transpiration (wat & ox)      Y     -
     =======  ================================================= ==== ============
-    
+
     *Signals send or handled*
-    
+
     None
-    
+
     *External dependencies:*
-    
+
     =======  =================================== =================  ============
      Name     Description                         Provided by         Unit
     =======  =================================== =================  ============
@@ -116,27 +115,27 @@ class Evapotranspiration(SimulationObject):
     _IDOST = Int(0)
 
     class Parameters(ParamTemplate):
-        CFET = Float(-99.)
-        DEPNR = Float(-99.)
+        CFET = Float(-99.0)
+        DEPNR = Float(-99.0)
         KDIFTB = AfgenTrait()
-        IAIRDU = Float(-99.)
-        IOX = Float(-99.)
-        CRAIRC = Float(-99.)
-        SM0 = Float(-99.)
-        SMW = Float(-99.)
-        SMFCF = Float(-99.)
+        IAIRDU = Float(-99.0)
+        IOX = Float(-99.0)
+        CRAIRC = Float(-99.0)
+        SM0 = Float(-99.0)
+        SMW = Float(-99.0)
+        SMFCF = Float(-99.0)
 
     class RateVariables(RatesTemplate):
-        EVWMX = Float(-99.)
-        EVSMX = Float(-99.)
-        TRAMX = Float(-99.)
-        TRA = Float(-99.)
+        EVWMX = Float(-99.0)
+        EVSMX = Float(-99.0)
+        TRAMX = Float(-99.0)
+        TRA = Float(-99.0)
         IDOS = Bool(False)
         IDWS = Bool(False)
-        RFWS = Float(-99.)
-        RFOS = Float(-99.)
-        RFTRA = Float(-99.)
-        ET0_CROP = Float(-99.)
+        RFWS = Float(-99.0)
+        RFOS = Float(-99.0)
+        RFTRA = Float(-99.0)
+        ET0_CROP = Float(-99.0)
 
     class StateVariables(StatesTemplate):
         IDOST = Int(-99)
@@ -152,7 +151,9 @@ class Evapotranspiration(SimulationObject):
 
         self.kiosk = kiosk
         self.params = self.Parameters(parvalues)
-        self.rates = self.RateVariables(kiosk, publish=["EVWMX", "EVSMX", "TRAMX", "TRA", "RFTRA", "ET0_CROP"])
+        self.rates = self.RateVariables(
+            kiosk, publish=["EVWMX", "EVSMX", "TRAMX", "TRA", "RFTRA", "ET0_CROP"]
+        )
         self.states = self.StateVariables(kiosk, IDOST=-999, IDWST=-999)
 
     @prepare_rates
@@ -160,53 +161,53 @@ class Evapotranspiration(SimulationObject):
         p = self.params
         r = self.rates
         k = self.kiosk
-        
+
         KGLOB = 0.75 * p.KDIFTB(k.DVS)
-  
+
         # crop specific correction on potential transpiration rate
-        ET0_CROP = max(0., p.CFET * drv.ET0)
+        ET0_CROP = max(0.0, p.CFET * drv.ET0)
         r.ET0_CROP = ET0_CROP
         # maximum evaporation and transpiration rates
         EKL = exp(-KGLOB * k.LAI)
         r.EVWMX = drv.E0 * EKL
-        r.EVSMX = max(0., drv.ES0 * EKL)
-        r.TRAMX = ET0_CROP * (1.-EKL)
-                
+        r.EVSMX = max(0.0, drv.ES0 * EKL)
+        r.TRAMX = ET0_CROP * (1.0 - EKL)
+
         # Critical soil moisture
         SWDEP = SWEAF(ET0_CROP, p.DEPNR)
-        SMCR = (1.-SWDEP)*(p.SMFCF-p.SMW) + p.SMW
+        SMCR = (1.0 - SWDEP) * (p.SMFCF - p.SMW) + p.SMW
 
         # Reduction factor for transpiration in case of water shortage (RFWS)
-        r.RFWS = limit(0., 1., (k.SM - p.SMW)/(SMCR - p.SMW))
+        r.RFWS = limit(0.0, 1.0, (k.SM - p.SMW) / (SMCR - p.SMW))
 
         # reduction in transpiration in case of oxygen shortage (RFOS)
         # for non-rice crops, and possibly deficient land drainage
-        r.RFOS = 1.
+        r.RFOS = 1.0
         if p.IAIRDU == 0 and p.IOX == 1:
-            RFOSMX = limit(0., 1., (p.SM0 - k.SM)/p.CRAIRC)
+            RFOSMX = limit(0.0, 1.0, (p.SM0 - k.SM) / p.CRAIRC)
             # maximum reduction reached after 4 days
-            r.RFOS = RFOSMX + (1. - min(k.DSOS, 4)/4.)*(1.-RFOSMX)
+            r.RFOS = RFOSMX + (1.0 - min(k.DSOS, 4) / 4.0) * (1.0 - RFOSMX)
 
         # Transpiration rate multiplied with reduction factors for oxygen and water
         r.RFTRA = r.RFOS * r.RFWS
         r.TRA = r.TRAMX * r.RFTRA
 
         # Counting stress days
-        if r.RFWS < 1.:
+        if r.RFWS < 1.0:
             r.IDWS = True
             self._IDWST += 1
-        if r.RFOS < 1.:
+        if r.RFOS < 1.0:
             r.IDOS = True
             self._IDOST += 1
 
         return r.TRA, r.TRAMX
-        
+
     @prepare_states
     def finalize(self, day):
 
         self.states.IDWST = self._IDWST
         self.states.IDOST = self._IDOST
-        
+
         SimulationObject.finalize(self, day)
 
 
@@ -261,28 +262,28 @@ class EvapotranspirationLayered(SimulationObject):
     _IDOST = Int(-99)
 
     class Parameters(ParamTemplate):
-        CFET   = Float(-99.)
-        DEPNR  = Float(-99.)
+        CFET = Float(-99.0)
+        DEPNR = Float(-99.0)
         KDIFTB = AfgenTrait()
-        IAIRDU = Float(-99.)
-        IOX    = Float(-99.)
-        CRAIRC = Float(-99.)
-        SM0    = Float(-99.)
-        SMW    = Float(-99.)
-        SMFCF  = Float(-99.)
+        IAIRDU = Float(-99.0)
+        IOX = Float(-99.0)
+        CRAIRC = Float(-99.0)
+        SM0 = Float(-99.0)
+        SMW = Float(-99.0)
+        SMFCF = Float(-99.0)
 
     class RateVariables(RatesTemplate):
-        EVWMX = Float(-99.)
-        EVSMX = Float(-99.)
-        TRAMX = Float(-99.)
-        TRA   = Float(-99.)
-        #TRALY = Instance(array.array)
-        IDOS  = Bool(False)
-        IDWS  = Bool(False)
+        EVWMX = Float(-99.0)
+        EVSMX = Float(-99.0)
+        TRAMX = Float(-99.0)
+        TRA = Float(-99.0)
+        # TRALY = Instance(array.array)
+        IDOS = Bool(False)
+        IDWS = Bool(False)
 
     class StateVariables(StatesTemplate):
-        IDOST  = Int(-99)
-        IDWST  = Int(-99)
+        IDOST = Int(-99)
+        IDWST = Int(-99)
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -294,9 +295,15 @@ class EvapotranspirationLayered(SimulationObject):
 
         self.kiosk = kiosk
         self.params = self.Parameters(parvalues)
-        self.rates = self.RateVariables(kiosk, publish=["EVWMX","EVSMX",
-                                                        "TRAMX","TRA",#"TRALY"
-                                                        ])
+        self.rates = self.RateVariables(
+            kiosk,
+            publish=[
+                "EVWMX",
+                "EVSMX",
+                "TRAMX",
+                "TRA",  # "TRALY"
+            ],
+        )
         self.states = self.StateVariables(kiosk, IDOST=-999, IDWST=-999)
 
         # Helper variables
@@ -313,10 +320,10 @@ class EvapotranspirationLayered(SimulationObject):
         DVS = self.kiosk["DVS"]
         LAI = self.kiosk["LAI"]
         NSL = self.kiosk.get("NSL", 0)
-        SM  = self.kiosk["SM"]
+        SM = self.kiosk["SM"]
         SOIL_LAYERS = self.kiosk.get("SOIL_LAYERS", Instance(list))
 
-        KGLOB = 0.75*p.KDIFTB(DVS)
+        KGLOB = 0.75 * p.KDIFTB(DVS)
 
         # crop specific correction on potential transpiration rate
         ET0 = p.CFET * drv.ET0
@@ -324,86 +331,92 @@ class EvapotranspirationLayered(SimulationObject):
         # maximum evaporation and transpiration rates
         EKL = exp(-KGLOB * LAI)
         r.EVWMX = drv.E0 * EKL
-        r.EVSMX = max(0., drv.ES0 * EKL)
-        r.TRAMX = max(0.000001, ET0 * (1.-EKL))
+        r.EVSMX = max(0.0, drv.ES0 * EKL)
+        r.TRAMX = max(0.000001, ET0 * (1.0 - EKL))
 
         # Critical soil moisture
         SWDEP = SWEAF(ET0, p.DEPNR)
 
-        if NSL==0: # unlayered
-            SMCR = (1.-SWDEP)*(p.SMFCF-p.SMW) + p.SMW
+        if NSL == 0:  # unlayered
+            SMCR = (1.0 - SWDEP) * (p.SMFCF - p.SMW) + p.SMW
 
             # Reduction factor for transpiration in case of water shortage (RFWS)
-            RFWS = limit(0., 1., (SM-p.SMW)/(SMCR-p.SMW))
+            RFWS = limit(0.0, 1.0, (SM - p.SMW) / (SMCR - p.SMW))
 
             # reduction in transpiration in case of oxygen shortage (RFOS)
             # for non-rice crops, and possibly deficient land drainage
-            if (p.IAIRDU == 0 and p.IOX == 1):
+            if p.IAIRDU == 0 and p.IOX == 1:
                 # critical soil moisture content for aeration
                 SMAIR = p.SM0 - p.CRAIRC
 
                 # count days since start oxygen shortage (up to 4 days)
                 if SM >= SMAIR:
-                    self._DSOS = min((self._DSOS+1),4)
+                    self._DSOS = min((self._DSOS + 1), 4)
                 else:
                     self._DSOS = 0
 
                 # maximum reduction reached after 4 days
-                RFOSMX = limit(0., 1., (p.SM0-SM)/(p.SM0-SMAIR))
-                RFOS   = RFOSMX + (1. - self._DSOS/4.)*(1.-RFOSMX)
+                RFOSMX = limit(0.0, 1.0, (p.SM0 - SM) / (p.SM0 - SMAIR))
+                RFOS = RFOSMX + (1.0 - self._DSOS / 4.0) * (1.0 - RFOSMX)
 
             # For rice, or non-rice crops grown on well drained land
-            elif (p.IAIRDU == 1 or p.IOX == 0):
-                RFOS = 1.
+            elif p.IAIRDU == 1 or p.IOX == 0:
+                RFOS = 1.0
             # Transpiration rate multiplied with reduction factors for oxygen and
             # water
             r.TRA = r.TRAMX * RFOS * RFWS
-        else: # layered
+        else:  # layered
             RD = self.kiosk["RD"]
             # calculation critical soil moisture content
-            SWDEP  = SWEAF(ET0, p.DEPNR)
-            DEPTH  = 0.0
+            SWDEP = SWEAF(ET0, p.DEPNR)
+            DEPTH = 0.0
             SUMTRA = 0.0
 
-            TRALY = array.array('d',[0.0]*NSL)
-            for il in range (0, NSL):
-                SM0   = SOIL_LAYERS[il]['SOILTYPE']['SM0']
-                SMW   = SOIL_LAYERS[il]['SOILTYPE']['SMW']
-                SMFCF = SOIL_LAYERS[il]['SOILTYPE']['SMFCF']
-                CRAIRC= SOIL_LAYERS[il]['SOILTYPE']['CRAIRC']
+            TRALY = array.array("d", [0.0] * NSL)
+            for il in range(0, NSL):
+                SM0 = SOIL_LAYERS[il]["SOILTYPE"]["SM0"]
+                SMW = SOIL_LAYERS[il]["SOILTYPE"]["SMW"]
+                SMFCF = SOIL_LAYERS[il]["SOILTYPE"]["SMFCF"]
+                CRAIRC = SOIL_LAYERS[il]["SOILTYPE"]["CRAIRC"]
 
-                SMCR = (1.-SWDEP)*(SMFCF-SMW) + SMW
+                SMCR = (1.0 - SWDEP) * (SMFCF - SMW) + SMW
                 # reduction in transpiration in case of water shortage
-                RFWS = limit(0., 1., (SOIL_LAYERS[il]['SM']-SMW)/(SMCR-SMW))
+                RFWS = limit(0.0, 1.0, (SOIL_LAYERS[il]["SM"] - SMW) / (SMCR - SMW))
 
                 # reduction in transpiration in case of oxygen shortage
                 # for non-rice crops, and possibly deficient land drainage
-                if (p.IAIRDU==0 and p.IOX==1):
+                if p.IAIRDU == 0 and p.IOX == 1:
                     # critical soil moisture content for aeration
                     SMAIR = SM0 - CRAIRC
                     # count days since start oxygen shortage (up to 4 days)
-                    if (SOIL_LAYERS[il]['SM'] >= SMAIR): self._DSOS = min((self._DSOS+1.),4.)
-                    if (SOIL_LAYERS[il]['SM'] <  SMAIR): self._DSOS = 0.
+                    if SOIL_LAYERS[il]["SM"] >= SMAIR:
+                        self._DSOS = min((self._DSOS + 1.0), 4.0)
+                    if SOIL_LAYERS[il]["SM"] < SMAIR:
+                        self._DSOS = 0.0
                     # maximum reduction reached after 4 days
-                    RFOSMX = limit(0., 1., (SM0-SOIL_LAYERS[il]['SM'])/(SM0-SMAIR))
-                    RFOS   = RFOSMX + (1. - self._DSOS/4.)*(1. - RFOSMX)
+                    RFOSMX = limit(
+                        0.0, 1.0, (SM0 - SOIL_LAYERS[il]["SM"]) / (SM0 - SMAIR)
+                    )
+                    RFOS = RFOSMX + (1.0 - self._DSOS / 4.0) * (1.0 - RFOSMX)
 
                 # for rice, or non-rice crops grown on perfectly drained land
-                elif (p.IAIRDU==1 or p.IOX==0) :
-                    RFOS = 1.
+                elif p.IAIRDU == 1 or p.IOX == 0:
+                    RFOS = 1.0
 
-                FRROOT  = max(0.0, (min(RD, DEPTH+SOIL_LAYERS[il]['TSL']) - DEPTH)) / RD
+                FRROOT = (
+                    max(0.0, (min(RD, DEPTH + SOIL_LAYERS[il]["TSL"]) - DEPTH)) / RD
+                )
                 TRALY[il] = RFWS * RFOS * r.TRAMX * FRROOT
-                DEPTH  += SOIL_LAYERS[il]['TSL']
+                DEPTH += SOIL_LAYERS[il]["TSL"]
             r.TRA = sum(TRALY)
             r.TRALY = TRALY
             # old: r.TRALY[:NSL] = r.TRA/NSL based on unlayered R.TRA calc.
 
         # Counting stress days
-        if RFWS < 1.:
+        if RFWS < 1.0:
             r.IDWS = True
             self._IDWST += 1
-        if RFOS < 1.:
+        if RFOS < 1.0:
             r.IDOS = True
             self._IDOST += 1
 
@@ -492,32 +505,35 @@ class EvapotranspirationCO2(SimulationObject):
     SM       Volumetric soil moisture content    Waterbalance        -
     =======  =================================== =================  ============
     """
+
     def take_avg(self, values, depths):
         """Calculate average value of soil properties"""
-        value_list = [values[L]*(depths[L] - depths[L-1]) for L in range(1, self.params.NLAYR)]
+        value_list = [
+            values[L] * (depths[L] - depths[L - 1]) for L in range(1, self.params.NLAYR)
+        ]
         value_list.append(values[0] * depths[0])
-        return sum(value_list) / depths[self.params.NLAYR-1]
-    
+        return sum(value_list) / depths[self.params.NLAYR - 1]
+
     # helper variable for counting total days with water and oxygen
     # stress (IDWST, IDOST)
     _IDWST = Int(0)
-    _IDOST = Int(0)   
-    AVGDUL = Float(-99.)
-    AVGLL = Float(-99.)
-    AVGBD = Float(-99.)
-    AVGPROS = Float(-99.)
+    _IDOST = Int(0)
+    AVGDUL = Float(-99.0)
+    AVGLL = Float(-99.0)
+    AVGBD = Float(-99.0)
+    AVGPROS = Float(-99.0)
 
     class Parameters(ParamTemplate):
-        CFET    = Float(-99.)
-        DEPNR   = Float(-99.)
-        KDIFTB  = AfgenTrait()
-        IAIRDU  = Float(-99.)
-        IOX     = Float(-99.)
-        CRAIRC  = Float(-99.)
+        CFET = Float(-99.0)
+        DEPNR = Float(-99.0)
+        KDIFTB = AfgenTrait()
+        IAIRDU = Float(-99.0)
+        IOX = Float(-99.0)
+        CRAIRC = Float(-99.0)
 
-        CO2     = Float(-99.)
+        CO2 = Float(-99.0)
         CO2TRATB = AfgenTrait()
-        
+
         NLAYR = Int()  # Number of soil layers
         BD = List()  # Bulk density (g/cm3)
         DS = List()  # Depth of soil layers (cm)
@@ -526,21 +542,20 @@ class EvapotranspirationCO2(SimulationObject):
         DLAYR = List()  # Thickness of soil layers (cm)
 
     class RateVariables(RatesTemplate):
-        EVWMX = Float(-99.)
-        EVSMX = Float(-99.)
-        TRAMX = Float(-99.)
-        TRA   = Float(-99.)
+        EVWMX = Float(-99.0)
+        EVSMX = Float(-99.0)
+        TRAMX = Float(-99.0)
+        TRA = Float(-99.0)
         TRALY = Instance(array.array)
-        IDOS  = Bool(False)
-        IDWS  = Bool(False)
-        RFWS = Float(-99.)
-        RFOS = Float(-99.)
-        RFTRA = Float(-99.)
-       
+        IDOS = Bool(False)
+        IDWS = Bool(False)
+        RFWS = Float(-99.0)
+        RFOS = Float(-99.0)
+        RFTRA = Float(-99.0)
 
     class StateVariables(StatesTemplate):
-        IDOST  = Int(-99)
-        IDWST  = Int(-99)
+        IDOST = Int(-99)
+        IDWST = Int(-99)
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -552,14 +567,18 @@ class EvapotranspirationCO2(SimulationObject):
 
         self.kiosk = kiosk
         self.params = self.Parameters(parvalues)
-        self.rates = self.RateVariables(kiosk, publish=["EVWMX","EVSMX", "TRAMX","TRA","TRALY", "RFTRA"])
+        self.rates = self.RateVariables(
+            kiosk, publish=["EVWMX", "EVSMX", "TRAMX", "TRA", "TRALY", "RFTRA"]
+        )
         self.states = self.StateVariables(kiosk, IDOST=-999, IDWST=-999)
-        #--- soil prop average
-        p = self.params 
+        # --- soil prop average
+        p = self.params
         self.AVGDUL = self.take_avg(p.DUL, p.DS)
         self.AVGLL = self.take_avg(p.LL, p.DS)
         self.AVGBD = self.take_avg(p.BD, p.DS)
-        self.AVGPROS = (1 - self.AVGBD / 2.65)  # Average porosity (-) which is 2.65 g/cm3 for soil
+        self.AVGPROS = (
+            1 - self.AVGBD / 2.65
+        )  # Average porosity (-) which is 2.65 g/cm3 for soil
 
     @prepare_rates
     def __call__(self, day, drv):
@@ -571,40 +590,40 @@ class EvapotranspirationCO2(SimulationObject):
         RF_TRAMX_CO2 = p.CO2TRATB(p.CO2)
 
         # crop specific correction on potential transpiration rate
-        ET0_CROP = max(0., p.CFET * drv.ET0)
+        ET0_CROP = max(0.0, p.CFET * drv.ET0)
 
         # maximum evaporation and transpiration rates
-        KGLOB = 0.75*p.KDIFTB(k.DVS)
+        KGLOB = 0.75 * p.KDIFTB(k.DVS)
         EKL = exp(-KGLOB * k.LAI)
         r.EVWMX = drv.E0 * EKL
-        r.EVSMX = max(0., drv.ES0 * EKL)
-        r.TRAMX = ET0_CROP * (1.-EKL) * RF_TRAMX_CO2
-    
+        r.EVSMX = max(0.0, drv.ES0 * EKL)
+        r.TRAMX = ET0_CROP * (1.0 - EKL) * RF_TRAMX_CO2
+
         # Critical soil moisture
         SWDEP = SWEAF(ET0_CROP, p.DEPNR)
 
-        SMCR = (1.-SWDEP)*(self.AVGDUL-self.AVGLL) + self.AVGLL
+        SMCR = (1.0 - SWDEP) * (self.AVGDUL - self.AVGLL) + self.AVGLL
 
         # Reduction factor for transpiration in case of water shortage (RFWS)
-        r.RFWS = limit(0., 1., (k.SM-self.AVGLL)/(SMCR-self.AVGLL))
+        r.RFWS = limit(0.0, 1.0, (k.SM - self.AVGLL) / (SMCR - self.AVGLL))
 
         # reduction in transpiration in case of oxygen shortage (RFOS)
         # for non-rice crops, and possibly deficient land drainage
-        r.RFOS = 1.
+        r.RFOS = 1.0
         if p.IAIRDU == 0 and p.IOX == 1:
-            RFOSMX = limit(0., 1., (self.AVGPROS - k.SM)/p.CRAIRC)
+            RFOSMX = limit(0.0, 1.0, (self.AVGPROS - k.SM) / p.CRAIRC)
             # maximum reduction reached after 4 days
-            r.RFOS = RFOSMX + (1. - min(k.DSOS, 4)/4.)*(1.-RFOSMX)
+            r.RFOS = RFOSMX + (1.0 - min(k.DSOS, 4) / 4.0) * (1.0 - RFOSMX)
 
         # Transpiration rate multiplied with reduction factors for oxygen and water
         r.RFTRA = r.RFOS * r.RFWS
         r.TRA = r.TRAMX * r.RFTRA
 
         # Counting stress days
-        if r.RFWS < 1.:
+        if r.RFWS < 1.0:
             r.IDWS = True
             self._IDWST += 1
-        if r.RFOS < 1.:
+        if r.RFOS < 1.0:
             r.IDOS = True
             self._IDOST += 1
 
@@ -621,14 +640,14 @@ class EvapotranspirationCO2(SimulationObject):
 
 class Simple_Evapotranspiration(SimulationObject):
     """Calculation of evaporation (water and soil) and transpiration rates.
-    
+
     simplified compared to the WOFOST model such that the parameters are not
     needed to calculate the ET. Parameters such as KDIF, CFET, DEPNR have been
     hardcoded and taken from a typical cereal crop. Also the oxygen stress has
     been switched off.
-    
+
     *Simulation parameters* (To be provided in soildata dictionary):
-    
+
     =======  ============================================= =======  ============
      Name     Description                                   Type     Unit
     =======  ============================================= =======  ============
@@ -638,12 +657,12 @@ class Simple_Evapotranspiration(SimulationObject):
              capacity
     SM0      Soil porosity                                   S       -
     =======  ============================================= =======  ============
-    
+
 
     *State variables*
-    
+
     None
-    
+
     *Rate variables*
 
     =======  ================================================= ==== ============
@@ -655,13 +674,13 @@ class Simple_Evapotranspiration(SimulationObject):
     TRAMX    Maximum transpiration rate from the plant canopy   Y    |cm day-1|
     TRA      Actual transpiration rate from the plant canopy    Y    |cm day-1|
     =======  ================================================= ==== ============
-    
+
     *Signals send or handled*
-    
+
     None
-    
+
     *External dependencies:*
-    
+
     =======  =================================== =================  ============
      Name     Description                         Provided by         Unit
     =======  =================================== =================  ============
@@ -671,15 +690,15 @@ class Simple_Evapotranspiration(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        SMFCF  = Float(-99.)
-        CFET = Float(-99.)
-        DEPNR = Float(-99.)
+        SMFCF = Float(-99.0)
+        CFET = Float(-99.0)
+        DEPNR = Float(-99.0)
 
     class RateVariables(RatesTemplate):
-        EVWMX = Float(-99.)
-        EVSMX = Float(-99.)
-        TRAMX = Float(-99.)
-        TRA   = Float(-99.)
+        EVWMX = Float(-99.0)
+        EVSMX = Float(-99.0)
+        TRAMX = Float(-99.0)
+        TRA = Float(-99.0)
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -690,38 +709,39 @@ class Simple_Evapotranspiration(SimulationObject):
 
         self.kiosk = kiosk
         self.params = self.Parameters(parvalues)
-        self.rates = self.RateVariables(kiosk, publish=["EVWMX","EVSMX",
-                                                        "TRAMX","TRA"])
+        self.rates = self.RateVariables(
+            kiosk, publish=["EVWMX", "EVSMX", "TRAMX", "TRA"]
+        )
 
     @prepare_rates
     def __call__(self, day, drv):
         p = self.params
         r = self.rates
-        
+
         LAI = self.kiosk["LAI"]
-        SM  = self.kiosk["SM"]
-        
+        SM = self.kiosk["SM"]
+
         # value for KDIF taken for maize
         KDIF = 0.6
-        KGLOB = 0.75*KDIF
-  
+        KGLOB = 0.75 * KDIF
+
         # crop specific correction on potential transpiration rate
         ET0 = p.CFET * drv.ET0
-  
+
         # maximum evaporation and transpiration rates
         EKL = exp(-KGLOB * LAI)
         r.EVWMX = drv.E0 * EKL
-        r.EVSMX = max(0., drv.ES0 * EKL)
-        r.TRAMX = max(0.000001, ET0 * (1.-EKL))
-        
+        r.EVSMX = max(0.0, drv.ES0 * EKL)
+        r.TRAMX = max(0.000001, ET0 * (1.0 - EKL))
+
         # Critical soil moisture
         SWDEP = SWEAF(ET0, p.DEPNR)
-        
-        SMCR = (1.-SWDEP)*(p.SMFCF-p.SMW) + p.SMW
+
+        SMCR = (1.0 - SWDEP) * (p.SMFCF - p.SMW) + p.SMW
 
         # Reduction factor for transpiration in case of water shortage (RFWS)
-        RFWS = limit(0., 1., (SM-p.SMW)/(SMCR-p.SMW))
-        
+        RFWS = limit(0.0, 1.0, (SM - p.SMW) / (SMCR - p.SMW))
+
         # Reduction factor for oxygen stress set to 1.
         RFOS = 1.0
 

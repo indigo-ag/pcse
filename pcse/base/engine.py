@@ -9,14 +9,13 @@ when creating PCSE simulation units.
 import types
 import logging
 
-from ..traitlets import (HasTraits, List, Float, Int, Instance, Dict, Bool, All)
+from ..traitlets import HasTraits, List, Float, Int, Instance, Dict, Bool, All
 from .dispatcher import DispatcherObject
 from .simulationobject import SimulationObject
 
 
 class BaseEngine(HasTraits, DispatcherObject):
-    """Base Class for Engine to inherit from
-    """
+    """Base Class for Engine to inherit from"""
 
     def __init__(self):
         HasTraits.__init__(self)
@@ -24,8 +23,7 @@ class BaseEngine(HasTraits, DispatcherObject):
 
     @property
     def logger(self):
-        loggername = "%s.%s" % (self.__class__.__module__,
-                                self.__class__.__name__)
+        loggername = "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
         return logging.getLogger(loggername)
 
     def __setattr__(self, attr, value):
@@ -54,8 +52,7 @@ class BaseEngine(HasTraits, DispatcherObject):
 
     @property
     def subSimObjects(self):
-        """ Find SimulationObjects embedded within self.
-        """
+        """Find SimulationObjects embedded within self."""
 
         subSimObjects = []
         defined_traits = self.__dict__["_trait_values"]
@@ -65,7 +62,7 @@ class BaseEngine(HasTraits, DispatcherObject):
         return subSimObjects
 
     def get_variable(self, varname):
-        """ Return the value of the specified state or rate variable.
+        """Return the value of the specified state or rate variable.
 
         :param varname: Name of the variable.
 
@@ -97,8 +94,7 @@ class BaseEngine(HasTraits, DispatcherObject):
         return value
 
     def zerofy(self):
-        """Zerofy the value of all rate variables of any sub-SimulationObjects.
-        """
+        """Zerofy the value of all rate variables of any sub-SimulationObjects."""
         # Walk over possible sub-simulation objects.
         if self.subSimObjects is not None:
             for simobj in self.subSimObjects:

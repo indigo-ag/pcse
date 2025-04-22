@@ -7,7 +7,6 @@ class EmptyModel(SimulationObject):
     dummy model: NoOp
     """
 
-
     def initialize(self, day, kiosk, *args, **kwargs):
         """
         :param day: start date of the simulation
@@ -16,24 +15,19 @@ class EmptyModel(SimulationObject):
                 key/value pairs
         """
         pass
-        
-        
+
     @prepare_rates
     def calc_rates(self, day, drv):
         pass
-    
-    
-    
+
     @prepare_states
     def integrate(self, day):
         pass
 
 
-        
 class EmptyAncillaryObject(AncillaryObject):
-    
     def initialize(self, day, kiosk, *args, **kwargs):
         pass
-    
-    def __call__ (self, *args, **kwargs):
+
+    def __call__(self, *args, **kwargs):
         pass

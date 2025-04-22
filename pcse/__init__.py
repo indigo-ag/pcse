@@ -27,6 +27,7 @@ See Also
 * http://pcse.readthedocs.org
 """
 from __future__ import print_function
+
 __author__ = "Allard de Wit <allard.dewit@wur.nl>"
 __license__ = "European Union Public License"
 __stable__ = True
@@ -35,6 +36,7 @@ __version__ = "5.5.6"
 
 import sys, os
 from . import util
+
 
 # First define and run setup before importing the rest of the stuff
 def setup():
@@ -55,22 +57,26 @@ def setup():
     user_settings_file = os.path.join(pcse_user_home, "user_settings.py")
     if not os.path.exists(user_settings_file):
         pcse_dir = os.path.dirname(__file__)
-        default_settings_file = os.path.join(pcse_dir, "settings", "default_settings.py")
+        default_settings_file = os.path.join(
+            pcse_dir, "settings", "default_settings.py"
+        )
         lines = open(default_settings_file).readlines()
         with open(user_settings_file, "w") as fp:
             for line in lines:
                 if line.startswith(("#", '"', "'", "import")):
                     cline = line
-                elif len(line.strip()) == 0: # empty line
+                elif len(line.strip()) == 0:  # empty line
                     cline = line
                 else:
                     cline = "# " + line
                 fp.write(cline)
 
+
 setup()
 
 import logging.config
 from .settings import settings
+
 logging.config.dictConfig(settings.LOG_CONFIG)
 
 from . import db
@@ -99,6 +105,7 @@ if not os.path.exists(pcse_db_file):
 
 if not __stable__:
     print("Warning: You are running a PCSE development version:  %s" % __version__)
+
 
 def test(dsn=None):
     """Run all available tests for PCSE."""

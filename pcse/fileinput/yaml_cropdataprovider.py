@@ -79,7 +79,10 @@ class YAMLCropDataProvider(MultiCropDataProvider):
     and there is a risk that parameters are loaded from an outdated cache file. In that
     case use `force_reload=True` to force loading the parameters from the URL.
     """
-    default_repository = "https://raw.githubusercontent.com/ajwdewit/WOFOST_crop_parameters/master/"
+
+    default_repository = (
+        "https://raw.githubusercontent.com/ajwdewit/WOFOST_crop_parameters/master/"
+    )
 
     HTTP_OK = 200
     current_crop_name = None
@@ -91,7 +94,9 @@ class YAMLCropDataProvider(MultiCropDataProvider):
     def __init__(self, fpath=None, repository=None, force_reload=False):
         MultiCropDataProvider.__init__(self)
 
-        if force_reload is True or self._load_cache(fpath) is False:  # either force a reload or load cache fails
+        if (
+            force_reload is True or self._load_cache(fpath) is False
+        ):  # either force a reload or load cache fails
             # enforce a clear state
             self.clear()
             self._store.clear()
@@ -103,13 +108,17 @@ class YAMLCropDataProvider(MultiCropDataProvider):
                 self.read_remote_repository(repository)
 
             else:
-                msg = f"No path or URL specified where to find YAML crop parameter files, " \
-                      f"using default at {self.default_repository}"
+                msg = (
+                    f"No path or URL specified where to find YAML crop parameter files, "
+                    f"using default at {self.default_repository}"
+                )
                 self.logger.info(msg)
                 self.read_remote_repository(self.default_repository)
 
             with open(self._get_cache_fname(fpath), "wb") as fp:
-                pickle.dump((self.compatible_version, self._store), fp, pickle.HIGHEST_PROTOCOL)
+                pickle.dump(
+                    (self.compatible_version, self._store), fp, pickle.HIGHEST_PROTOCOL
+                )
 
     def read_local_repository(self, fpath):
         """Reads the crop YAML files on the local file system
@@ -154,8 +163,7 @@ class YAMLCropDataProvider(MultiCropDataProvider):
             self._add_crop(crop_name, parameters)
 
     def _get_cache_fname(self, fpath):
-        """Returns the name of the cache file for the CropDataProvider.
-        """
+        """Returns the name of the cache file for the CropDataProvider."""
         cache_fname = "%s.pkl" % self.__class__.__name__
         if fpath is None:
             cache_fname_fp = os.path.join(settings.METEO_CACHE_DIR, cache_fname)
@@ -164,8 +172,7 @@ class YAMLCropDataProvider(MultiCropDataProvider):
         return cache_fname_fp
 
     def _load_cache(self, fpath):
-        """Loads the cache file if possible and returns True, else False.
-        """
+        """Loads the cache file if possible and returns True, else False."""
         try:
             cache_fname_fp = self._get_cache_fname(fpath)
             if os.path.exists(cache_fname_fp):
@@ -174,7 +181,9 @@ class YAMLCropDataProvider(MultiCropDataProvider):
                 # This only works for files not for github repos
                 if fpath is not None:
                     yaml_file_names = self._get_yaml_files(fpath)
-                    yaml_file_dates = [os.stat(fn).st_mtime for crop,fn in yaml_file_names.items()]
+                    yaml_file_dates = [
+                        os.stat(fn).st_mtime for crop, fn in yaml_file_names.items()
+                    ]
                     # retrieve modification date of cache file
                     cache_date = os.stat(cache_fname_fp).st_mtime
                     # Ensure cache file is more recent then any of the YAML files
@@ -185,7 +194,9 @@ class YAMLCropDataProvider(MultiCropDataProvider):
                 with open(cache_fname_fp, "rb") as fp:
                     version, store = pickle.load(fp)
                 if version_tuple(version) != version_tuple(self.compatible_version):
-                    msg = "Cache file is from a different version of YAMLCropDataProvider"
+                    msg = (
+                        "Cache file is from a different version of YAMLCropDataProvider"
+                    )
                     raise exc.PCSEError(msg)
                 self._store = store
                 return True
@@ -204,29 +215,38 @@ class YAMLCropDataProvider(MultiCropDataProvider):
         :param parameters: The parameter set loaded by YAML
         """
         try:
-            v = parameters['Version']
+            v = parameters["Version"]
             if version_tuple(v) != version_tuple(self.compatible_version):
-                msg = "Version supported by %s is %s, while parameter set version is %s!"
-                raise exc.PCSEError(msg % (self.__class__.__name__, self.compatible_version, parameters['Version']))
+                msg = (
+                    "Version supported by %s is %s, while parameter set version is %s!"
+                )
+                raise exc.PCSEError(
+                    msg
+                    % (
+                        self.__class__.__name__,
+                        self.compatible_version,
+                        parameters["Version"],
+                    )
+                )
         except Exception as e:
             msg = f"Version check failed on crop parameter file: {crop_fname}"
             raise exc.PCSEError(msg)
 
     def _add_crop(self, crop_name, parameters):
-        """Store the parameter sets for the different varieties for the given crop.
-        """
+        """Store the parameter sets for the different varieties for the given crop."""
         variety_sets = parameters["CropParameters"]["Varieties"]
         self._store[crop_name] = variety_sets
 
     def _get_yaml_files(self, fpath):
-        """Returns all the files ending on *.yaml in the given path.
-        """
+        """Returns all the files ending on *.yaml in the given path."""
         fname = os.path.join(fpath, "crops.yaml")
         if not os.path.exists(fname):
             msg = "Cannot find 'crops.yaml' at {f}".format(f=fname)
             raise exc.PCSEError(msg)
         crop_names = yaml.safe_load(open(fname))["available_crops"]
-        crop_yaml_fnames = {crop: os.path.join(fpath, crop + ".yaml") for crop in crop_names}
+        crop_yaml_fnames = {
+            crop: os.path.join(fpath, crop + ".yaml") for crop in crop_names
+        }
         for crop, fname in crop_yaml_fnames.items():
             if not os.path.exists(fname):
                 msg = f"Cannot find yaml file for crop '{crop}': {fname}"
@@ -243,19 +263,27 @@ class YAMLCropDataProvider(MultiCropDataProvider):
         """
         self.clear()
         if crop_name not in self._store:
-            msg = "Crop name '%s' not available in %s " % (crop_name, self.__class__.__name__)
+            msg = "Crop name '%s' not available in %s " % (
+                crop_name,
+                self.__class__.__name__,
+            )
             raise exc.PCSEError(msg)
         variety_sets = self._store[crop_name]
         if variety_name not in variety_sets:
-            msg = "Variety name '%s' not available for crop '%s' in " \
-                  "%s " % (variety_name, crop_name, self.__class__.__name__)
+            msg = "Variety name '%s' not available for crop '%s' in " "%s " % (
+                variety_name,
+                crop_name,
+                self.__class__.__name__,
+            )
             raise exc.PCSEError(msg)
 
         self.current_crop_name = crop_name
         self.current_variety_name = variety_name
 
         # Retrieve parameter name/values from input (ignore description and units)
-        parameters = {k: v[0] for k, v in variety_sets[variety_name].items() if k != "Metadata"}
+        parameters = {
+            k: v[0] for k, v in variety_sets[variety_name].items() if k != "Metadata"
+        }
         # update internal dict with parameter values for this variety
         self.update(parameters)
 
@@ -268,27 +296,31 @@ class YAMLCropDataProvider(MultiCropDataProvider):
         return {k: v.keys() for k, v in self._store.items()}
 
     def print_crops_varieties(self):
-        """Gives a printed list of crops and varieties on screen.
-        """
+        """Gives a printed list of crops and varieties on screen."""
         msg = ""
         for crop, varieties in self.get_crops_varieties().items():
             msg += "crop '%s', available varieties:\n" % crop
             for var in varieties:
-                msg += (" - '%s'\n" % var)
+                msg += " - '%s'\n" % var
         print(msg)
 
     def __str__(self):
         if not self:
-            msg = "%s - crop and variety not set: no active crop parameter set!\n" % self.__class__.__name__
+            msg = (
+                "%s - crop and variety not set: no active crop parameter set!\n"
+                % self.__class__.__name__
+            )
             return msg
         else:
-            msg = "%s - current active crop '%s' with variety '%s'\n" % \
-                  (self.__class__.__name__, self.current_crop_name, self.current_variety_name)
+            msg = "%s - current active crop '%s' with variety '%s'\n" % (
+                self.__class__.__name__,
+                self.current_crop_name,
+                self.current_variety_name,
+            )
             msg += "Available crop parameters:\n %s" % str(dict.__str__(self))
             return msg
 
     @property
     def logger(self):
-        loggername = "%s.%s" % (self.__class__.__module__,
-                                self.__class__.__name__)
+        loggername = "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
         return logging.getLogger(loggername)

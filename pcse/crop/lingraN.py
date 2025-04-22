@@ -110,7 +110,7 @@ class SourceLimitedGrowth(SimulationObject):
         k = self.kiosk
 
         # From J/m2/d to MJ/m2/d
-        DTR = drv.IRRAD / 1.E+6
+        DTR = drv.IRRAD / 1.0e6
         PAR = DTR * 0.50
 
         # Photosynthesis reduction factors for temperature and radiation level
@@ -118,7 +118,7 @@ class SourceLimitedGrowth(SimulationObject):
         r.RF_RadiationLevel = p.LUEreductionRadiationTB(DTR)
 
         # Fraction of light interception
-        FINT = (1.-exp(-p.KDIFTB(k.DVS) * k.LAI))
+        FINT = 1.0 - exp(-p.KDIFTB(k.DVS) * k.LAI)
 
         # Total intercepted photosynthetically active
         # radiation, MJ m-2 d-1
@@ -131,12 +131,12 @@ class SourceLimitedGrowth(SimulationObject):
         # RFNUTR = (0.336 + 0.224 * p.NamountLV) / (0.336 + 0.224 * p.NmaxLV)
         r.LUEact = LUEpot * min(k.RFNUTR, k.RFTRA)
 
-        if k.dWeightHARV == 0.:  # No grass harvest today, normal growth
+        if k.dWeightHARV == 0.0:  # No grass harvest today, normal growth
             # (10: conversion from g m-2 d-1 to kg ha-1 d-1)
-            GrowthSource = r.LUEact * PARINT * (1. + 0.8 * log(p.CO2A / 360.)) * 10.
+            GrowthSource = r.LUEact * PARINT * (1.0 + 0.8 * log(p.CO2A / 360.0)) * 10.0
         else:
             # growth is zero at day when mowing occurs
-            GrowthSource = 0.
+            GrowthSource = 0.0
 
         return GrowthSource
 
@@ -233,7 +233,9 @@ class SinkLimitedGrowth(SimulationObject):
 
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)
-        self.rates = self.RateVariables(kiosk, publish=["dTillerNumber", "dLeafLengthPot"])
+        self.rates = self.RateVariables(
+            kiosk, publish=["dTillerNumber", "dLeafLengthPot"]
+        )
 
     @prepare_rates
     def __call__(self, day, drv):
@@ -244,19 +246,27 @@ class SinkLimitedGrowth(SimulationObject):
         # Temperature dependent leaf appearance rate, according to
         # (Davies and Thomas, 1983), soil temperature (TemperatureSoil) is used as
         # driving force which is estimated from a 10 day running average
-        LeafAppRate = k.TemperatureSoil * 0.01 if k.RF_Temperature > 0. else 0.
+        LeafAppRate = k.TemperatureSoil * 0.01 if k.RF_Temperature > 0.0 else 0.0
         # derive tiller rate
         r.dTillerNumber = self._calc_tillering_rate(LeafAppRate)
 
         # Leaf elongation rate affected by temperature: cm day-1 tiller-1
-        r.dLeafLengthPot = 0.83 * log(max(drv.TEMP, 2.)) - 0.8924 if (drv.TEMP - p.TempBase) > 0. else 0.
+        r.dLeafLengthPot = (
+            0.83 * log(max(drv.TEMP, 2.0)) - 0.8924
+            if (drv.TEMP - p.TempBase) > 0.0
+            else 0.0
+        )
 
         # Rate of sink limited leaf growth, unit of TillerNumber is tillers m-2
         # 1.0E-8 is conversion from cm-2 to ha-1, ha leaf ha ground-1 d-1
-        r.LAIgrowthSink = (k.TillerNumber * 1.0E4 * (r.dLeafLengthPot * 0.3)) * 1.0E-8
+        r.LAIgrowthSink = (k.TillerNumber * 1.0e4 * (r.dLeafLengthPot * 0.3)) * 1.0e-8
         # Conversion of leaf growth rate to total sink limited carbon demand using SLA
         # in kg leaf ha-1 d-1
-        GrowthSink = r.LAIgrowthSink * (1./p.SLA) * (1./k.LVfraction) if k.dWeightHARV <= 0. else 0.
+        GrowthSink = (
+            r.LAIgrowthSink * (1.0 / p.SLA) * (1.0 / k.LVfraction)
+            if k.dWeightHARV <= 0.0
+            else 0.0
+        )
 
         return GrowthSink
 
@@ -268,21 +278,33 @@ class SinkLimitedGrowth(SimulationObject):
         # Theoretical maximum tillering size = 0.693
         SiteFillingAct = k.NNI * p.SiteFillingMax
 
-        if k.DaysAfterHarvest < 8.:
+        if k.DaysAfterHarvest < 8.0:
             # Relative rate of tiller formation when defoliation less
             # than 8 days ago, tiller tiller-1 d-1
-            TillerFormationRate = max(0., p.TillerFormRateA0 - p.TillerFormRateB0 * k.LAI) * k.RF_Temperature
+            TillerFormationRate = (
+                max(0.0, p.TillerFormRateA0 - p.TillerFormRateB0 * k.LAI)
+                * k.RF_Temperature
+            )
         else:
             # Relative rate of tiller formation when defoliation is more
             # than 8 days ago, tiller tiller-1 d-1
-            TillerFormationRate = limit(0., SiteFillingAct, p.TillerFormRateA8 - p.TillerFormRateB8 * k.LAI) * k.RF_Temperature
+            TillerFormationRate = (
+                limit(
+                    0.0, SiteFillingAct, p.TillerFormRateA8 - p.TillerFormRateB8 * k.LAI
+                )
+                * k.RF_Temperature
+            )
 
         # Relative death rate of tillers due to self-shading (DTILD), tiller tiller-1 d-1
-        TillerDeathRate = max(0.01 * (1. + k.TSUM / p.TSUMmax), 0.05 * (k.LAI - p.LAIcrit) / p.LAIcrit)
+        TillerDeathRate = max(
+            0.01 * (1.0 + k.TSUM / p.TSUMmax), 0.05 * (k.LAI - p.LAIcrit) / p.LAIcrit
+        )
 
         # Change in Tiller number
-        if k.TillerNumber <= 14000.:
-            dTillerNumber = (TillerFormationRate - TillerDeathRate) * LeafAppRate * k.TillerNumber
+        if k.TillerNumber <= 14000.0:
+            dTillerNumber = (
+                (TillerFormationRate - TillerDeathRate) * LeafAppRate * k.TillerNumber
+            )
         else:
             dTillerNumber = -TillerDeathRate * LeafAppRate * k.TillerNumber
 
@@ -337,8 +359,11 @@ class SoilTemperature(SimulationObject):
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)
         self.rates = self.RateVariables(kiosk)
-        self.states = self.StateVariables(kiosk, TemperatureSoil=self.params.TemperatureSoilinit,
-                                          publish=["TemperatureSoil"])
+        self.states = self.StateVariables(
+            kiosk,
+            TemperatureSoil=self.params.TemperatureSoilinit,
+            publish=["TemperatureSoil"],
+        )
 
     @prepare_rates
     def calc_rates(self, day, drv):
@@ -346,7 +371,7 @@ class SoilTemperature(SimulationObject):
         s = self.states
 
         # soil temperature changes
-        r.dTemperatureSoil = (drv.TEMP - s.TemperatureSoil) / 10.
+        r.dTemperatureSoil = (drv.TEMP - s.TemperatureSoil) / 10.0
 
     @prepare_states
     def integrate(self, day, delt=1.0):
@@ -528,25 +553,45 @@ class LINGRA_N(SimulationObject):
 
         self.params = self.Parameters(parvalues)
         p = self.params
-        s = {"TSUM": 0.,
-             "LAI": p.LAIinit,
-             "DaysAfterHarvest": 0,
-             "CuttingNumber": 0,
-             "TillerNumber": p.TillerNumberinit,
-             "WeightLVgreen": p.LAIinit / p.SLA,
-             "WeightLVdead": 0.,
-             "WeightHARV": 0.,
-             "WeightRE": p.WeightREinit,
-             "WeightRT": p.WeightRTinit,
-             "LeafLength": 0.,
-             "WeightABG": p.LAIinit / p.SLA,
-             "SLAINT": p.SLA,
-             "DVS": 0.0}
-        pub = ["LAI", "WeightRE", "LeafLength", "TillerNumber", "TSUM",
-               "DaysAfterHarvest", "DVS", "WeightLVgreen", "WeightRT"]
+        s = {
+            "TSUM": 0.0,
+            "LAI": p.LAIinit,
+            "DaysAfterHarvest": 0,
+            "CuttingNumber": 0,
+            "TillerNumber": p.TillerNumberinit,
+            "WeightLVgreen": p.LAIinit / p.SLA,
+            "WeightLVdead": 0.0,
+            "WeightHARV": 0.0,
+            "WeightRE": p.WeightREinit,
+            "WeightRT": p.WeightRTinit,
+            "LeafLength": 0.0,
+            "WeightABG": p.LAIinit / p.SLA,
+            "SLAINT": p.SLA,
+            "DVS": 0.0,
+        }
+        pub = [
+            "LAI",
+            "WeightRE",
+            "LeafLength",
+            "TillerNumber",
+            "TSUM",
+            "DaysAfterHarvest",
+            "DVS",
+            "WeightLVgreen",
+            "WeightRT",
+        ]
         self.states = self.StateVariables(kiosk, **s, publish=pub)
-        self.rates = self.RateVariables(kiosk, publish=["dWeightHARV", "LVfraction", "RTfraction",
-                                                        "LVgrowth", "dWeightRT", "LVdeath"])
+        self.rates = self.RateVariables(
+            kiosk,
+            publish=[
+                "dWeightHARV",
+                "LVfraction",
+                "RTfraction",
+                "LVgrowth",
+                "dWeightRT",
+                "LVdeath",
+            ],
+        )
         self.n_dynamics = N_Crop_Dynamics(day, kiosk, parvalues)
         self.n_stress = N_Stress(day, kiosk, parvalues)
         self._connect_signal(self._on_MOWING, signal=pcse.signals.mowing)
@@ -558,7 +603,7 @@ class LINGRA_N(SimulationObject):
         k = self.kiosk
         s = self.states
 
-        r.dTSUM = max(drv.TEMP - p.TempBase, 0.)
+        r.dTSUM = max(drv.TEMP - p.TempBase, 0.0)
 
         self.soil_temperature.calc_rates(day, drv)
         self.root_dynamics.calc_rates(day, drv)
@@ -572,7 +617,7 @@ class LINGRA_N(SimulationObject):
             r.dCuttingNumber = 1
         else:
             r.dCuttingNumber = 0
-            r.dWeightHARV = 0.
+            r.dWeightHARV = 0.0
             if s.CuttingNumber > 0 or r.dCuttingNumber == 1:
                 r.dDaysAfterHarvest = 1
             else:
@@ -580,11 +625,13 @@ class LINGRA_N(SimulationObject):
 
         # *** Death rates leaves ***
         # Relative death rate of leaves due to drought stress, d-1
-        RDRdrought = limit(0., p.RDRdrought, p.RDRdrought * (1.-k.RFTRA))
+        RDRdrought = limit(0.0, p.RDRdrought, p.RDRdrought * (1.0 - k.RFTRA))
         # Relative death rate of leaves due to self-shading, d-1
-        RDRshading = limit(0., p.RDRshading, p.RDRshading * (s.LAI-p.LAIcrit)/p.LAIcrit)
+        RDRshading = limit(
+            0.0, p.RDRshading, p.RDRshading * (s.LAI - p.LAIcrit) / p.LAIcrit
+        )
         # Relative death rate of leaves due to N stress
-        RDRnitrogen = limit(0, p.RDRnitrogen, p.RDRnitrogen * (1. - k.NNI))
+        RDRnitrogen = limit(0, p.RDRnitrogen, p.RDRnitrogen * (1.0 - k.NNI))
         # Actual relative death rate of leaves is sum of base death
         # rate plus maximum of death rates of shading, drought and nitrogen, d-1
         RDRtotal = p.RDRbase + max(RDRshading, RDRdrought, RDRnitrogen)
@@ -593,11 +640,11 @@ class LINGRA_N(SimulationObject):
         if self._flag_MOWING:
             LAIdeath = r.dWeightHARV * s.SLAINT
         else:
-            LAIdeath = s.LAI * (1. - exp(-RDRtotal))
+            LAIdeath = s.LAI * (1.0 - exp(-RDRtotal))
 
         # Fraction of dry matter allocated to roots/leaves, kg kg-1
         r.RTfraction = p.PartitioningRootsTB(k.RFTRA)
-        r.LVfraction = 1. - r.RTfraction
+        r.LVfraction = 1.0 - r.RTfraction
 
         # *** Growth rates ***
         GrowthSource = self.source_limited_growth(day, drv)
@@ -614,12 +661,12 @@ class LINGRA_N(SimulationObject):
             GrowthAct = GrowthSink
 
         # Actual growth rate of leaf area, ha ha-1 d-1
-        SLA = p.SLA * exp(-p.NSLA * (1.-k.NNI))
+        SLA = p.SLA * exp(-p.NSLA * (1.0 - k.NNI))
         LAIgrowthAct = GrowthAct * r.LVfraction * SLA
 
         # rate of change of dry weight of green leaves due to
         # growth and senescence of leaves or periodical harvest, kg ha-1
-        r.LVgrowth = GrowthAct * r.LVfraction if r.dWeightHARV <= 0 else 0.
+        r.LVgrowth = GrowthAct * r.LVfraction if r.dWeightHARV <= 0 else 0.0
 
         # Actual death rate of leaf biomass, kg ha-1 d-1 incl. harvested leaves
         r.LVdeath = LAIdeath / s.SLAINT
@@ -639,7 +686,7 @@ class LINGRA_N(SimulationObject):
         else:
             if GrowthSink > 0:
                 # Correction for source limitation
-                r.dLeafLengthAct = k.dLeafLengthPot * GrowthAct/GrowthSink
+                r.dLeafLengthAct = k.dLeafLengthPot * GrowthAct / GrowthSink
             else:
                 r.dLeafLengthAct = 0
 
@@ -684,8 +731,6 @@ class LINGRA_N(SimulationObject):
         SimulationObject.finalize(self, day)
 
     def _on_MOWING(self, biomass_remaining):
-        """Handler for grass mowing events
-        """
+        """Handler for grass mowing events"""
         self.WeightLV_remaining = biomass_remaining
         self._flag_MOWING = True
-

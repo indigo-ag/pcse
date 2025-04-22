@@ -4,8 +4,7 @@ import datetime
 
 from ..traitlets import Float, Instance, Unicode
 from ..decorators import prepare_rates, prepare_states
-from ..base import ParamTemplate, StatesTemplate, RatesTemplate, \
-     SimulationObject
+from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 from .. import signals
 from .. import exceptions as exc
 from .phenology import DVS_Phenology as Phenology
@@ -13,8 +12,9 @@ from .respiration import WOFOST_Maintenance_Respiration as MaintenanceRespiratio
 from .stem_dynamics import WOFOST_Stem_Dynamics as Stem_Dynamics
 from .root_dynamics import WOFOST_Root_Dynamics as Root_Dynamics
 from .leaf_dynamics import WOFOST_Leaf_Dynamics_NPK as Leaf_Dynamics
-from .storage_organ_dynamics import WOFOST_Storage_Organ_Dynamics as \
-    Storage_Organ_Dynamics
+from .storage_organ_dynamics import (
+    WOFOST_Storage_Organ_Dynamics as Storage_Organ_Dynamics,
+)
 from .assimilation import WOFOST_Assimilation2 as Assimilation
 from .partitioning import DVS_Partitioning_NPK as Partitioning
 from .evapotranspiration import EvapotranspirationCO2 as Evapotranspiration
@@ -25,15 +25,14 @@ from .nutrients.npk_stress import NPK_Stress as NPK_Stress
 
 
 class Wofost80(SimulationObject):
-    
     """Top level object organizing the different components of the WOFOST crop
     simulation including the implementation of N/P/K dynamics.
-            
+
     The CropSimulation object organizes the different processes of the crop
     simulation. Moreover, it contains the parameters, rate and state variables
     which are relevant at the level of the entire crop. The processes that are
     implemented as embedded simulation objects consist of:
-    
+
         1. Phenology (self.pheno)
         2. Partitioning (self.part)
         3. Assimilation (self.assim)
@@ -47,7 +46,7 @@ class Wofost80(SimulationObject):
         12. N/P/K stress (self.npk_stress)
 
     **Simulation parameters:**
-    
+
     ======== =============================================== =======  ==========
      Name     Description                                     Type     Unit
     ======== =============================================== =======  ==========
@@ -57,8 +56,8 @@ class Wofost80(SimulationObject):
     CVR      Conversion factor for assimilates to roots        SCr     -
     CVS      Conversion factor for assimilates to stems        SCr     -
     ======== =============================================== =======  ==========
-    
-    
+
+
     **State variables:**
 
     ============  ================================================= ==== ===============
@@ -79,7 +78,7 @@ class Wofost80(SimulationObject):
                   simulation: maturity, harvest, leave death, etc.
     ============  ================================================= ==== ===============
 
- 
+
      **Rate variables:**
 
     =======  ================================================ ==== =============
@@ -97,7 +96,7 @@ class Wofost80(SimulationObject):
     =======  ================================================ ==== =============
 
     """
-    
+
     # sub-model components for crop simulation
     pheno = Instance(SimulationObject)
     part = Instance(SimulationObject)
@@ -110,32 +109,32 @@ class Wofost80(SimulationObject):
     so_dynamics = Instance(SimulationObject)
     npk_crop_dynamics = Instance(SimulationObject)
     npk_stress = Instance(SimulationObject)
-        
+
     # Parameters, rates and states which are relevant at the main crop
     # simulation level
     class Parameters(ParamTemplate):
-        CVL = Float(-99.)
-        CVO = Float(-99.)
-        CVR = Float(-99.)
-        CVS = Float(-99.)
+        CVL = Float(-99.0)
+        CVO = Float(-99.0)
+        CVR = Float(-99.0)
+        CVS = Float(-99.0)
 
     class StateVariables(StatesTemplate):
-        TAGP = Float(-99.)
-        GASST = Float(-99.)
-        MREST = Float(-99.)
-        CTRAT = Float(-99.) # Crop total transpiration
-        CEVST = Float(-99.)
-        HI = Float(-99.)
+        TAGP = Float(-99.0)
+        GASST = Float(-99.0)
+        MREST = Float(-99.0)
+        CTRAT = Float(-99.0)  # Crop total transpiration
+        CEVST = Float(-99.0)
+        HI = Float(-99.0)
         DOF = Instance(datetime.date)
         FINISH_TYPE = Unicode("")
 
     class RateVariables(RatesTemplate):
-        GASS = Float(-99.)
-        PGASS = Float(-99.)
-        MRES = Float(-99.)
-        ASRC = Float(-99.)
-        DMI = Float(-99.)
-        ADMI = Float(-99.)
+        GASS = Float(-99.0)
+        PGASS = Float(-99.0)
+        MRES = Float(-99.0)
+        ASRC = Float(-99.0)
+        DMI = Float(-99.0)
+        ADMI = Float(-99.0)
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -143,13 +142,13 @@ class Wofost80(SimulationObject):
         :param kiosk: variable kiosk of this PCSE model instance
         :param parvalues: dictionary with parameter key/value pairs
         """
-        
+
         self.params = self.Parameters(parvalues)
         self.rates = self.RateVariables(kiosk, publish=["DMI", "ADMI"])
         self.kiosk = kiosk
-        
+
         # Initialize components of the crop
-        self.pheno = Phenology(day, kiosk,  parvalues)
+        self.pheno = Phenology(day, kiosk, parvalues)
         self.part = Partitioning(day, kiosk, parvalues)
         self.assim = Assimilation(day, kiosk, parvalues)
         self.mres = MaintenanceRespiration(day, kiosk, parvalues)
@@ -161,42 +160,57 @@ class Wofost80(SimulationObject):
         # Added for book keeping of N/P/K in crop and soil
         self.npk_crop_dynamics = NPK_crop(day, kiosk, parvalues)
         self.npk_stress = NPK_Stress(day, kiosk, parvalues)
-        
 
         # Initial total (living+dead) above-ground biomass of the crop
         TAGP = self.kiosk.TWLV + self.kiosk.TWST + self.kiosk.TWSO
 
-        self.states = self.StateVariables(kiosk,
-                                          publish=["TAGP","GASST","MREST","HI"],
-                                          TAGP=TAGP, GASST=0.0, MREST=0.0,
-                                          CTRAT=0.0, HI=0.0, CEVST=0.0,
-                                          DOF=None, FINISH_TYPE=None)
+        self.states = self.StateVariables(
+            kiosk,
+            publish=["TAGP", "GASST", "MREST", "HI"],
+            TAGP=TAGP,
+            GASST=0.0,
+            MREST=0.0,
+            CTRAT=0.0,
+            HI=0.0,
+            CEVST=0.0,
+            DOF=None,
+            FINISH_TYPE=None,
+        )
 
         # Check partitioning of TDWI over plant organs
         checksum = parvalues["TDWI"] - self.states.TAGP - self.kiosk.TWRT
         if abs(checksum) > 0.0001:
             msg = "Error in partitioning of initial biomass (TDWI)!"
             raise exc.PartitioningError(msg)
-            
+
         # assign handler for CROP_FINISH signal
         self._connect_signal(self._on_CROP_FINISH, signal=signals.crop_finish)
 
     @staticmethod
     def _check_carbon_balance(day, DMI, GASS, MRES, CVF, pf):
         (FR, FL, FS, FO) = pf
-        checksum = (GASS - MRES - (FR+(FL+FS+FO)*(1.-FR)) * DMI/CVF) * \
-                    1./(max(0.0001,GASS))
+        checksum = (
+            (GASS - MRES - (FR + (FL + FS + FO) * (1.0 - FR)) * DMI / CVF)
+            * 1.0
+            / (max(0.0001, GASS))
+        )
         if abs(checksum) >= 0.0001:
             msg = "Carbon flows not balanced on day %s\n" % day
             msg += "Checksum: %f, GASS: %f, MRES: %f\n" % (checksum, GASS, MRES)
-            msg += "FR,L,S,O: %5.3f,%5.3f,%5.3f,%5.3f, DMI: %f, CVF: %f\n" % \
-                   (FR,FL,FS,FO,DMI,CVF)
+            msg += "FR,L,S,O: %5.3f,%5.3f,%5.3f,%5.3f, DMI: %f, CVF: %f\n" % (
+                FR,
+                FL,
+                FS,
+                FO,
+                DMI,
+                CVF,
+            )
             raise exc.CarbonBalanceError(msg)
 
     @prepare_rates
     def calc_rates(self, day, drv):
         params = self.params
-        rates  = self.rates
+        rates = self.rates
         k = self.kiosk
 
         # Phenology
@@ -210,7 +224,7 @@ class Wofost80(SimulationObject):
 
         # Potential assimilation
         rates.PGASS = self.assim(day, drv)
-        
+
         # (evapo)transpiration rates
         self.evtra(day, drv)
 
@@ -232,11 +246,13 @@ class Wofost80(SimulationObject):
         # DM partitioning factors (pf), conversion factor (CVF),
         # dry matter increase (DMI) and check on carbon balance
         pf = self.part.calc_rates(day, drv)
-        CVF = 1./((pf.FL/params.CVL + pf.FS/params.CVS + pf.FO/params.CVO) *
-                  (1.-pf.FR) + pf.FR/params.CVR)
+        CVF = 1.0 / (
+            (pf.FL / params.CVL + pf.FS / params.CVS + pf.FO / params.CVO)
+            * (1.0 - pf.FR)
+            + pf.FR / params.CVR
+        )
         rates.DMI = CVF * rates.ASRC
-        self._check_carbon_balance(day, rates.DMI, rates.GASS, rates.MRES,
-                                   CVF, pf)
+        self._check_carbon_balance(day, rates.DMI, rates.GASS, rates.MRES, CVF, pf)
 
         # distribution over plant organ
 
@@ -244,11 +260,11 @@ class Wofost80(SimulationObject):
         self.ro_dynamics.calc_rates(day, drv)
         # Aboveground dry matter increase and distribution over stems,
         # leaves, organs
-        rates.ADMI = (1. - pf.FR) * rates.DMI
+        rates.ADMI = (1.0 - pf.FR) * rates.DMI
         self.st_dynamics.calc_rates(day, drv)
         self.so_dynamics.calc_rates(day, drv)
         self.lv_dynamics.calc_rates(day, drv)
-        
+
         # Update nutrient rates in crop and soil
         self.npk_crop_dynamics.calc_rates(day, drv)
 
@@ -273,7 +289,7 @@ class Wofost80(SimulationObject):
 
         # Partitioning
         self.part.integrate(day, delt)
-        
+
         # Integrate states on leaves, storage organs, stems and roots
         self.ro_dynamics.integrate(day, delt)
         self.so_dynamics.integrate(day, delt)
@@ -284,14 +300,12 @@ class Wofost80(SimulationObject):
         self.npk_crop_dynamics.integrate(day, delt)
 
         # Integrate total (living+dead) above-ground biomass of the crop
-        states.TAGP = self.kiosk.TWLV + \
-                      self.kiosk.TWST + \
-                      self.kiosk.TWSO
+        states.TAGP = self.kiosk.TWLV + self.kiosk.TWST + self.kiosk.TWSO
 
-        # total gross assimilation and maintenance respiration 
+        # total gross assimilation and maintenance respiration
         states.GASST += rates.GASS
         states.MREST += rates.MRES
-        
+
         # total crop transpiration and soil evaporation
         states.CTRAT += self.kiosk.TRA
         states.CEVST += self.kiosk.EVS
@@ -301,12 +315,12 @@ class Wofost80(SimulationObject):
 
         # Calculate Harvest Index
         if self.states.TAGP > 0:
-            self.states.HI = self.kiosk.TWSO/self.states.TAGP
+            self.states.HI = self.kiosk.TWSO / self.states.TAGP
         else:
             msg = "Cannot calculate Harvest Index because TAGP=0"
             self.logger.warning(msg)
-            self.states.HI = -1.
-        
+            self.states.HI = -1.0
+
         SimulationObject.finalize(self, day)
 
     def _on_CROP_FINISH(self, day, finish_type=None):

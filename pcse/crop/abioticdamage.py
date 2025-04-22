@@ -18,32 +18,38 @@ from ..traitlets import Float, Int, Instance, Enum, Bool
 from ..decorators import prepare_rates, prepare_states
 
 from ..util import limit, merge_dict
-from ..base import ParamTemplate, StatesTemplate, RatesTemplate, \
-     SimulationObject, VariableKiosk
+from ..base import (
+    ParamTemplate,
+    StatesTemplate,
+    RatesTemplate,
+    SimulationObject,
+    VariableKiosk,
+)
 from .. import signals
 from .. import exceptions as exc
+
 
 class CrownTemperature(SimulationObject):
     """Implementation of a simple algorithm for estimating the crown temperature
     (2cm under the soil surface) under snow.
-    
+
     Is is based on a simple empirical equation which estimates the daily
-    minimum, maximum and mean crown 
+    minimum, maximum and mean crown
     temperature as a function of daily min or max temperature and the relative
     snow depth (RSD):
-    
+
     :math:`RSD = min(15, SD)/15`
-    
+
     and
-    
-    :math:`T^{crown}_{min} = T_{min} * (A + B(1 - RSD)^{2})`   
+
+    :math:`T^{crown}_{min} = T_{min} * (A + B(1 - RSD)^{2})`
 
     and
 
     :math:`T^{crown}_{max} = T_{max} * (A + B(1 - RSD)^{2})`
-    
+
     and
-    
+
     :math:`T^{crown}_{avg} = (T^{crown}_{max} + T^{crown}_{min})/2`
 
     At zero snow depth crown temperature is estimated close the the air
@@ -60,10 +66,10 @@ class CrownTemperature(SimulationObject):
     :param parvalues: `ParameterProvider` object providing parameters as
             key/value pairs
     :returns: a tuple containing minimum, maximum and daily average crown
-              temperature. 
+              temperature.
 
     *Simulation parameters*
-    
+
     ========= ============================================== =======  ==========
      Name     Description                                    Type     Unit
     ========= ============================================== =======  ==========
@@ -102,6 +108,7 @@ class CrownTemperature(SimulationObject):
                                                   taken from kiosk
     ============ =============================== ========================== =====
     """
+
     # This setting is only used when running the unit tests for FROSTOL.
     # For unit testing, FROSTOL should not rely on the CrownTemperature model,
     # but instead use the prescribed crown temperature directly.
@@ -110,7 +117,7 @@ class CrownTemperature(SimulationObject):
     class Parameters(ParamTemplate):
         CROWNTMPA = Float()
         CROWNTMPB = Float()
-        ISNOWSRC  = Float()
+        ISNOWSRC = Float()
 
     class RateVariables(RatesTemplate):
         TEMP_CROWN = Float()
@@ -121,7 +128,9 @@ class CrownTemperature(SimulationObject):
         self.kiosk = kiosk
         self._testing_ = testing
         self.params = self.Parameters(parvalues)
-        self.rates = self.RateVariables(self.kiosk, publish=["TEMP_CROWN", "TMIN_CROWN", "TMAX_CROWN"])
+        self.rates = self.RateVariables(
+            self.kiosk, publish=["TEMP_CROWN", "TMIN_CROWN", "TMAX_CROWN"]
+        )
 
     @prepare_rates
     def __call__(self, day, drv):
@@ -131,8 +140,8 @@ class CrownTemperature(SimulationObject):
 
         # If unit testing then directly return the prescribed crown temperature
         if self._testing_:
-            r.TMIN_CROWN = 0.
-            r.TMAX_CROWN = 10.
+            r.TMIN_CROWN = 0.0
+            r.TMAX_CROWN = 10.0
             r.TEMP_CROWN = drv.TEMP_CROWN
             return
 
@@ -142,12 +151,12 @@ class CrownTemperature(SimulationObject):
             SD = drv.SNOWDEPTH
         else:
             SD = self.kiosk["SNOWDEPTH"]
-        RSD = limit(0., 15., SD)/15.
+        RSD = limit(0.0, 15.0, SD) / 15.0
 
         if drv.TMIN < 0:
-            r.TMIN_CROWN = drv.TMIN*(p.CROWNTMPA + p.CROWNTMPB*(1. - RSD)**2)
-            r.TMAX_CROWN = drv.TMAX*(p.CROWNTMPA + p.CROWNTMPB*(1. - RSD)**2)
-            r.TEMP_CROWN = (r.TMIN_CROWN + r.TMAX_CROWN)/2.
+            r.TMIN_CROWN = drv.TMIN * (p.CROWNTMPA + p.CROWNTMPB * (1.0 - RSD) ** 2)
+            r.TMAX_CROWN = drv.TMAX * (p.CROWNTMPA + p.CROWNTMPB * (1.0 - RSD) ** 2)
+            r.TEMP_CROWN = (r.TMIN_CROWN + r.TMAX_CROWN) / 2.0
         else:
             r.TMIN_CROWN = drv.TMIN
             r.TMAX_CROWN = drv.TMAX
@@ -233,6 +242,7 @@ class CrownTemperatureJRC(SimulationObject):
                                                   taken from kiosk
     ============ =============================== ========================== =====
     """
+
     # This setting is only used when running the unit tests for FROSTOL.
     # For unit testing, FROSTOL should not rely on the CrownTemperature model,
     # but instead use the prescribed crown temperature directly.
@@ -252,7 +262,9 @@ class CrownTemperatureJRC(SimulationObject):
         self.kiosk = kiosk
         self._testing_ = testing
         self.params = self.Parameters(parvalues)
-        self.rates = self.RateVariables(self.kiosk, publish=["TEMP_CROWN", "TMIN_CROWN", "TMAX_CROWN"])
+        self.rates = self.RateVariables(
+            self.kiosk, publish=["TEMP_CROWN", "TMIN_CROWN", "TMAX_CROWN"]
+        )
 
     @prepare_rates
     def __call__(self, day, drv):
@@ -262,8 +274,8 @@ class CrownTemperatureJRC(SimulationObject):
 
         # If unit testing then directly return the prescribed crown temperature
         if self._testing_:
-            r.TMIN_CROWN = 0.
-            r.TMAX_CROWN = 10.
+            r.TMIN_CROWN = 0.0
+            r.TMAX_CROWN = 10.0
             r.TEMP_CROWN = drv.TEMP_CROWN
             return
 
@@ -273,12 +285,16 @@ class CrownTemperatureJRC(SimulationObject):
             SD = drv.SNOWDEPTH
         else:
             SD = self.kiosk["SNOWDEPTH"]
-        SD = limit(0., 15., SD)
+        SD = limit(0.0, 15.0, SD)
 
         if drv.TMIN < 0:
-            r.TMIN_CROWN = 2.0 + drv.TMIN * (p.JRCCROWNTMPA + p.JRCCROWNTMPB * (SD - 15.) ** 2)
-            r.TMAX_CROWN = 2.0 + drv.TMAX * (p.JRCCROWNTMPA + p.JRCCROWNTMPB * (SD - 15.) ** 2)
-            r.TEMP_CROWN = (r.TMIN_CROWN + r.TMAX_CROWN) / 2.
+            r.TMIN_CROWN = 2.0 + drv.TMIN * (
+                p.JRCCROWNTMPA + p.JRCCROWNTMPB * (SD - 15.0) ** 2
+            )
+            r.TMAX_CROWN = 2.0 + drv.TMAX * (
+                p.JRCCROWNTMPA + p.JRCCROWNTMPB * (SD - 15.0) ** 2
+            )
+            r.TEMP_CROWN = (r.TMIN_CROWN + r.TMAX_CROWN) / 2.0
         else:
             r.TMIN_CROWN = drv.TMIN
             r.TMAX_CROWN = drv.TMAX
@@ -286,7 +302,7 @@ class CrownTemperatureJRC(SimulationObject):
 
 
 class FROSTOL(SimulationObject):
-    """ Implementation of the FROSTOL model for frost damage in winter-wheat.
+    """Implementation of the FROSTOL model for frost damage in winter-wheat.
 
     :param day: start date of the simulation
     :param kiosk: variable kiosk of this PCSE instance
@@ -294,18 +310,18 @@ class FROSTOL(SimulationObject):
             key/value pairs
 
     *Simulation parameters*
-    
+
     ============== ============================================= =======  ============
      Name          Description                                   Type     Unit
     ============== ============================================= =======  ============
     IDSL           Switch for phenological development options    SCr      -
-                   temperature only (IDSL=0), including           
-                   daylength (IDSL=1) and including               
+                   temperature only (IDSL=0), including
+                   daylength (IDSL=1) and including
                    vernalization (IDSL>=2). FROSTOL requires
                    IDSL>=2
     LT50C          Critical LT50 defined as the lowest LT50       SCr     |C|
                    value that the wheat cultivar can obtain
-    FROSTOL_H      Hardening coefficient                          SCr     |C-1day-1| 
+    FROSTOL_H      Hardening coefficient                          SCr     |C-1day-1|
     FROSTOL_D      Dehardening coefficient                        SCr     |C-3day-1|
     FROSTOL_S      Low temperature stress coefficient             SCr     |C-1day-1|
     FROSTOL_R      Respiration stress coefficient                 SCr     |day-1|
@@ -351,9 +367,9 @@ class FROSTOL(SimulationObject):
                total frost kill.
     ========== ================================================= ==== ============
 
-    
+
     *External dependencies:*
-    
+
     ============ =============================== ========================== =====
      Name        Description                         Provided by             Unit
     ============ =============================== ========================== =====
@@ -372,7 +388,7 @@ class FROSTOL(SimulationObject):
                Modelling the course of frost tolerance in winter wheat: I. Model
                development, European Journal of Agronomy, Volume 28,
                Issue 3, April 2008, Pages 321-330.
-    
+
     http://dx.doi.org/10.1016/j.eja.2007.10.002
     """
 
@@ -380,32 +396,32 @@ class FROSTOL(SimulationObject):
     _CROP_FRACTION_REMAINING = Float(1.0)
 
     class Parameters(ParamTemplate):
-        IDSL      = Float(-99.)
-        LT50C     = Float(-99.)
-        FROSTOL_H = Float(-99.)
-        FROSTOL_D = Float(-99.)
-        FROSTOL_S = Float(-99.)
-        FROSTOL_R = Float(-99.)
-        FROSTOL_SDBASE = Float(-99.)
-        FROSTOL_SDMAX  = Float(-99.)
+        IDSL = Float(-99.0)
+        LT50C = Float(-99.0)
+        FROSTOL_H = Float(-99.0)
+        FROSTOL_D = Float(-99.0)
+        FROSTOL_S = Float(-99.0)
+        FROSTOL_R = Float(-99.0)
+        FROSTOL_SDBASE = Float(-99.0)
+        FROSTOL_SDMAX = Float(-99.0)
         FROSTOL_KILLCF = Float(-99)
         ISNOWSRC = Float(-99)
 
     class RateVariables(RatesTemplate):
-        RH       = Float(-99.)
-        RDH_TEMP = Float(-99.)
-        RDH_RESP = Float(-99.)
-        RDH_TSTR = Float(-99.)
-        IDFS     = Int(-99)
-        RF_FROST = Float(-99.)
+        RH = Float(-99.0)
+        RDH_TEMP = Float(-99.0)
+        RDH_RESP = Float(-99.0)
+        RDH_TSTR = Float(-99.0)
+        IDFS = Int(-99)
+        RF_FROST = Float(-99.0)
 
     class StateVariables(StatesTemplate):
-        LT50T = Float(-99.)
-        LT50I = Float(-99.)
+        LT50T = Float(-99.0)
+        LT50I = Float(-99.0)
         IDFST = Int(-99)
         RF_FROST_T = Float(-99)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def initialize(self, day, kiosk, parvalues, testing=False):
 
         self.params = self.Parameters(parvalues)
@@ -414,17 +430,20 @@ class FROSTOL(SimulationObject):
 
         # Define initial states
         LT50I = -0.6 + 0.142 * self.params.LT50C
-        self.states = self.StateVariables(kiosk, LT50T=LT50I, LT50I=LT50I,
-                                          IDFST=0, RF_FROST_T=0.)
+        self.states = self.StateVariables(
+            kiosk, LT50T=LT50I, LT50I=LT50I, IDFST=0, RF_FROST_T=0.0
+        )
 
         # Check on vernalization
         if self.params.IDSL < 2:
-            msg = ("FROSTOL needs vernalization to be enabled in the " +
-                   "phenology module (IDSL=2).")
+            msg = (
+                "FROSTOL needs vernalization to be enabled in the "
+                + "phenology module (IDSL=2)."
+            )
             self.logger.error(msg)
             raise exc.ParameterError(msg)
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     @prepare_rates
     def calc_rates(self, day, drv):
 
@@ -444,65 +463,67 @@ class FROSTOL(SimulationObject):
             snow_depth = self.kiosk["SNOWDEPTH"]
 
         # Hardening
-        if (not isVernalized) and (k.TEMP_CROWN < 10.):
-            xTC = limit(0., 10., k.TEMP_CROWN)
-            r.RH = p.FROSTOL_H * (10. - xTC)*(s.LT50T - p.LT50C)
+        if (not isVernalized) and (k.TEMP_CROWN < 10.0):
+            xTC = limit(0.0, 10.0, k.TEMP_CROWN)
+            r.RH = p.FROSTOL_H * (10.0 - xTC) * (s.LT50T - p.LT50C)
         else:
-            r.RH = 0.
+            r.RH = 0.0
 
         # Dehardening
-        TCcrit = (10. if (not isVernalized) else -4.)
+        TCcrit = 10.0 if (not isVernalized) else -4.0
         if k.TEMP_CROWN > TCcrit:
-            r.RDH_TEMP = p.FROSTOL_D * (s.LT50I - s.LT50T) * \
-                         (k.TEMP_CROWN + 4)**3
+            r.RDH_TEMP = p.FROSTOL_D * (s.LT50I - s.LT50T) * (k.TEMP_CROWN + 4) ** 3
         else:
-            r.RDH_TEMP = 0.
+            r.RDH_TEMP = 0.0
 
         # Stress due to respiration under snow coverage
-        xTC = (k.TEMP_CROWN if k.TEMP_CROWN > -2.5 else -2.5)
-        Resp = (exp(0.84 + 0.051*xTC)-2.)/1.85
+        xTC = k.TEMP_CROWN if k.TEMP_CROWN > -2.5 else -2.5
+        Resp = (exp(0.84 + 0.051 * xTC) - 2.0) / 1.85
 
-        Fsnow = (snow_depth - p.FROSTOL_SDBASE)/(p.FROSTOL_SDMAX - p.FROSTOL_SDBASE)
-        Fsnow = limit(0., 1., Fsnow)
+        Fsnow = (snow_depth - p.FROSTOL_SDBASE) / (p.FROSTOL_SDMAX - p.FROSTOL_SDBASE)
+        Fsnow = limit(0.0, 1.0, Fsnow)
         r.RDH_RESP = p.FROSTOL_R * Resp * Fsnow
 
         # Stress due to low temperatures
-        r.RDH_TSTR = (s.LT50T - k.TEMP_CROWN) * \
-                      1./exp(-p.FROSTOL_S * (s.LT50T - k.TEMP_CROWN) - 3.74)
+        r.RDH_TSTR = (
+            (s.LT50T - k.TEMP_CROWN)
+            * 1.0
+            / exp(-p.FROSTOL_S * (s.LT50T - k.TEMP_CROWN) - 3.74)
+        )
 
         # kill factor using logistic function. Because the logistic function
         # stretches from -inf to inf, some limits must be applied. In this
         # case we assume that killfactor < 0.05 means no kill and
         # killfactor > 0.95 means complete kill.
-        if k.TMIN_CROWN < 0.:
-            killfactor = 1/(1 + exp((k.TMIN_CROWN - s.LT50T)/p.FROSTOL_KILLCF))
+        if k.TMIN_CROWN < 0.0:
+            killfactor = 1 / (1 + exp((k.TMIN_CROWN - s.LT50T) / p.FROSTOL_KILLCF))
             if killfactor < 0.05:
-                killfactor = 0.
+                killfactor = 0.0
             elif killfactor > 0.95:
-                killfactor = 1.
+                killfactor = 1.0
         else:
-            killfactor = 0.
+            killfactor = 0.0
 
         # Frost stress occurring yes/no
-        r.IDFS = 1 if (killfactor > 0.) else 0
+        r.IDFS = 1 if (killfactor > 0.0) else 0
 
         # Reduction factor on leave biomass
         r.RF_FROST = killfactor
 
         # Fraction of the remaining standing crop
-        self._CROP_FRACTION_REMAINING *= (1. - killfactor)
+        self._CROP_FRACTION_REMAINING *= 1.0 - killfactor
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     @prepare_states
     def integrate(self, day, delt=1.0):
         states = self.states
-        rates  = self.rates
+        rates = self.rates
         params = self.params
 
         # Change hardening state
         LT50T = states.LT50T
         LT50T -= rates.RH
-        LT50T += (rates.RDH_TEMP + rates.RDH_RESP + rates.RDH_TSTR)
+        LT50T += rates.RDH_TEMP + rates.RDH_RESP + rates.RDH_TSTR
         states.LT50T = limit(params.LT50C, states.LT50I, LT50T)
 
         # Count number of days with frost stress
@@ -510,7 +531,7 @@ class FROSTOL(SimulationObject):
 
         # Total cumulative frost kill computed as 1 minus the fraction
         # of remaining living crop
-        states.RF_FROST_T = 1. - self._CROP_FRACTION_REMAINING
+        states.RF_FROST_T = 1.0 - self._CROP_FRACTION_REMAINING
 
 
 class CERES_WinterKill(SimulationObject):
@@ -553,25 +574,25 @@ class CERES_WinterKill(SimulationObject):
     ============ ================================================= ==== ============
 
     Reference:
-    Savdie, I., R. Whitewood, et al. (1991). Potential for winter wheat 
-    production in western Canada: A CERES model winterkill risk 
+    Savdie, I., R. Whitewood, et al. (1991). Potential for winter wheat
+    production in western Canada: A CERES model winterkill risk
     assessment. Canadian Journal of Plant Science 71: 21-30.
     """
 
     class Parameters(ParamTemplate):
-        CWWK_HC_S1  = Float(-99.) # Hardening coefficient stage 1
-        CWWK_HC_S2  = Float(-99.) # Hardening coefficient stage 2
-        CWWK_DHC = Float(-99.)    # De-hardening coefficient
-        CWWK_KILLTEMP = Float(-99.) # Initial Killing temperature
+        CWWK_HC_S1 = Float(-99.0)  # Hardening coefficient stage 1
+        CWWK_HC_S2 = Float(-99.0)  # Hardening coefficient stage 2
+        CWWK_DHC = Float(-99.0)  # De-hardening coefficient
+        CWWK_KILLTEMP = Float(-99.0)  # Initial Killing temperature
 
     class StateVariables(StatesTemplate):
-        HARDINDEX  = Float(-99.) # Hardening Index
-        HIKILLTEMP = Float(-99.) # Kill temperature given Hardening Index
+        HARDINDEX = Float(-99.0)  # Hardening Index
+        HIKILLTEMP = Float(-99.0)  # Kill temperature given Hardening Index
 
     class RateVariables(RatesTemplate):
-        RH = Float(-99.)
-        RDH = Float(-99.)
-        HIKILLFACTOR = Float(-99.)
+        RH = Float(-99.0)
+        RDH = Float(-99.0)
+        HIKILLFACTOR = Float(-99.0)
 
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)
@@ -579,8 +600,9 @@ class CERES_WinterKill(SimulationObject):
         self.kiosk = kiosk
 
         # Define initial states
-        self.states = self.StateVariables(kiosk, HARDINDEX=0.,
-                                          HIKILLTEMP=self.params.CWWK_KILLTEMP)
+        self.states = self.StateVariables(
+            kiosk, HARDINDEX=0.0, HIKILLTEMP=self.params.CWWK_KILLTEMP
+        )
 
     @prepare_rates
     def calc_rates(self, day, drv):
@@ -591,50 +613,51 @@ class CERES_WinterKill(SimulationObject):
         # derive snow depth from kiosk
         snow_depth = self.kiosk["SNOWDEPTH"]
 
-        if states.HARDINDEX >= 1.: # HI between 1 and 2.
-            if drv.TEMP_CROWN < 0.:
+        if states.HARDINDEX >= 1.0:  # HI between 1 and 2.
+            if drv.TEMP_CROWN < 0.0:
                 # 12 days of hardening are enough to reach stage 2
                 # default value 0.083333 = 1/12
                 rates.RH = params.CWWK_HC_S2
             else:
-                rates.RH = 0.
+                rates.RH = 0.0
         else:  # HI between 0 and 1
-            if (drv.TEMP_CROWN > -1.) and (drv.TEMP_CROWN < 8.):
-                # At 3.5 degree HI increase 0.1 (max) and with 0.06 (min) 
+            if (drv.TEMP_CROWN > -1.0) and (drv.TEMP_CROWN < 8.0):
+                # At 3.5 degree HI increase 0.1 (max) and with 0.06 (min)
                 # at -1 and 8 degree. Default vaue for CERESWK_HC_S1=0.1
-                rates.RH = params.CWWK_HC_S1 - \
-                                       ((3.5 - drv.TEMP_CROWN)**2/506.)
+                rates.RH = params.CWWK_HC_S1 - ((3.5 - drv.TEMP_CROWN) ** 2 / 506.0)
             else:
-                rates.RH = 0.
+                rates.RH = 0.0
 
         # Dehardening
         if drv.TMAX_CROWN > 10:
-            #for each degree above 10, HI decreases with 0.02
+            # for each degree above 10, HI decreases with 0.02
             rates.RDH = (10 - drv.TMAX_CROWN) * params.CWWK_DHC
         else:
-            rates.RDH = 0.
+            rates.RDH = 0.0
 
         # Calculate the killing factor based on the current kill temperature
         if drv.TMIN_CROWN < states.HIKILLTEMP:
-            rates.KILLFACTOR = 1.
+            rates.KILLFACTOR = 1.0
             # Send signal that crop is finished
             self._send_signal(signals.crop_finish, day=day, finish_type="frost kill")
 
         elif drv.TMIN_CROWN > params.CWWK_KILLTEMP:
-            rates.KILLFACTOR = 0.
+            rates.KILLFACTOR = 0.0
 
         else:
-            KF = (0.02 * states.HARDINDEX - 0.1) * \
-                  ((drv.TMINCROWN * 0.85) + (drv.TMAX_CROWN * 0.15) + \
-                   10 + (0.25 * snow_depth))
+            KF = (0.02 * states.HARDINDEX - 0.1) * (
+                (drv.TMINCROWN * 0.85)
+                + (drv.TMAX_CROWN * 0.15)
+                + 10
+                + (0.25 * snow_depth)
+            )
             rates.KILLFACTOR = limit(0, 0.96, KF)
 
     @prepare_states
     def integrate(self, day, delt=1.0):
         states = self.states
-        rates  = self.rates
+        rates = self.rates
         params = self.params
 
-        states.HARDINDEX += (rates.RH + rates.RDH)
-        states.HIKILLTEMP = (states.HARDINDEX + 1.) * params.CWWK_KILLTEMP
-
+        states.HARDINDEX += rates.RH + rates.RDH
+        states.HIKILLTEMP = (states.HARDINDEX + 1.0) * params.CWWK_KILLTEMP

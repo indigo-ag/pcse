@@ -12,11 +12,17 @@ class Wofost72_PP(Engine):
     :param weatherdataprovider: A WeatherDataProvider object
     :param agromanagement: Agromanagement data
     """
+
     config = "Wofost72_PP.conf"
 
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
-        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
-                        config=self.config)
+        Engine.__init__(
+            self,
+            parameterprovider,
+            weatherdataprovider,
+            agromanagement,
+            config=self.config,
+        )
 
 
 class Wofost72_WLP_FD(Engine):
@@ -26,11 +32,17 @@ class Wofost72_WLP_FD(Engine):
     :param weatherdataprovider: A WeatherDataProvider object
     :param agromanagement: Agromanagement data
     """
+
     config = "Wofost72_WLP_FD.conf"
 
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
-        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
-                        config=self.config)
+        Engine.__init__(
+            self,
+            parameterprovider,
+            weatherdataprovider,
+            agromanagement,
+            config=self.config,
+        )
 
 
 class Wofost72_Phenology(Engine):
@@ -40,11 +52,17 @@ class Wofost72_Phenology(Engine):
     :param weatherdataprovider: A WeatherDataProvider object
     :param agromanagement: Agromanagement data
     """
+
     config = "Wofost72_Pheno.conf"
 
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
-        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
-                        config=self.config)
+        Engine.__init__(
+            self,
+            parameterprovider,
+            weatherdataprovider,
+            agromanagement,
+            config=self.config,
+        )
 
 
 # This is to ensure that old code keeps working
@@ -59,11 +77,17 @@ class Wofost80_PP_beta(Engine):
     :param weatherdataprovider: A WeatherDataProvider object
     :param agromanagement: Agromanagement data
     """
+
     config = "Wofost80_PP.conf"
 
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
-        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
-                        config=self.config)
+        Engine.__init__(
+            self,
+            parameterprovider,
+            weatherdataprovider,
+            agromanagement,
+            config=self.config,
+        )
 
 
 class Indigo_Wofost(Engine):
@@ -73,11 +97,17 @@ class Indigo_Wofost(Engine):
     :param weatherdataprovider: A WeatherDataProvider object
     :param agromanagement: Agromanagement data
     """
+
     config = "Indigo_Wofost.conf"
 
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
-        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
-                        config=self.config)
+        Engine.__init__(
+            self,
+            parameterprovider,
+            weatherdataprovider,
+            agromanagement,
+            config=self.config,
+        )
 
 
 class Wofost80_WLP_FD_beta(Engine):
@@ -87,11 +117,17 @@ class Wofost80_WLP_FD_beta(Engine):
     :param weatherdataprovider: A WeatherDataProvider object
     :param agromanagement: Agromanagement data
     """
+
     config = "Wofost80_WLP_FD.conf"
 
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
-        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
-                        config=self.config)
+        Engine.__init__(
+            self,
+            parameterprovider,
+            weatherdataprovider,
+            agromanagement,
+            config=self.config,
+        )
 
 
 class Wofost80_NWLP_FD_beta(Engine):
@@ -101,11 +137,17 @@ class Wofost80_NWLP_FD_beta(Engine):
     :param weatherdataprovider: A WeatherDataProvider object
     :param agromanagement: Agromanagement data
     """
+
     config = "Wofost80_NWLP_FD.conf"
 
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
-        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
-                        config=self.config)
+        Engine.__init__(
+            self,
+            parameterprovider,
+            weatherdataprovider,
+            agromanagement,
+            config=self.config,
+        )
 
 
 class LINTUL3(Engine):
@@ -123,11 +165,17 @@ class LINTUL3(Engine):
     :param agromanagement: AgroManagement data. The data format is described
         in the section on agronomic management.
     """
+
     config = "Lintul3.conf"
 
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
-        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
-                        config=self.config)
+        Engine.__init__(
+            self,
+            parameterprovider,
+            weatherdataprovider,
+            agromanagement,
+            config=self.config,
+        )
 
 
 class FAO_WRSI(Engine):
@@ -142,8 +190,13 @@ class FAO_WRSI(Engine):
     config = "FAO_WRSI.conf"
 
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
-        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
-                        config=self.config)
+        Engine.__init__(
+            self,
+            parameterprovider,
+            weatherdataprovider,
+            agromanagement,
+            config=self.config,
+        )
 
 
 class LINGRA_PP(Engine):
@@ -151,8 +204,13 @@ class LINGRA_PP(Engine):
     __version__ = "1.0.0"
 
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
-        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
-                        config=self.config)
+        Engine.__init__(
+            self,
+            parameterprovider,
+            weatherdataprovider,
+            agromanagement,
+            config=self.config,
+        )
 
 
 class LINGRA_WLP_FD(Engine):
@@ -160,8 +218,13 @@ class LINGRA_WLP_FD(Engine):
     __version__ = "1.0.0"
 
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
-        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
-                        config=self.config)
+        Engine.__init__(
+            self,
+            parameterprovider,
+            weatherdataprovider,
+            agromanagement,
+            config=self.config,
+        )
 
 
 class LINGRA_NWLP_FD(Engine):
@@ -169,15 +232,25 @@ class LINGRA_NWLP_FD(Engine):
     __version__ = "1.0.0"
 
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
-        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
-                        config=self.config)
+        Engine.__init__(
+            self,
+            parameterprovider,
+            weatherdataprovider,
+            agromanagement,
+            config=self.config,
+        )
 
 
 class ALCEPAS(Engine):
-    """ALCEPAS Onion growth model.
-    """
+    """ALCEPAS Onion growth model."""
+
     config = "alcepas.conf"
 
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
-        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
-                        config=self.config)
+        Engine.__init__(
+            self,
+            parameterprovider,
+            weatherdataprovider,
+            agromanagement,
+            config=self.config,
+        )

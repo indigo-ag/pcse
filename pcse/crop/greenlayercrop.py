@@ -20,16 +20,16 @@ class GreenLayerCrop(SimulationObject):
     the FAO Water Requirement Satisfaction Index (WRSI).
 
     The processes that are implemented as embedded simulation objects consist of:
-    
+
         1. Evapotranspiration taken from the WOFOST model
         2. Leaf dynamics as defined by the CSDM model (a logistic/exponential LAI curve)
         3. Root dynamics taken from the WOFOST model
 
     **Simulation parameters:**
-    
+
     None in this class, but see classes for evapotranspiration, leaf dynamics and
     root dynamics.
-    
+
     **State variables:**
 
     =======  ================================================= ==== ============
@@ -46,24 +46,24 @@ class GreenLayerCrop(SimulationObject):
              as SumAET/SumPET * 100                             N     %
     =======  ================================================= ==== ============
 
- 
+
      **Rate variables:**
 
     None
     """
-    
+
     # sub-model components for crop simulation
     evtra = Instance(SimulationObject)
     lv_dynamics = Instance(SimulationObject)
     ro_dynamics = Instance(SimulationObject)
-    
+
     class StateVariables(StatesTemplate):
-        CTRAT = Float(-99.) # Crop total transpiration
+        CTRAT = Float(-99.0)  # Crop total transpiration
         DOF = Instance(datetime.date)
         FINISH = Instance(str)
         WRSI = Float()
-        SumPET = Float() # Sum of potential crop evapotranspiration
-        SumAET = Float() # Sum of actual crop evapotranspiration
+        SumPET = Float()  # Sum of potential crop evapotranspiration
+        SumAET = Float()  # Sum of actual crop evapotranspiration
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -74,15 +74,16 @@ class GreenLayerCrop(SimulationObject):
         """
 
         self.kiosk = kiosk
-        
+
         # Initialize components of the crop
         self.evtra = Evapotranspiration(day, kiosk, parvalues)
         self.ro_dynamics = Root_Dynamics(day, kiosk, parvalues)
         self.lv_dynamics = Leaf_Dynamics(day, kiosk, parvalues)
 
-        self.states = self.StateVariables(kiosk, CTRAT=0.0, DOF=None, FINISH=None, WRSI=100,
-                                          SumPET=0., SumAET=0.)
-            
+        self.states = self.StateVariables(
+            kiosk, CTRAT=0.0, DOF=None, FINISH=None, WRSI=100, SumPET=0.0, SumAET=0.0
+        )
+
         # assign handler for CROP_FINISH signal
         self._connect_signal(self._on_CROP_FINISH, signal=signals.crop_finish)
 
@@ -101,7 +102,7 @@ class GreenLayerCrop(SimulationObject):
     @prepare_states
     def integrate(self, day, delt=1.0):
         states = self.states
-        
+
         # Integrate states on leaves, storage organs, stems and roots
         self.ro_dynamics.integrate(day, delt)
         self.lv_dynamics.integrate(day, delt)
@@ -113,11 +114,11 @@ class GreenLayerCrop(SimulationObject):
         states.SumPET += (self.kiosk["TRAMX"] + self.kiosk["EVS"]) * delt
         states.SumAET += (self.kiosk["TRA"] + self.kiosk["EVS"]) * delt
         # compute Water Requirements Satisfaction Index according to FAO
-        states.WRSI = states.SumAET/states.SumPET * 100
-        
+        states.WRSI = states.SumAET / states.SumPET * 100
+
     def _on_CROP_FINISH(self, day, finish_type, *args, **kwargs):
         """Handler for setting day of finish (DOF) and reason for
         crop finishing (FINISH).
         """
         self._for_finalize["DOF"] = day
-        self._for_finalize["FINISH"]= finish_type
+        self._for_finalize["FINISH"] = finish_type

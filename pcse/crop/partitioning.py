@@ -6,8 +6,7 @@ from math import exp
 
 from ..traitlets import Float, Int, Instance
 from ..decorators import prepare_rates, prepare_states
-from ..base import ParamTemplate, StatesTemplate, SimulationObject,\
-     VariableKiosk
+from ..base import ParamTemplate, StatesTemplate, SimulationObject, VariableKiosk
 from .. import exceptions as exc
 from warnings import warn
 from ..util import AfgenTrait
@@ -16,6 +15,7 @@ from ..util import AfgenTrait
 # Template for namedtuple containing partitioning factors
 class PartioningFactors(namedtuple("partitioning_factors", "FR FL FS FO")):
     pass
+
 
 class DVS_Partitioning(SimulationObject):
     """Class for assimilate partioning based on development stage (`DVS`).
@@ -26,12 +26,12 @@ class DVS_Partitioning(SimulationObject):
     split into below-ground and abovegrond using the values in FRTB. In a
     second stage they are split into leaves (`FLTB`), stems (`FSTB`) and storage
     organs (`FOTB`).
-    
+
     Since the partitioning fractions are derived from the state variable `DVS`
     they are regarded state variables as well.
 
     **Simulation parameters** (To be provided in cropdata dictionary):
-    
+
     =======  ============================================= =======  ============
      Name     Description                                   Type     Unit
     =======  ============================================= =======  ============
@@ -44,7 +44,7 @@ class DVS_Partitioning(SimulationObject):
     FOTB     Partitioning to storage organs as a function    TCr       -
              of development stage.
     =======  ============================================= =======  ============
-    
+
 
     **State variables**
 
@@ -60,38 +60,38 @@ class DVS_Partitioning(SimulationObject):
     **Rate variables**
 
     None
-    
+
     **Signals send or handled**
-    
+
     None
-    
+
     **External dependencies:**
-    
+
     =======  =================================== =================  ============
      Name     Description                         Provided by         Unit
     =======  =================================== =================  ============
     DVS      Crop development stage              DVS_Phenology       -
     =======  =================================== =================  ============
-    
+
     *Exceptions raised*
-    
+
     A PartitioningError is raised if the partitioning coefficients to leaves,
     stems and storage organs on a given day do not add up to '1'.
     """
-    
+
     class Parameters(ParamTemplate):
-        FRTB   = AfgenTrait()
-        FLTB   = AfgenTrait()
-        FSTB   = AfgenTrait()
-        FOTB   = AfgenTrait()
+        FRTB = AfgenTrait()
+        FLTB = AfgenTrait()
+        FSTB = AfgenTrait()
+        FOTB = AfgenTrait()
 
     class StateVariables(StatesTemplate):
-        FR = Float(-99.)
-        FL = Float(-99.)
-        FS = Float(-99.)
-        FO = Float(-99.)
+        FR = Float(-99.0)
+        FL = Float(-99.0)
+        FS = Float(-99.0)
+        FO = Float(-99.0)
         PF = Instance(PartioningFactors)
-    
+
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
@@ -112,12 +112,13 @@ class DVS_Partitioning(SimulationObject):
 
         # Pack partitioning factors into tuple
         PF = PartioningFactors(FR, FL, FS, FO)
-        
+
         # Initial states
-        self.states = self.StateVariables(kiosk, publish=["FR","FL","FS","FO"],
-                                          FR=FR, FL=FL, FS=FS, FO=FO, PF=PF)
+        self.states = self.StateVariables(
+            kiosk, publish=["FR", "FL", "FS", "FO"], FR=FR, FL=FL, FS=FS, FO=FO, PF=PF
+        )
         self._check_partitioning()
-        
+
     def _check_partitioning(self):
         """Check for partitioning errors."""
 
@@ -125,36 +126,42 @@ class DVS_Partitioning(SimulationObject):
         FL = self.states.FL
         FS = self.states.FS
         FO = self.states.FO
-        checksum = FR+(FL+FS+FO)*(1.-FR) - 1.
+        checksum = FR + (FL + FS + FO) * (1.0 - FR) - 1.0
         if abs(checksum) >= 0.0001:
-            msg = ("Error in partitioning!\n")
-            msg += ("Checksum: %f, FR: %5.3f, FL: %5.3f, FS: %5.3f, FO: %5.3f\n" \
-                    % (checksum, FR, FL, FS, FO))
+            msg = "Error in partitioning!\n"
+            msg += "Checksum: %f, FR: %5.3f, FL: %5.3f, FS: %5.3f, FO: %5.3f\n" % (
+                checksum,
+                FR,
+                FL,
+                FS,
+                FO,
+            )
             self.logger.error(msg)
             warn(msg)
-#             raise exc.PartitioningError(msg)
+
+    #             raise exc.PartitioningError(msg)
 
     @prepare_states
     def integrate(self, day, delt=1.0):
         """Update partitioning factors based on development stage (DVS)"""
 
         params = self.params
-        
+
         DVS = self.kiosk["DVS"]
         self.states.FR = params.FRTB(DVS)
         self.states.FL = params.FLTB(DVS)
         self.states.FS = params.FSTB(DVS)
         self.states.FO = params.FOTB(DVS)
-        
-        # Pack partitioning factors into tuple
-        self.states.PF = PartioningFactors(self.states.FR, self.states.FL,
-                                           self.states.FS, self.states.FO)
 
-        self._check_partitioning()  
-    
+        # Pack partitioning factors into tuple
+        self.states.PF = PartioningFactors(
+            self.states.FR, self.states.FL, self.states.FS, self.states.FO
+        )
+
+        self._check_partitioning()
+
     def calc_rates(self, day, drv):
-        """ Return partitioning factors based on current DVS.
-        """
+        """Return partitioning factors based on current DVS."""
         # rate calculation does nothing for partioning as it is a derived
         # state
         return self.states.PF
@@ -235,13 +242,15 @@ class DVS_Partitioning_NPK(SimulationObject):
         FLTB = AfgenTrait()
         FSTB = AfgenTrait()
         FOTB = AfgenTrait()
-        NPART = Float(-99.)  # coefficient for the effect of N stress on leaf allocation
+        NPART = Float(
+            -99.0
+        )  # coefficient for the effect of N stress on leaf allocation
 
     class StateVariables(StatesTemplate):
-        FR = Float(-99.)
-        FL = Float(-99.)
-        FS = Float(-99.)
-        FO = Float(-99.)
+        FR = Float(-99.0)
+        FL = Float(-99.0)
+        FS = Float(-99.0)
+        FO = Float(-99.0)
         PF = Instance(PartioningFactors)
 
     def initialize(self, day, kiosk, parameters):
@@ -263,8 +272,9 @@ class DVS_Partitioning_NPK(SimulationObject):
         PF = PartioningFactors(FR, FL, FS, FO)
 
         # Initial states
-        self.states = self.StateVariables(kiosk, publish=["FR","FL","FS","FO"],
-                                          FR=FR, FL=FL, FS=FS, FO=FO, PF=PF)
+        self.states = self.StateVariables(
+            kiosk, publish=["FR", "FL", "FS", "FO"], FR=FR, FL=FL, FS=FS, FO=FO, PF=PF
+        )
         self._check_partitioning()
 
     def _check_partitioning(self):
@@ -274,11 +284,16 @@ class DVS_Partitioning_NPK(SimulationObject):
         FL = self.states.FL
         FS = self.states.FS
         FO = self.states.FO
-        checksum = FR+(FL+FS+FO)*(1.-FR) - 1.
+        checksum = FR + (FL + FS + FO) * (1.0 - FR) - 1.0
         if abs(checksum) >= 0.0001:
-            msg = ("Error in partitioning!\n")
-            msg += ("Checksum: %f, FR: %5.3f, FL: %5.3f, FS: %5.3f, FO: %5.3f\n" \
-                    % (checksum, FR, FL, FS, FO))
+            msg = "Error in partitioning!\n"
+            msg += "Checksum: %f, FR: %5.3f, FL: %5.3f, FS: %5.3f, FO: %5.3f\n" % (
+                checksum,
+                FR,
+                FL,
+                FS,
+                FO,
+            )
             self.logger.error(msg)
             raise exc.PartitioningError(msg)
 
@@ -297,7 +312,7 @@ class DVS_Partitioning_NPK(SimulationObject):
             # Water stress is more severe than nitrogen stress and the
             # partitioning follows the original LINTUL2 assumptions
             # Note: we use specifically nitrogen stress not nutrient stress!!!
-            FRTMOD = max(1., 1./(k.RFTRA + 0.5))
+            FRTMOD = max(1.0, 1.0 / (k.RFTRA + 0.5))
             s.FR = min(0.6, p.FRTB(k.DVS) * FRTMOD)
             s.FL = p.FLTB(k.DVS)
             s.FS = p.FSTB(k.DVS)
@@ -317,7 +332,6 @@ class DVS_Partitioning_NPK(SimulationObject):
         self._check_partitioning()
 
     def calc_rates(self, day, drv):
-        """ Return partitioning factors based on current DVS.
-        """
+        """Return partitioning factors based on current DVS."""
         # rate calculation does nothing for partitioning as it is a derived state
         return self.states.PF

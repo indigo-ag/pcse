@@ -13,9 +13,9 @@ from ..settings import settings
 
 # Conversion functions
 NoConversion = lambda x: x
-kJ_to_J = lambda x: x*1000.
-kPa_to_hPa = lambda x: x*10.
-mm_to_cm = lambda x: x/10.
+kJ_to_J = lambda x: x * 1000.0
+kPa_to_hPa = lambda x: x * 10.0
+mm_to_cm = lambda x: x / 10.0
 
 
 def determine_true_false(value):
@@ -75,6 +75,7 @@ class ExcelWeatherDataProvider(WeatherDataProvider):
     accomplished in Excel itself. Only SNOW_DEPTH is allowed to be missing
     as this parameter is usually not provided outside the winter season.
     """
+
     obs_conversions = {
         "TMAX": NoConversion,
         "TMIN": NoConversion,
@@ -82,7 +83,7 @@ class ExcelWeatherDataProvider(WeatherDataProvider):
         "VAP": kPa_to_hPa,
         "WIND": NoConversion,
         "RAIN": mm_to_cm,
-        "SNOWDEPTH": NoConversion
+        "SNOWDEPTH": NoConversion,
     }
 
     # row numbers where values start. Note that the row numbers are
@@ -118,12 +119,14 @@ class ExcelWeatherDataProvider(WeatherDataProvider):
         src = sheet["B5"].value
         contact = sheet["B6"].value
         self.nodata_value = float(sheet["B7"].value)
-        self.description = [u"Weather data for:",
-                            u"Country: %s" % country,
-                            u"Station: %s" % station,
-                            u"Description: %s" % desc,
-                            u"Source: %s" % src,
-                            u"Contact: %s" % contact]
+        self.description = [
+            "Weather data for:",
+            "Country: %s" % country,
+            "Station: %s" % station,
+            "Description: %s" % desc,
+            "Source: %s" % src,
+            "Contact: %s" % contact,
+        ]
 
     def _read_site_characteristics(self, sheet):
 
@@ -137,8 +140,9 @@ class ExcelWeatherDataProvider(WeatherDataProvider):
             has_sunshine = sheet[f"F{self.site_row}"].value
             self.has_sunshine = determine_true_false(has_sunshine)
         except ValueError as e:
-            raise PCSEError(f"Cannot determine if sheet as radiation or sunshine hours: {e}")
-
+            raise PCSEError(
+                f"Cannot determine if sheet as radiation or sunshine hours: {e}"
+            )
 
     def _read_observations(self, sheet):
 
@@ -147,7 +151,7 @@ class ExcelWeatherDataProvider(WeatherDataProvider):
 
         # Start reading all rows with data
         # rownums = list(range(sheet.nrows))
-        for rownum, row in enumerate(sheet[self.data_start_row:sheet.max_row]):
+        for rownum, row in enumerate(sheet[self.data_start_row : sheet.max_row]):
             try:
                 d = {}
                 for cell, label in zip(row, labels):
@@ -172,41 +176,56 @@ class ExcelWeatherDataProvider(WeatherDataProvider):
                     if label == "IRRAD" and self.has_sunshine is True:
                         if 0 <= value <= 24:
                             # Use Angstrom equation to convert sunshine duration to radiation in J/m2/day
-                            value = angstrom(d["DAY"], self.latitude, value, self.angstA, self.angstB)
-                            value /= 1000.  # convert to kJ/m2/day for compatibility with obs_conversion function
+                            value = angstrom(
+                                d["DAY"], self.latitude, value, self.angstA, self.angstB
+                            )
+                            value /= 1000.0  # convert to kJ/m2/day for compatibility with obs_conversion function
                         else:
-                            msg = "Sunshine duration not within 0-24 interval for row %i" % \
-                                  (rownum + self.data_start_row)
+                            msg = (
+                                "Sunshine duration not within 0-24 interval for row %i"
+                                % (rownum + self.data_start_row)
+                            )
                             raise ValueError(msg)
 
                     func = self.obs_conversions[label]
                     d[label] = func(value)
 
                 # Reference ET in mm/day
-                e0, es0, et0 = reference_ET(LAT=self.latitude, ELEV=self.elevation, ANGSTA=self.angstA,
-                                            ANGSTB=self.angstB, **d)
+                e0, es0, et0 = reference_ET(
+                    LAT=self.latitude,
+                    ELEV=self.elevation,
+                    ANGSTA=self.angstA,
+                    ANGSTB=self.angstB,
+                    **d,
+                )
                 # convert to cm/day
-                d["E0"] = e0/10.; d["ES0"] = es0/10.; d["ET0"] = et0/10.
+                d["E0"] = e0 / 10.0
+                d["ES0"] = es0 / 10.0
+                d["ET0"] = et0 / 10.0
 
-                wdc = WeatherDataContainer(LAT=self.latitude, LON=self.longitude, ELEV=self.elevation, **d)
+                wdc = WeatherDataContainer(
+                    LAT=self.latitude, LON=self.longitude, ELEV=self.elevation, **d
+                )
                 self._store_WeatherDataContainer(wdc, d["DAY"])
 
             except ValueError as e:  # strange value in cell
-                msg = "Failed reading row: %i. Skipping..." % (rownum + self.data_start_row)
+                msg = "Failed reading row: %i. Skipping..." % (
+                    rownum + self.data_start_row
+                )
                 self.logger.warning(msg)
                 print(msg)
 
     def _load_cache_file(self, xls_fname):
 
-         cache_filename = self._find_cache_file(xls_fname)
-         if cache_filename is None:
-             return False
-         else:
-             try:
-                 self._load(cache_filename)
-                 return True
-             except:
-                 return False
+        cache_filename = self._find_cache_file(xls_fname)
+        if cache_filename is None:
+            return False
+        else:
+            try:
+                self._load(cache_filename)
+                return True
+            except:
+                return False
 
     def _find_cache_file(self, xls_fname):
         """Try to find a cache file for file name
@@ -224,8 +243,7 @@ class ExcelWeatherDataProvider(WeatherDataProvider):
         return None
 
     def _get_cache_filename(self, xls_fname):
-        """Constructs the filename used for cache files given xls_fname
-        """
+        """Constructs the filename used for cache files given xls_fname"""
         basename = os.path.basename(xls_fname)
         filename, ext = os.path.splitext(basename)
 

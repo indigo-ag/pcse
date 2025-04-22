@@ -5,8 +5,7 @@
 
 from pcse.traitlets import Float
 from pcse.decorators import prepare_rates, prepare_states
-from pcse.base import ParamTemplate, StatesTemplate, RatesTemplate, \
-    SimulationObject
+from pcse.base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 from pcse import signals
 
 
@@ -17,7 +16,7 @@ class N_PotentialProduction(SimulationObject):
     """
 
     class StateVariables(StatesTemplate):
-        NAVAIL = Float(-99.)  # total mineral N from soil and fertiliser  kg N ha-1
+        NAVAIL = Float(-99.0)  # total mineral N from soil and fertiliser  kg N ha-1
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -25,7 +24,7 @@ class N_PotentialProduction(SimulationObject):
         :param kiosk: variable kiosk of this PCSE instance
         :param cropdata: dictionary with WOFOST cropdata key/value pairs
         """
-        self.states = self.StateVariables(kiosk, publish=["NAVAIL"], NAVAIL=100.)
+        self.states = self.StateVariables(kiosk, publish=["NAVAIL"], NAVAIL=100.0)
 
     def calc_rates(self, day, drv):
         pass
@@ -107,22 +106,26 @@ class N_Soil_Dynamics(SimulationObject):
     =========  =================================== ===================  ==============
     """
 
-    NSOILI = Float(-99.) # initial soil N amount
+    NSOILI = Float(-99.0)  # initial soil N amount
     # placeholders for FERT_N/P/K_SUPPLY
-    _FERT_N_SUPPLY = Float(0.)
+    _FERT_N_SUPPLY = Float(0.0)
 
-    class Parameters(ParamTemplate):      
-        NSOILBASE = Float(-99.)  # total mineral soil N available at start of growth period [kg N/ha]
-        NSOILBASE_FR = Float(-99.)  # fraction of soil mineral N coming available per day [day-1]
-        BG_N_SUPPLY = Float() # Background rates of N/P/K supply [kg/ha/day]
+    class Parameters(ParamTemplate):
+        NSOILBASE = Float(
+            -99.0
+        )  # total mineral soil N available at start of growth period [kg N/ha]
+        NSOILBASE_FR = Float(
+            -99.0
+        )  # fraction of soil mineral N coming available per day [day-1]
+        BG_N_SUPPLY = Float()  # Background rates of N/P/K supply [kg/ha/day]
 
     class StateVariables(StatesTemplate):
-        NSOIL = Float(-99.)  # mineral N available from soil for crop    kg N ha-1
-        NAVAIL = Float(-99.)  # total mineral N from soil and fertiliser  kg N ha-1
+        NSOIL = Float(-99.0)  # mineral N available from soil for crop    kg N ha-1
+        NAVAIL = Float(-99.0)  # total mineral N from soil and fertiliser  kg N ha-1
 
     class RateVariables(RatesTemplate):
-        RNSOIL = Float(-99.)
-        RNAVAIL = Float(-99.)
+        RNSOIL = Float(-99.0)
+        RNAVAIL = Float(-99.0)
         # Rate of fertilizer supply for N [kg/ha/day]
         FERT_N_SUPPLY = Float()
 
@@ -136,13 +139,15 @@ class N_Soil_Dynamics(SimulationObject):
         self.params = self.Parameters(parvalues)
         self.rates = self.RateVariables(kiosk)
         self.kiosk = kiosk
-        
+
         # INITIAL STATES
         p = self.params
         self.NSOILI = p.NSOILBASE
-        self.states = self.StateVariables(kiosk, publish=["NAVAIL"], NSOIL=p.NSOILBASE, NAVAIL=0.)
+        self.states = self.StateVariables(
+            kiosk, publish=["NAVAIL"], NSOIL=p.NSOILBASE, NAVAIL=0.0
+        )
         self._connect_signal(self._on_APPLY_N, signals.apply_n)
-        
+
     @prepare_rates
     def calc_rates(self, day, drv):
         r = self.rates
@@ -152,9 +157,9 @@ class N_Soil_Dynamics(SimulationObject):
 
         # Rate of supplied N
         r.FERT_N_SUPPLY = self._FERT_N_SUPPLY
-        self._FERT_N_SUPPLY = 0.
+        self._FERT_N_SUPPLY = 0.0
 
-        r.RNSOIL = max(0., min(p.NSOILBASE_FR * self.NSOILI, s.NSOIL))
+        r.RNSOIL = max(0.0, min(p.NSOILBASE_FR * self.NSOILI, s.NSOIL))
         r.RNAVAIL = r.FERT_N_SUPPLY + p.BG_N_SUPPLY - k.RNuptake + r.RNSOIL
 
     @prepare_states

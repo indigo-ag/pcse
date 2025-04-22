@@ -14,6 +14,7 @@ import sqlalchemy as sa
 from sqlalchemy import select, and_, MetaData, Table
 import socket
 
+
 class TaskManager:
     """Class defines a taskmanager which reads from a table called 'tasklist'.
 
@@ -44,14 +45,14 @@ class TaskManager:
          );
 
     """
-    validstatus = ['Pending', 'In progress', 'Finished',
-                   'Error occurred']
-    knowndatabases = ['mysql', 'oracle', 'sqlite']
 
-#-------------------------------------------------------------------------------
-    def __init__(self, engine, dbtype=None, tasklist='tasklist'):
+    validstatus = ["Pending", "In progress", "Finished", "Error occurred"]
+    knowndatabases = ["mysql", "oracle", "sqlite"]
+
+    # -------------------------------------------------------------------------------
+    def __init__(self, engine, dbtype=None, tasklist="tasklist"):
         """Class constructor for TaskManager.
-        
+
         Arguments:
         * engine - An SQLAlchemy engine object
 
@@ -67,8 +68,10 @@ class TaskManager:
             msg = "keyword 'dbtype' should be one of %s" % self.knowndatabases
             raise RuntimeError(msg)
         if not isinstance(engine, sa.engine.base.Engine):
-            msg = "Argument 'engine' should be SQLalchemy database engine, " \
-                  "got %s" % engine
+            msg = (
+                "Argument 'engine' should be SQLalchemy database engine, "
+                "got %s" % engine
+            )
             raise RuntimeError(msg)
 
         self.dbtype = dbtype.lower()
@@ -88,16 +91,19 @@ class TaskManager:
             self.logger.exception(msg)
             raise RuntimeError(msg)
 
-#-------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------
     def get_task(self):
         "Return 'Pending' task to processing unit."
-        
+
         conn = self.engine.connect()
         self._lock_table(conn)
         tasklist = self.table_tasklist
-        s = select([tasklist], and_(tasklist.c.status=='Pending'), 
-                   order_by=[tasklist.c.task_id],
-                   limit=1)
+        s = select(
+            [tasklist],
+            and_(tasklist.c.status == "Pending"),
+            order_by=[tasklist.c.task_id],
+            limit=1,
+        )
         r = conn.execute(s)
         row = r.fetchone()
         r.close()
@@ -106,54 +112,58 @@ class TaskManager:
             return None
         else:
             task = dict(row)
-            u = tasklist.update(tasklist.c.task_id==task["task_id"])
-            conn.execute(u, status='In progress',  hostname=self.hostname,
-                         process_id=self.process_id)
+            u = tasklist.update(tasklist.c.task_id == task["task_id"])
+            conn.execute(
+                u,
+                status="In progress",
+                hostname=self.hostname,
+                process_id=self.process_id,
+            )
         self._unlock_table(conn)
         return task
-    
-#-------------------------------------------------------------------------------
+
+    # -------------------------------------------------------------------------------
     def _lock_table(self, connection):
         """Locks the TASKLIST table. Note that locking/unlocking is carried out
         by directly sending SQL to the database instead of using SQLAlchemy,
         which does not support this kind of table locking."""
-    
-        if self.dbtype=="mysql":
-            connection.execute("LOCK TABLE %s WRITE" % self.tasklist_tablename)
-        elif self.dbtype=="oracle":
-            connection.execute("LOCK TABLE %s IN EXCLUSIVE MODE" %
-                               self.tasklist_tablename)
-        elif self.dbtype=="sqlite":
-            pass # No locking needed for SQLite: assuming one client only.
-        
 
-#-------------------------------------------------------------------------------
+        if self.dbtype == "mysql":
+            connection.execute("LOCK TABLE %s WRITE" % self.tasklist_tablename)
+        elif self.dbtype == "oracle":
+            connection.execute(
+                "LOCK TABLE %s IN EXCLUSIVE MODE" % self.tasklist_tablename
+            )
+        elif self.dbtype == "sqlite":
+            pass  # No locking needed for SQLite: assuming one client only.
+
+    # -------------------------------------------------------------------------------
     def _unlock_table(self, connection):
         "Unlocks the TASKLIST table"
-    
-        if self.dbtype=="mysql":
+
+        if self.dbtype == "mysql":
             connection.execute("UNLOCK TABLES")
-        elif self.dbtype=="oracle":
+        elif self.dbtype == "oracle":
             connection.execute("COMMIT")
-        elif self.dbtype=="sqlite":
-            pass # No locking needed for SQLite: assuming one client only.
-        
-#-------------------------------------------------------------------------------
+        elif self.dbtype == "sqlite":
+            pass  # No locking needed for SQLite: assuming one client only.
+
+    # -------------------------------------------------------------------------------
     def set_task_finished(self, task, comment="OK"):
         "Sets a task to status 'Finished'"
-        
+
         conn = self.engine.connect()
         self._lock_table(conn)
-        u = self.table_tasklist.update(self.table_tasklist.c.task_id==task["task_id"])
-        conn.execute(u, status='Finished', comment=comment)
+        u = self.table_tasklist.update(self.table_tasklist.c.task_id == task["task_id"])
+        conn.execute(u, status="Finished", comment=comment)
         self._unlock_table(conn)
-        
-#-------------------------------------------------------------------------------
+
+    # -------------------------------------------------------------------------------
     def set_task_error(self, task, comment=None):
         "Sets a task to status 'Error occurred' with given comment"
-        
+
         conn = self.engine.connect()
         self._lock_table(conn)
-        u = self.table_tasklist.update(self.table_tasklist.c.task_id==task["task_id"])
-        conn.execute(u, status='Error occurred', comment=comment)
+        u = self.table_tasklist.update(self.table_tasklist.c.task_id == task["task_id"])
+        conn.execute(u, status="Error occurred", comment=comment)
         self._unlock_table(conn)

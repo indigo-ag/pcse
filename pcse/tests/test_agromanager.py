@@ -20,9 +20,10 @@ class TestAgroManagerSimpleTestTemplate(unittest.TestCase):
     def runTest(self):
         d = yaml.safe_load(self.agmt_input)
         kiosk = VariableKiosk()
-        amgt = AgroManager(kiosk, d['AgroManagement'])
+        amgt = AgroManager(kiosk, d["AgroManagement"])
         self.assertEqual(amgt.start_date, self.start_date)
         self.assertEqual(amgt.end_date, self.end_date)
+
 
 class TestAgroManager1(TestAgroManagerSimpleTestTemplate):
 
@@ -205,7 +206,7 @@ class TestAgroManager6(unittest.TestCase):
     def runTest(self):
         d = yaml.safe_load(self.agmt_input)
         kiosk = VariableKiosk()
-        self.amgt = AgroManager(kiosk, d['AgroManagement'])
+        self.amgt = AgroManager(kiosk, d["AgroManagement"])
         self.assertRaises(PCSEError, self._get_end_date)
 
     def _get_end_date(self):
@@ -239,7 +240,7 @@ class TestAgroManager7(unittest.TestCase):
     def _start_agromanager(self):
         d = yaml.safe_load(self.agmt_input)
         kiosk = VariableKiosk()
-        amgt = AgroManager(kiosk, d['AgroManagement'])
+        amgt = AgroManager(kiosk, d["AgroManagement"])
 
 
 # This should raise an error because the crop start date is not within the
@@ -268,10 +269,11 @@ class TestAgroManager8(unittest.TestCase):
     def _start_agromanager(self):
         d = yaml.safe_load(self.agmt_input)
         kiosk = VariableKiosk()
-        amgt = AgroManager(kiosk, d['AgroManagement'])
+        amgt = AgroManager(kiosk, d["AgroManagement"])
+
 
 def suite():
-    """ This defines all the tests of a module"""
+    """This defines all the tests of a module"""
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestAgroManager1))
     suite.addTest(unittest.makeSuite(TestAgroManager2))
@@ -283,5 +285,6 @@ def suite():
     suite.addTest(unittest.makeSuite(TestAgroManager8))
     return suite
 
-if __name__ == '__main__':
-   unittest.TextTestRunner(verbosity=2).run(suite())
+
+if __name__ == "__main__":
+    unittest.TextTestRunner(verbosity=2).run(suite())

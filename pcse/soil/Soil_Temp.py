@@ -4,12 +4,12 @@ import math
 from ..traitlets import Float, Int, Instance, Enum, Unicode, Bool, List
 from ..decorators import prepare_rates, prepare_states
 from ..util import limit, Afgen, merge_dict, AfgenTrait
-from ..base import ParamTemplate, StatesTemplate, RatesTemplate, \
-     SimulationObject
+from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 from .. import signals
 from .. import exceptions as exc
 from .snowmaus import SnowMAUS
 from array import array
+
 
 class SoilTemperature(SimulationObject):
     """
@@ -59,61 +59,66 @@ class SoilTemperature(SimulationObject):
     temperature.
 
     """
+
     class Parameters(ParamTemplate):
         NLAYR = Int()  # Number of soil layers
         TAMP = Float()  # Amplitude of temperature function (°C)
         TAV = Float()  # Average annual soil temperature (°C)
         MSALB = Float()  # Soil albedo with mulch and soil water effects (fraction)
-        
+
         BD = List()  # Bulk density (g/cm3)
         DS = List()  # Depth of soil layers (cm)
         LL = List()  # Lower limit of soil water content (cm3/cm3)
         DLAYR = List()  # Thickness of soil layers (cm)
-        
+
     class StateVariables(StatesTemplate):
         ST = List()  # Soil temperature for each layer (°C)
         SRFTEMP = Float()  # Temperature of the soil surface litter (°C)
 
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)
-        
+
         # Initialize soil temperature array with default values
         ST_init = [20.0] * self.params.NLAYR
-        
-        self.states = self.StateVariables(kiosk, ST=ST_init, SRFTEMP=20.0,
-                                          publish=["ST", "SRFTEMP"])
-        
+
+        self.states = self.StateVariables(
+            kiosk, ST=ST_init, SRFTEMP=20.0, publish=["ST", "SRFTEMP"]
+        )
+
     def calc_states(self, day, drv):
         """Calculate the soil temperature at the specified depths and time."""
         # Calculate soil temperature at 30 cm depth
         s = self.states
         p = self.params
         ALBEDO = p.MSALB  # (fraction)
-        BDs = [(p.BD[L]*(p.DS[L] - p.DS[L-1])) for L in range(1, p.NLAYR)]  # Total bulk density (g/cm3)
+        BDs = [
+            (p.BD[L] * (p.DS[L] - p.DS[L - 1])) for L in range(1, p.NLAYR)
+        ]  # Total bulk density (g/cm3)
         BDs.append(p.BD[0] * p.DS[0])
         TBD = sum(BDs)  # Total bulk density (g/cm3)
-        ABD = TBD / p.DS[p.NLAYR-1]  # Average bulk density (g/cm3)
-        
+        ABD = TBD / p.DS[p.NLAYR - 1]  # Average bulk density (g/cm3)
+
         FX = ABD / (ABD + 686.0 * math.exp(-5.63 * ABD))  # Exponential decay factor (-)
         B = math.log(500.0 / (1000.0 + 2500.0 * FX))  # Exponential decay factor (-)
-        CUMDPT = p.DS[p.NLAYR-1] * 10.0  # Cumulative depth of soil profile (mm)
+        CUMDPT = p.DS[p.NLAYR - 1] * 10.0  # Cumulative depth of soil profile (mm)
         DP = 1000.0 + 2500.0 * FX  # Damping depth parameter (mm)
         HDAY = 20.0 if drv.LAT < 0.0 else 200.0  # Hottest day of the year (DOY)
-        
-        # !! FIX THESE TWO THE MULTI LAYER PROBLEM FOR LAYER 0 
-        SW = self.kiosk['SM']
-        PESW = sum(max(0.0, SW - p.LL[L]) * p.DLAYR[L] for L in range(0, p.NLAYR))  # Potential extractable soil water (cm)
 
-        
+        # !! FIX THESE TWO THE MULTI LAYER PROBLEM FOR LAYER 0
+        SW = self.kiosk["SM"]
+        PESW = sum(
+            max(0.0, SW - p.LL[L]) * p.DLAYR[L] for L in range(0, p.NLAYR)
+        )  # Potential extractable soil water (cm)
+
         WW = 0.356 - 0.144 * ABD  # Volumetric soil water content parameter (-)
         DSMID = [0.0] * p.NLAYR  # Depth to midpoint of each soil layer (cm)
         DSMID[0] = p.DLAYR[0] / 2.0
         for L in range(1, p.NLAYR):
-            DSMID[L] = DSMID[L-1] + (p.DLAYR[L-1] + p.DLAYR[L]) / 2.0
+            DSMID[L] = DSMID[L - 1] + (p.DLAYR[L - 1] + p.DLAYR[L]) / 2.0
 
-        
-        
-        TMA = [20.0] * 5  # Initialize array of previous 5 days of average soil temperatures (°C)
+        TMA = [
+            20.0
+        ] * 5  # Initialize array of previous 5 days of average soil temperatures (°C)
         ATOT = sum(TMA)  # Sum of TMA array (°C)
 
         # Calculate soil temperatures
@@ -123,30 +128,40 @@ class SoilTemperature(SimulationObject):
         ATOT = ATOT - TMA[4]
         TMA = TMA[1:] + [TMA[0]]  # Shift TMA array by one day
 
-        tavg =  0.5 * (drv.TMIN + drv.TMAX)
-        srd = drv.IRRAD * 1e-6 # |Jm-2day-1| to (MJ/m2-d)
-        TMA[0] = (1.0 - ALBEDO) * (tavg+ (drv.TMAX - tavg) *
-                                   math.sqrt(srd * 0.03)) + ALBEDO * TMA[0]  # (°C)
-        TMA[0] = round(TMA[0], 4)  # Round to 4 decimal places to avoid floating-point errors
+        tavg = 0.5 * (drv.TMIN + drv.TMAX)
+        srd = drv.IRRAD * 1e-6  # |Jm-2day-1| to (MJ/m2-d)
+        TMA[0] = (1.0 - ALBEDO) * (
+            tavg + (drv.TMAX - tavg) * math.sqrt(srd * 0.03)
+        ) + ALBEDO * TMA[
+            0
+        ]  # (°C)
+        TMA[0] = round(
+            TMA[0], 4
+        )  # Round to 4 decimal places to avoid floating-point errors
         ATOT = ATOT + TMA[0]
 
         WC = max(0.01, PESW) / (WW * CUMDPT) * 10.0  # Water content function (-)
-        FX = math.exp(B * ((1.0 - WC) / (1.0 + WC))**2)  # Exponential decay factor (-)
+        FX = math.exp(
+            B * ((1.0 - WC) / (1.0 + WC)) ** 2
+        )  # Exponential decay factor (-)
         DD = FX * DP  # Damping depth (mm)
 
         TA = p.TAV + p.TAMP * math.cos(ALX) / 2.0  # Daily normal temperature (°C)
         DT = ATOT / 5.0 - TA  # Temperature difference (°C)
-        
+
         ST = [0.0] * p.NLAYR
         for L in range(p.NLAYR):
             ZD = -DSMID[L] / DD  # Depth factor (-)
-            ST[L] = p.TAV + (p.TAMP / 2.0 * math.cos(ALX + ZD) + DT) * math.exp(ZD)  # Soil temperature in layer L (°C)
+            ST[L] = p.TAV + (p.TAMP / 2.0 * math.cos(ALX + ZD) + DT) * math.exp(
+                ZD
+            )  # Soil temperature in layer L (°C)
             ST[L] = round(ST[L], 3)  # Round to 3 decimal places
 
-        SRFTEMP = p.TAV + (p.TAMP / 2.0 * math.cos(ALX) + DT)  # Soil surface temperature (°C)
+        SRFTEMP = p.TAV + (
+            p.TAMP / 2.0 * math.cos(ALX) + DT
+        )  # Soil surface temperature (°C)
 
         s.ST = ST  # Update the ST array with the calculated soil temperatures
         s.SRFTEMP = SRFTEMP
-        
-        #s.ST = [20.0] * p.NLAYR
-    
+
+        # s.ST = [20.0] * p.NLAYR

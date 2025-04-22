@@ -17,25 +17,28 @@ from . import test_agromanager
 from . import test_wofost80
 from . import test_lintul3
 
+
 def make_test_suite(dsn=None):
-    """Assemble test suite and return it
-    """
-    allsuites = unittest.TestSuite([test_abioticdamage.suite(),
-                                    # test_assimilation.suite(),  # skip test because test inputs do not include TMIN
-                                    test_partitioning.suite(),
-                                    test_evapotranspiration.suite(),
-                                    test_respiration.suite(),
-                                    test_penmanmonteith.suite(),
-                                    test_agromanager.suite(),
-                                    test_wofost72.suite(dsn),
-                                    # test_lintul3.suite(),
-                                    # test_wofost80.suite()
-                                    ])
+    """Assemble test suite and return it"""
+    allsuites = unittest.TestSuite(
+        [
+            test_abioticdamage.suite(),
+            # test_assimilation.suite(),  # skip test because test inputs do not include TMIN
+            test_partitioning.suite(),
+            test_evapotranspiration.suite(),
+            test_respiration.suite(),
+            test_penmanmonteith.suite(),
+            test_agromanager.suite(),
+            test_wofost72.suite(dsn),
+            # test_lintul3.suite(),
+            # test_wofost80.suite()
+        ]
+    )
     return allsuites
 
+
 def test_all(dsn=None):
-    """Assemble test suite and run the test using the TextTestRunner
-    """
+    """Assemble test suite and run the test using the TextTestRunner"""
     allsuites = make_test_suite(dsn)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")

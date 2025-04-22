@@ -19,9 +19,13 @@ import yaml
 from ...base import WeatherDataProvider
 from ... import exceptions as exc
 from ...util import check_date
-from ..wofost_parameters import WOFOST_optional_parameters, WOFOST_parameter_codes_single, \
-    WOFOST_parameter_codes_tabular, WOFOST_parameters_additional, \
-    WOFOST_single2tabular
+from ..wofost_parameters import (
+    WOFOST_optional_parameters,
+    WOFOST_parameter_codes_single,
+    WOFOST_parameter_codes_tabular,
+    WOFOST_parameters_additional,
+    WOFOST_single2tabular,
+)
 
 
 def fetch_crop_name(HDFstore, crop_no):
@@ -47,7 +51,6 @@ def fetch_crop_name(HDFstore, crop_no):
 
 
 class WeatherObsGridDataProvider(WeatherDataProvider):
-
     def __init__(self, HDFstore=None, grid_no=None):
         WeatherDataProvider.__init__(self)
 
@@ -61,8 +64,10 @@ class WeatherObsGridDataProvider(WeatherDataProvider):
             raise RuntimeError(msg)
 
         # Read grid information and meteo time-series
-        self.df_grid = pd.read_hdf(self.HDFstore, '/grid', where="grid_no==%i" % grid_no)
-        self.df_meteo = pd.read_hdf(self.HDFstore, ('/%s/data' % grid_no))
+        self.df_grid = pd.read_hdf(
+            self.HDFstore, "/grid", where="grid_no==%i" % grid_no
+        )
+        self.df_meteo = pd.read_hdf(self.HDFstore, ("/%s/data" % grid_no))
 
         if len(self.df_grid) == 0:
             msg = "Cannot find grid_no == %i in grid table." % grid_no
@@ -73,11 +78,18 @@ class WeatherObsGridDataProvider(WeatherDataProvider):
         self.df_meteo["LAT"] = np.float32(self.df_grid.latitude.iloc[0])
         self.df_meteo["LON"] = np.float32(self.df_grid.longitude.iloc[0])
         self.df_meteo["ELEV"] = np.float32(self.df_grid.altitude.iloc[0])
-        self.df_meteo["DTEMP"] = (0.5 * (self.df_meteo.TEMP + self.df_meteo.TMAX)).astype(np.float32)
-        self.df_meteo["TMINRA"] = self.df_meteo.TMIN.rolling(7, min_periods=1).mean().astype(np.float32)
+        self.df_meteo["DTEMP"] = (
+            0.5 * (self.df_meteo.TEMP + self.df_meteo.TMAX)
+        ).astype(np.float32)
+        self.df_meteo["TMINRA"] = (
+            self.df_meteo.TMIN.rolling(7, min_periods=1).mean().astype(np.float32)
+        )
 
         # Metadata for weatherdataprovider
-        self.description = "Weather data for grid %i from HDF5 store: %s" % (grid_no, self.HDFstore)
+        self.description = "Weather data for grid %i from HDF5 store: %s" % (
+            grid_no,
+            self.HDFstore,
+        )
         self.latitude = float(self.df_grid.latitude)
         self.longitude = float(self.df_grid.longitude)
         self.elevation = float(self.df_grid.altitude)
@@ -95,11 +107,10 @@ class WeatherObsGridDataProvider(WeatherDataProvider):
         return list(df.itertuples())[0]
 
     def export(self):
-        return self.df_meteo.to_dict(orient='records')
+        return self.df_meteo.to_dict(orient="records")
 
 
 class CropDataProvider(dict):
-
     def __init__(self, HDFstore, grid_no, crop_no, campaign_year):
 
         self.HDFstore = os.path.abspath(HDFstore)
@@ -115,7 +126,11 @@ class CropDataProvider(dict):
         self.crop_name = fetch_crop_name(self.HDFstore, self.crop_no)
 
         # Read crop calendar for variety number
-        wh = "grid_no=%i and crop_no=%i and year=%i" % (self.grid_no, self.crop_no, self.campaign_year)
+        wh = "grid_no=%i and crop_no=%i and year=%i" % (
+            self.grid_no,
+            self.crop_no,
+            self.campaign_year,
+        )
         df_cc = pd.read_hdf(self.HDFstore, "/crop_calendar", where=wh)
         if len(df_cc) == 0:
             msg = "Cannot find crop calendar for: %s" % wh
@@ -158,8 +173,10 @@ class CropDataProvider(dict):
                     msg = "Failure retrieving parameter '%s'" % parcode
                     raise exc.WeatherDataProviderError(msg)
             if len(df) == 1:
-                msg = ("Single parameter value found for crop_no=%s, parameter_code='%s' while "
-                       "tabular parameter expected." % (self.crop_no, parcode))
+                msg = (
+                    "Single parameter value found for crop_no=%s, parameter_code='%s' while "
+                    "tabular parameter expected." % (self.crop_no, parcode)
+                )
                 raise exc.WeatherDataProviderError(msg)
             table = []
             for t in df.itertuples():
@@ -187,8 +204,10 @@ class CropDataProvider(dict):
             if len(df) == 0:
                 continue
             if len(df) == 1:
-                msg = ("Single parameter value found for crop_no=%s, parameter_code='%s' while "
-                       "tabular parameter expected." % (self.crop_no, parcode))
+                msg = (
+                    "Single parameter value found for crop_no=%s, parameter_code='%s' while "
+                    "tabular parameter expected." % (self.crop_no, parcode)
+                )
                 raise exc.WeatherDataProviderError(msg)
             table = []
             for t in df.itertuples():
@@ -196,8 +215,7 @@ class CropDataProvider(dict):
             self[parcode] = table
 
     def _convert_single2tabular(self, parameter_code, pvalue):
-        """Converts the single parameter into a tabular parameter.
-        """
+        """Converts the single parameter into a tabular parameter."""
         tabular_parameter_code, template = WOFOST_single2tabular[parameter_code]
         tabular_values = [pvalue if v is None else v for v in template]
 
@@ -218,13 +236,15 @@ class SoilDataProviderSingleLayer(dict):
     to field capacity (SMFCF)
     """
 
-    soil_parameters = [("CRAIRC", "CRITICAL_AIR_CONTENT"),
-                       ("K0", "HYDR_CONDUCT_SATUR"),
-                       ("SOPE", "MAX_PERCOL_ROOT_ZONE"),
-                       ("KSUB", "MAX_PERCOL_SUBSOIL"),
-                       ("SMFCF", "SOIL_MOISTURE_CONTENT_FC"),
-                       ("SM0", "SOIL_MOISTURE_CONTENT_SAT"),
-                       ("SMW", "SOIL_MOISTURE_CONTENT_WP")]
+    soil_parameters = [
+        ("CRAIRC", "CRITICAL_AIR_CONTENT"),
+        ("K0", "HYDR_CONDUCT_SATUR"),
+        ("SOPE", "MAX_PERCOL_ROOT_ZONE"),
+        ("KSUB", "MAX_PERCOL_SUBSOIL"),
+        ("SMFCF", "SOIL_MOISTURE_CONTENT_FC"),
+        ("SM0", "SOIL_MOISTURE_CONTENT_SAT"),
+        ("SMW", "SOIL_MOISTURE_CONTENT_WP"),
+    ]
 
     def __init__(self, HDFstore, stu_no):
         dict.__init__(self)
@@ -248,7 +268,7 @@ class SoilDataProviderSingleLayer(dict):
         wh = "stu_no = %i" % stu_no
         df = pd.read_hdf(self.HDFstore, "/soil_typologic_unit", where=wh)
         if len(df) == 0:
-            msg = ("No record found for stu_no=%i in table SOIL_TYPOLOGIC_UNIT." % stu_no)
+            msg = "No record found for stu_no=%i in table SOIL_TYPOLOGIC_UNIT." % stu_no
             raise exc.PCSEError(msg)
         soil_group_no = int(df.soil_group_no.iloc[0])
         rd_class = int(df.calculated_rooting_depth.iloc[0])
@@ -270,7 +290,10 @@ class SoilDataProviderSingleLayer(dict):
             if t[0] == rd_class:
                 break
         else:
-            msg = ("No record found for rooting depth class %i in table ROOTING_DEPTH." % rd_class)
+            msg = (
+                "No record found for rooting depth class %i in table ROOTING_DEPTH."
+                % rd_class
+            )
             raise exc.PCSEError(msg)
 
         self["RDMSOL"] = t.min_depth
@@ -283,10 +306,12 @@ class SoilDataProviderSingleLayer(dict):
 
         wh = "soil_group_no = %i" % spg_no
         df = pd.read_hdf(self.HDFstore, "/soil_physical_group", where=wh)
-        for (wofost_soil_par, db_soil_par) in self.soil_parameters:
+        for wofost_soil_par, db_soil_par in self.soil_parameters:
             dfs = df[df.parameter_code == db_soil_par]
             if len(dfs) == 0:
-                msg = "Parameter %s not found in table SOIL_PHYSICAL_GROUP" % db_soil_par
+                msg = (
+                    "Parameter %s not found in table SOIL_PHYSICAL_GROUP" % db_soil_par
+                )
                 raise exc.PCSEError(msg)
             self[wofost_soil_par] = dfs.parameter_xvalue.iloc[0]
 
@@ -312,6 +337,7 @@ class AgroManagementDataProvider(list):
     For adjusting the campaign_start_Date, see also the `set_campaign_start_date(date)` method
     to update the campaign_start_date on an existing AgroManagementDataProvider.
     """
+
     agro_management_template = """
           - {campaign_start_date}:
                 CropCalendar:
@@ -338,7 +364,11 @@ class AgroManagementDataProvider(list):
         self.crop_name = fetch_crop_name(self.HDFstore, self.crop_no)
 
         # Read crop calendar
-        wh = "grid_no=%i and crop_no=%i and year=%i" % (self.grid_no, self.crop_no, self.campaign_year)
+        wh = "grid_no=%i and crop_no=%i and year=%i" % (
+            self.grid_no,
+            self.crop_no,
+            self.campaign_year,
+        )
         df = pd.read_hdf(self.HDFstore, "/crop_calendar", where=wh)
         if len(df) == 0:
             msg = "Failed deriving crop calendar for %s" % wh
@@ -367,8 +397,10 @@ class AgroManagementDataProvider(list):
                 if campaign_start <= self.crop_start_date:
                     self.campaign_start_date = campaign_start
                 else:
-                    msg = "Date (%s) specified by keyword 'campaign_start' in call to AgroManagementDataProvider " \
-                          "is later then crop_start_date defined in the CGMS database."
+                    msg = (
+                        "Date (%s) specified by keyword 'campaign_start' in call to AgroManagementDataProvider "
+                        "is later then crop_start_date defined in the CGMS database."
+                    )
                     raise exc.PCSEError(msg % campaign_start)
             except KeyError as e:
                 msg = "Value (%s) of keyword 'campaign_start' not recognized in call to AgroManagementDataProvider."
@@ -377,8 +409,10 @@ class AgroManagementDataProvider(list):
         # Determine crop end date/type and the end of the campaign
         self.crop_end_type = str(df.end_type.iloc[0]).strip().lower()
         if self.crop_end_type not in ["harvest", "earliest", "maturity"]:
-            msg = ("Unrecognized option for END_TYPE in table "
-                   "CROP_CALENDAR: %s" % self.crop_end_type)
+            msg = (
+                "Unrecognized option for END_TYPE in table "
+                "CROP_CALENDAR: %s" % self.crop_end_type
+            )
             raise exc.PCSEError(msg)
 
         # Determine maximum duration of the crop
@@ -386,7 +420,9 @@ class AgroManagementDataProvider(list):
         if self.crop_end_type == "maturity":
             self.crop_end_date = "null"
             self.max_duration = int(df.max_duration.iloc[0])
-            self.campaign_end_date = self.crop_start_date + dt.timedelta(days=self.max_duration)
+            self.campaign_end_date = self.crop_start_date + dt.timedelta(
+                days=self.max_duration
+            )
         else:
             self.crop_end_date = check_date(df.end_date.iloc[0])
             self.campaign_end_date = self.crop_end_date
@@ -400,16 +436,17 @@ class AgroManagementDataProvider(list):
         # We do not get a variety_name from the CGMS database, so we make one
         # as <crop_name>_<grid>_<year>
         variety_name = "%s_%s_%s" % (self.crop_name, self.grid_no, self.campaign_year)
-        input = self.agro_management_template.format(campaign_start_date=self.campaign_start_date,
-                                                     crop_name=self.crop_name,
-                                                     variety_name=variety_name,
-                                                     crop_start_date=self.crop_start_date,
-                                                     crop_start_type=self.crop_start_type,
-                                                     crop_end_date=self.crop_end_date,
-                                                     crop_end_type=self.crop_end_type,
-                                                     max_duration=self.max_duration,
-                                                     campaign_end_date=self.campaign_end_date
-                                                     )
+        input = self.agro_management_template.format(
+            campaign_start_date=self.campaign_start_date,
+            crop_name=self.crop_name,
+            variety_name=variety_name,
+            crop_start_date=self.crop_start_date,
+            crop_start_type=self.crop_start_type,
+            crop_end_date=self.crop_end_date,
+            crop_end_type=self.crop_end_type,
+            max_duration=self.max_duration,
+            campaign_end_date=self.campaign_end_date,
+        )
         return input
 
     def _parse_yaml(self, input):
@@ -433,8 +470,12 @@ class AgroManagementDataProvider(list):
         self._parse_yaml(input)
 
     def __str__(self):
-        msg1 = ("Agromanagement data for crop/grid/year (%s/%i/%i) derived from: %s" %
-               (self.crop_name, self.grid_no, self.campaign_year, self.HDFstore))
+        msg1 = "Agromanagement data for crop/grid/year (%s/%i/%i) derived from: %s" % (
+            self.crop_name,
+            self.grid_no,
+            self.campaign_year,
+            self.HDFstore,
+        )
         msg2 = self._build_yaml_agromanagement()
         msg = "  %s:\n %s" % (msg1, msg2)
         return msg
@@ -499,8 +540,12 @@ class SiteDataProvider(dict):
         self.stu_no = int(stu_no)
         self.crop_name = fetch_crop_name(self.HDFstore, self.crop_no)
 
-        wh = "grid_no=%i and crop_no=%i and year=%i and stu_no=%i" % \
-             (self.grid_no, self.crop_no, self.campaign_year, self.stu_no)
+        wh = "grid_no=%i and crop_no=%i and year=%i and stu_no=%i" % (
+            self.grid_no,
+            self.crop_no,
+            self.campaign_year,
+            self.stu_no,
+        )
         df = pd.read_hdf(self.HDFstore, "/initial_soil_water", where=wh)
         if len(df) == 0:
             msg = "Failed retrieving site data for %s" % wh
@@ -511,7 +556,10 @@ class SiteDataProvider(dict):
 
         # Raise an error in case simulation with ground water influence
         if int(df.zti.iloc[0]) != 999 or int(df.dd.iloc[0]) != 999:
-            msg = ("Simulation with ground water for %s. Not implemented in PCSE/WOFOST (yet)." % wh)
+            msg = (
+                "Simulation with ground water for %s. Not implemented in PCSE/WOFOST (yet)."
+                % wh
+            )
             raise exc.PCSEError(msg)
 
         # Start date water balance
@@ -522,12 +570,21 @@ class SiteDataProvider(dict):
         self["IFUNRN"] = int(df_site.ifunrn.iloc[0])
         self["NOTINF"] = float(df_site.notinf.iloc[0])
         self["SSMAX"] = float(df_site.max_surface_storage.iloc[0])
-        self["SSI"] = 0.
+        self["SSI"] = 0.0
 
     def __str__(self):
-        msg = ("Site parameter values for grid_no=%s, crop_no=%s (%s), stu_no=%s, "
-               "campaign_year=%i derived from %s\n" % (self.grid_no, self.crop_no,
-                self.crop_name, self.stu_no, self.campaign_year, self.HDFstore))
+        msg = (
+            "Site parameter values for grid_no=%s, crop_no=%s (%s), stu_no=%s, "
+            "campaign_year=%i derived from %s\n"
+            % (
+                self.grid_no,
+                self.crop_no,
+                self.crop_name,
+                self.stu_no,
+                self.campaign_year,
+                self.HDFstore,
+            )
+        )
         msg += "    %s" % dict.__str__(self)
 
         return msg
@@ -582,8 +639,10 @@ class SoilDataIterator(list):
         wh = "grid_no = %i" % self.grid_no
         df_emu = pd.read_hdf(self.HDFstore, "/%s" % self.emu_table_name, where=wh)
         if len(df_emu) == 0:
-            msg = ("No soil mapping units (SMU) found for grid_no=%i "
-                   "in table %s" % (self.grid_no, self.emu_table_name))
+            msg = "No soil mapping units (SMU) found for grid_no=%i " "in table %s" % (
+                self.grid_no,
+                self.emu_table_name,
+            )
             raise exc.PCSEError(msg)
 
         return df_emu.itertuples(index=False)
@@ -601,9 +660,11 @@ class SoilDataIterator(list):
         return df.itertuples(index=False)
 
     def __str__(self):
-        msg = "Soil data for grid_no=%i derived from %s\n" % (self.grid_no, self.HDFstore)
+        msg = "Soil data for grid_no=%i derived from %s\n" % (
+            self.grid_no,
+            self.HDFstore,
+        )
         template = "  smu_no=%i, area=%.0f, stu_no=%i covering %i%% of smu.\n    Soil parameters %s\n"
         for t in self:
             msg += template % t
         return msg
-

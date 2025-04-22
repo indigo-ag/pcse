@@ -9,6 +9,7 @@ when creating PCSE simulation units.
 import sys
 import logging
 from collections import Counter
+
 if sys.version_info > (3, 8):
     from collections.abc import MutableMapping
 else:
@@ -34,6 +35,7 @@ class ParameterProvider(MutableMapping):
 
     See also the `MultiCropDataProvider`
     """
+
     _maps = list()
     _sitedata = dict()
     _soildata = dict()
@@ -41,7 +43,9 @@ class ParameterProvider(MutableMapping):
     _timerdata = dict()
     _override = dict()
     _iter = 0  # Counter for iterator
-    _ncrops_activated = 0  # Counts the number of times `set_crop_type()` has been called.
+    _ncrops_activated = (
+        0  # Counts the number of times `set_crop_type()` has been called.
+    )
 
     def __init__(self, sitedata=None, timerdata=None, soildata=None, cropdata=None):
         if sitedata is not None:
@@ -61,10 +65,22 @@ class ParameterProvider(MutableMapping):
         else:
             self._timerdata = {}
         self._override = {}
-        self._maps = [self._override, self._sitedata, self._timerdata, self._soildata, self._cropdata]
+        self._maps = [
+            self._override,
+            self._sitedata,
+            self._timerdata,
+            self._soildata,
+            self._cropdata,
+        ]
         self._test_uniqueness()
 
-    def set_active_crop(self, crop_name=None, variety_name=None, crop_start_type=None, crop_end_type=None):
+    def set_active_crop(
+        self,
+        crop_name=None,
+        variety_name=None,
+        crop_start_type=None,
+        crop_end_type=None,
+    ):
         """Activate the crop parameters for the given crop_name and variety_name.
 
         :param crop_name: string identifying the crop name, is ignored as only
@@ -103,9 +119,11 @@ class ParameterProvider(MutableMapping):
                 pass
             else:
                 # has been called multiple times
-                msg = "A second crop was scheduled: however, the CropDataProvider does not " \
-                      "support multiple crop parameter sets. This will only work for crop" \
-                      "rotations with the same crop."
+                msg = (
+                    "A second crop was scheduled: however, the CropDataProvider does not "
+                    "support multiple crop parameter sets. This will only work for crop"
+                    "rotations with the same crop."
+                )
                 self.logger.warning(msg)
 
         self._ncrops_activated += 1
@@ -113,12 +131,11 @@ class ParameterProvider(MutableMapping):
 
     @property
     def logger(self):
-        loggername = "%s.%s" % (self.__class__.__module__,
-                                self.__class__.__name__)
+        loggername = "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
         return logging.getLogger(loggername)
 
     def set_override(self, varname, value, check=True):
-        """"Override the value of parameter varname in the parameterprovider.
+        """ "Override the value of parameter varname in the parameterprovider.
 
         Overriding the value of particular parameter is often useful for example
         when running for different sets of parameters or for calibration
@@ -132,7 +149,9 @@ class ParameterProvider(MutableMapping):
             if varname in self:
                 self._override[varname] = value
             else:
-                msg = "Cannot override '%s', parameter does not already exist." % varname
+                msg = (
+                    "Cannot override '%s', parameter does not already exist." % varname
+                )
                 raise exc.PCSEError(msg)
         else:
             self._override[varname] = value
@@ -159,7 +178,12 @@ class ParameterProvider(MutableMapping):
         is specifically meant for overriding parameters.
         """
         parnames = []
-        for mapping in [self._sitedata, self._timerdata, self._soildata, self._cropdata]:
+        for mapping in [
+            self._sitedata,
+            self._timerdata,
+            self._soildata,
+            self._cropdata,
+        ]:
             parnames.extend(mapping.keys())
         unique = Counter(parnames)
         for parname, count in unique.items():
@@ -215,8 +239,11 @@ class ParameterProvider(MutableMapping):
         if key in self:
             self._override[key] = value
         else:
-            msg = "Cannot override parameter '%s', parameter does not exist. " \
-                  "to bypass this check use: set_override(parameter, value, check=False)" % key
+            msg = (
+                "Cannot override parameter '%s', parameter does not exist. "
+                "to bypass this check use: set_override(parameter, value, check=False)"
+                % key
+            )
             raise exc.PCSEError(msg)
 
     def __delitem__(self, key):
@@ -253,7 +280,6 @@ class ParameterProvider(MutableMapping):
 
 
 class MultiCropDataProvider(dict):
-
     def __init__(self):
         dict.__init__(self)
         self._store = {}
@@ -263,7 +289,8 @@ class MultiCropDataProvider(dict):
 
         Needs to be implemented by each subclass of MultiCropDataProvider
         """
-        msg = "'set_crop_type' method should be implemented specifically for each" \
-              "subclass of MultiCropDataProvider."
+        msg = (
+            "'set_crop_type' method should be implemented specifically for each"
+            "subclass of MultiCropDataProvider."
+        )
         raise NotImplementedError(msg)
-

@@ -5,31 +5,37 @@
 from ..traitlets import Float, Int, Instance
 from ..decorators import prepare_rates, prepare_states
 from ..util import limit
-from ..base import ParamTemplate, StatesTemplate, RatesTemplate, \
-    SimulationObject, VariableKiosk
+from ..base import (
+    ParamTemplate,
+    StatesTemplate,
+    RatesTemplate,
+    SimulationObject,
+    VariableKiosk,
+)
+
 
 class WOFOST_Storage_Organ_Dynamics(SimulationObject):
     """Implementation of storage organ dynamics.
-    
+
     Storage organs are the most simple component of the plant in WOFOST and
     consist of a static pool of biomass. Growth of the storage organs is the
     result of assimilate partitioning. Death of storage organs is not
     implemented and the corresponding rate variable (DRSO) is always set to
     zero.
-    
+
     Pods are green elements of the plant canopy and can as such contribute
     to the total photosynthetic active area. This is expressed as the Pod
     Area Index which is obtained by multiplying pod biomass with a fixed
     Specific Pod Area (SPA).
 
     **Simulation parameters**
-    
+
     =======  ============================================= =======  ============
      Name     Description                                   Type     Unit
     =======  ============================================= =======  ============
     TDWI     Initial total crop dry weight                  SCr      |kg ha-1|
     SPA      Specific Pod Area                              SCr      |ha kg-1|
-    =======  ============================================= =======  ============    
+    =======  ============================================= =======  ============
 
     **State variables**
 
@@ -51,38 +57,38 @@ class WOFOST_Storage_Organ_Dynamics(SimulationObject):
     DRSO     Death rate storage organs                          N   |kg ha-1 d-1|
     GWSO     Net change in storage organ biomass                N   |kg ha-1 d-1|
     =======  ================================================= ==== ============
-    
+
     **Signals send or handled**
-    
+
     None
-    
+
     **External dependencies**
-    
+
     =======  =================================== =================  ============
      Name     Description                         Provided by         Unit
     =======  =================================== =================  ============
     ADMI     Above-ground dry matter             CropSimulation     |kg ha-1 d-1|
              increase
-    FO       Fraction biomass to storage organs  DVS_Partitioning    - 
-    FR       Fraction biomass to roots           DVS_Partitioning    - 
+    FO       Fraction biomass to storage organs  DVS_Partitioning    -
+    FR       Fraction biomass to roots           DVS_Partitioning    -
     =======  =================================== =================  ============
     """
 
-    class Parameters(ParamTemplate):      
-        SPA  = Float(-99.)
-        TDWI = Float(-99.)
+    class Parameters(ParamTemplate):
+        SPA = Float(-99.0)
+        TDWI = Float(-99.0)
 
     class StateVariables(StatesTemplate):
-        WSO  = Float(-99.) # Weight living storage organs
-        DWSO = Float(-99.) # Weight dead storage organs
-        TWSO = Float(-99.) # Total weight storage organs
-        PAI  = Float(-99.) # Pod Area Index
+        WSO = Float(-99.0)  # Weight living storage organs
+        DWSO = Float(-99.0)  # Weight dead storage organs
+        TWSO = Float(-99.0)  # Total weight storage organs
+        PAI = Float(-99.0)  # Pod Area Index
 
     class RateVariables(RatesTemplate):
-        GRSO = Float(-99.)
-        DRSO = Float(-99.)
-        GWSO = Float(-99.)
-        
+        GRSO = Float(-99.0)
+        DRSO = Float(-99.0)
+        GWSO = Float(-99.0)
+
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
@@ -92,30 +98,35 @@ class WOFOST_Storage_Organ_Dynamics(SimulationObject):
         """
 
         self.params = self.Parameters(parvalues)
-        self.rates  = self.RateVariables(kiosk)
+        self.rates = self.RateVariables(kiosk)
         self.kiosk = kiosk
-        
+
         # INITIAL STATES
         params = self.params
         # Initial storage organ biomass
         FO = self.kiosk["FO"]
         FR = self.kiosk["FR"]
-        WSO  = (params.TDWI * (1-FR)) * FO
-        DWSO = 0.
+        WSO = (params.TDWI * (1 - FR)) * FO
+        DWSO = 0.0
         TWSO = WSO + DWSO
         # Initial Pod Area Index
         PAI = WSO * params.SPA
 
-        self.states = self.StateVariables(kiosk, publish=["TWSO","WSO","PAI"],
-                                          WSO=WSO, DWSO=DWSO, TWSO=TWSO,
-                                          PAI=PAI)
+        self.states = self.StateVariables(
+            kiosk,
+            publish=["TWSO", "WSO", "PAI"],
+            WSO=WSO,
+            DWSO=DWSO,
+            TWSO=TWSO,
+            PAI=PAI,
+        )
 
     @prepare_rates
     def calc_rates(self, day, drv):
-        rates  = self.rates
+        rates = self.rates
         states = self.states
         params = self.params
-        
+
         FO = self.kiosk["FO"]
         ADMI = self.kiosk["ADMI"]
 
@@ -147,7 +158,5 @@ class WOFOST_Storage_Organ_Dynamics(SimulationObject):
         s.TWSO = s.DWSO + nWSO
         s.PAI = s.WSO * p.SPA
 
-        increments = {"WSO": s.WSO - oWSO,
-                      "PAI": s.PAI - oPAI,
-                      "TWSO": s.TWSO - oTWSO}
+        increments = {"WSO": s.WSO - oWSO, "PAI": s.PAI - oPAI, "TWSO": s.TWSO - oTWSO}
         return increments

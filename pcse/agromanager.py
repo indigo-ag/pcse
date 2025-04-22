@@ -18,12 +18,19 @@ from datetime import date, timedelta
 import logging
 from collections import Counter
 
-from .base import DispatcherObject, VariableKiosk, SimulationObject, ParameterProvider, AncillaryObject
+from .base import (
+    DispatcherObject,
+    VariableKiosk,
+    SimulationObject,
+    ParameterProvider,
+    AncillaryObject,
+)
 from .traitlets import HasTraits, Float, Int, Instance, Enum, Bool, List, Dict, Unicode
 from . import exceptions as exc
 from .util import ConfigurationLoader
 from . import signals
 from . import exceptions as exc
+
 
 def cmp2(x, y):
     """
@@ -32,6 +39,7 @@ def cmp2(x, y):
     Surrogate for cmp() function in Python2
     """
     return (x > y) - (x < y)
+
 
 def check_date_range(day, start, end):
     """returns True if start <= day < end
@@ -48,11 +56,10 @@ def check_date_range(day, start, end):
         return start <= day
     else:
         return start <= day < end
-        
+
 
 def take_first(iterator):
-    """Return the first item of the given iterator.
-    """
+    """Return the first item of the given iterator."""
     for item in iterator:
         return item
 
@@ -101,12 +108,20 @@ class CropCalendar(HasTraits, DispatcherObject):
     duration = Int(0)
     in_crop_cycle = Bool(False)
 
-    def __init__(self, kiosk, crop_name=None, variety_name=None, crop_start_date=None,
-                 crop_start_type=None, crop_end_date=None, crop_end_type=None, max_duration=None):
+    def __init__(
+        self,
+        kiosk,
+        crop_name=None,
+        variety_name=None,
+        crop_start_date=None,
+        crop_start_type=None,
+        crop_end_date=None,
+        crop_end_type=None,
+        max_duration=None,
+    ):
 
         # set up logging
-        loggername = "%s.%s" % (self.__class__.__module__,
-                                self.__class__.__name__)
+        loggername = "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
 
         self.logger = logging.getLogger(loggername)
         self.kiosk = kiosk
@@ -137,11 +152,20 @@ class CropCalendar(HasTraits, DispatcherObject):
             raise exc.PCSEError(msg % (self.crop_start_date, self.crop_end_date))
 
         # check that crop_start_date is within the campaign interval
-        r = check_date_range(self.crop_start_date, campaign_start_date, next_campaign_start_date)
+        r = check_date_range(
+            self.crop_start_date, campaign_start_date, next_campaign_start_date
+        )
         if r is not True:
-            msg = "Start date (%s) for crop '%s' vareity '%s' not within campaign window (%s - %s)." % \
-                  (self.crop_start_date, self.crop_name, self.variety_name,
-                   campaign_start_date, next_campaign_start_date)
+            msg = (
+                "Start date (%s) for crop '%s' vareity '%s' not within campaign window (%s - %s)."
+                % (
+                    self.crop_start_date,
+                    self.crop_name,
+                    self.variety_name,
+                    campaign_start_date,
+                    next_campaign_start_date,
+                )
+            )
             raise exc.PCSEError(msg)
 
     def __call__(self, day):
@@ -159,11 +183,20 @@ class CropCalendar(HasTraits, DispatcherObject):
         if day == self.crop_start_date:  # Start a new crop
             self.duration = 0
             self.in_crop_cycle = True
-            msg = "Starting crop (%s) with variety (%s) on day %s" % (self.crop_name, self.variety_name, day)
+            msg = "Starting crop (%s) with variety (%s) on day %s" % (
+                self.crop_name,
+                self.variety_name,
+                day,
+            )
             self.logger.info(msg)
-            self._send_signal(signal=signals.crop_start, day=day, crop_name=self.crop_name,
-                              variety_name=self.variety_name, crop_start_type=self.crop_start_type,
-                              crop_end_type=self.crop_end_type)
+            self._send_signal(
+                signal=signals.crop_start,
+                day=day,
+                crop_name=self.crop_name,
+                variety_name=self.variety_name,
+                crop_start_type=self.crop_start_type,
+                crop_end_type=self.crop_end_type,
+            )
 
         # end of the crop cycle
         finish_type = None
@@ -180,12 +213,15 @@ class CropCalendar(HasTraits, DispatcherObject):
         # If finish condition is reached send a signal to finish the crop
         if finish_type is not None:
             self.in_crop_cycle = False
-            self._send_signal(signal=signals.crop_finish, day=day,
-                              finish_type=finish_type, crop_delete=True)
+            self._send_signal(
+                signal=signals.crop_finish,
+                day=day,
+                finish_type=finish_type,
+                crop_delete=True,
+            )
 
     def _on_CROP_FINISH(self):
-        """Register that crop has reached the end of its cycle.
-        """
+        """Register that crop has reached the end of its cycle."""
         self.in_crop_cycle = False
 
     def get_end_date(self):
@@ -196,7 +232,7 @@ class CropCalendar(HasTraits, DispatcherObject):
 
         :return: a date object
         """
-        if self.crop_end_type in ["harvest", 'earliest']:
+        if self.crop_end_type in ["harvest", "earliest"]:
             return self.crop_end_date
         else:
             return self.crop_start_date + timedelta(days=self.max_duration)
@@ -241,6 +277,7 @@ class TimedEventsDispatcher(HasTraits, DispatcherObject):
     for each date the parameters that should be dispatched with the given
     event_signal.
     """
+
     event_signal = None
     events_table = List()
     days_with_events = Instance(Counter)
@@ -262,8 +299,7 @@ class TimedEventsDispatcher(HasTraits, DispatcherObject):
         """
 
         # set up logging
-        loggername = "%s.%s" % (self.__class__.__module__,
-                                self.__class__.__name__)
+        loggername = "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
         self.logger = logging.getLogger(loggername)
 
         self.kiosk = kiosk
@@ -303,8 +339,11 @@ class TimedEventsDispatcher(HasTraits, DispatcherObject):
             day = list(event.keys())[0]
             r = check_date_range(day, campaign_start_date, next_campaign_start_date)
             if r is not True:
-                msg = "Timed event at day %s not in campaign interval (%s - %s)" %\
-                      (day, campaign_start_date, next_campaign_start_date)
+                msg = "Timed event at day %s not in campaign interval (%s - %s)" % (
+                    day,
+                    campaign_start_date,
+                    next_campaign_start_date,
+                )
                 raise exc.PCSEError(msg)
 
     def __call__(self, day):
@@ -321,13 +360,12 @@ class TimedEventsDispatcher(HasTraits, DispatcherObject):
                 msg = "Time event dispatched from '%s' at day %s" % (self.name, day)
                 self.logger.info(msg)
                 kwargs = event[day]
-                kwargs['day'] = day
-         
+                kwargs["day"] = day
+
                 self._send_signal(signal=self.event_signal, **kwargs)
 
     def get_end_date(self):
-        """Returns the last date for which a timed event is given
-        """
+        """Returns the last date for which a timed event is given"""
         return max(self.days_with_events)
 
 
@@ -390,9 +428,10 @@ class StateEventsDispatcher(HasTraits, DispatcherObject):
     the irrigation amount increase the soil moisture and (`model_state` - `event_state`) crosses zero again
     but from the other direction.
     """
+
     event_signal = None
     event_state = Unicode()
-    zero_condition = Enum(['rising', 'falling', 'either'])
+    zero_condition = Enum(["rising", "falling", "either"])
     events_table = List()
     kiosk = Instance(VariableKiosk)
     logger = Instance(logging.Logger)
@@ -400,8 +439,16 @@ class StateEventsDispatcher(HasTraits, DispatcherObject):
     comment = Unicode()
     previous_signs = List()
 
-    def __init__(self, kiosk, event_signal, event_state, zero_condition, name,
-                 comment, events_table):
+    def __init__(
+        self,
+        kiosk,
+        event_signal,
+        event_state,
+        zero_condition,
+        name,
+        comment,
+        events_table,
+    ):
         """Initialising a StateEventDispatcher
 
         :param kiosk: an instance of the VariableKiosk
@@ -416,8 +463,7 @@ class StateEventsDispatcher(HasTraits, DispatcherObject):
         """
 
         # set up logging
-        loggername = "%s.%s" % (self.__class__.__module__,
-                                self.__class__.__name__)
+        loggername = "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
         self.logger = logging.getLogger(loggername)
 
         self.kiosk = kiosk
@@ -428,16 +474,16 @@ class StateEventsDispatcher(HasTraits, DispatcherObject):
         self.comment = comment
 
         # assign evaluation function for states
-        if self.zero_condition == 'falling':
+        if self.zero_condition == "falling":
             self._evaluate_state = self._zero_condition_falling
-        elif self.zero_condition == 'rising':
+        elif self.zero_condition == "rising":
             self._evaluate_state = self._zero_condition_rising
-        elif self.zero_condition == 'either':
+        elif self.zero_condition == "either":
             self._evaluate_state = self._zero_condition_either
 
         # assign Nones to self.zero_condition_signs to signal
         # that the sign have not yet been evaluated
-        self.previous_signs = [None]*len(self.events_table)
+        self.previous_signs = [None] * len(self.events_table)
 
         # get signal from signals module
         if not hasattr(signals, event_signal):
@@ -477,12 +523,15 @@ class StateEventsDispatcher(HasTraits, DispatcherObject):
         zero_condition_signs = []
         for event, zero_condition_sign in zip(self.events_table, self.previous_signs):
             state, keywords = take_first(event.items())
-            zcs = self._evaluate_state(current_state, state, keywords, zero_condition_sign)
+            zcs = self._evaluate_state(
+                current_state, state, keywords, zero_condition_sign
+            )
             zero_condition_signs.append(zcs)
         self.previous_signs = zero_condition_signs
 
-
-    def _zero_condition_falling(self, current_state, state, keywords, zero_condition_sign):
+    def _zero_condition_falling(
+        self, current_state, state, keywords, zero_condition_sign
+    ):
         sign = cmp2(current_state - state, 0)
 
         # is None: e.g. called the first time and zero_condition_sign is not yet calculated
@@ -490,7 +539,10 @@ class StateEventsDispatcher(HasTraits, DispatcherObject):
             return sign
 
         if zero_condition_sign == 1 and sign in [-1, 0]:
-            msg = "State event dispatched from '%s' at event_state %s" % (self.name, state)
+            msg = "State event dispatched from '%s' at event_state %s" % (
+                self.name,
+                state,
+            )
             self.logger.info(msg)
             self._send_signal(signal=self.event_signal, **keywords)
 
@@ -504,22 +556,31 @@ class StateEventsDispatcher(HasTraits, DispatcherObject):
             return sign
 
         if zero_condition_sign == -1 and sign in [0, 1]:
-            msg = "State event dispatched from '%s' at model state %s" % (self.name, current_state)
+            msg = "State event dispatched from '%s' at model state %s" % (
+                self.name,
+                current_state,
+            )
             self.logger.info(msg)
             self._send_signal(signal=self.event_signal, **kwargs)
 
         return sign
 
-    def _zero_condition_either(self, current_state, state, keywords, zero_condition_sign):
+    def _zero_condition_either(
+        self, current_state, state, keywords, zero_condition_sign
+    ):
         sign = cmp2(current_state - state, 0)
 
         # is None: e.g. called the first time and zero_condition_sign is not yet calculated
         if zero_condition_sign is None:
             return sign
 
-        if (zero_condition_sign == 1 and sign in [-1, 0]) or \
-           (zero_condition_sign == -1 and sign in [0, 1]):
-            msg = "State event dispatched from %s at event_state %s" % (self.name, state)
+        if (zero_condition_sign == 1 and sign in [-1, 0]) or (
+            zero_condition_sign == -1 and sign in [0, 1]
+        ):
+            msg = "State event dispatched from %s at event_state %s" % (
+                self.name,
+                state,
+            )
             self.logger.info(msg)
             self._send_signal(signal=self.event_signal, **keywords)
 
@@ -637,7 +698,6 @@ class AgroManager(AncillaryObject):
         :param agromanagement: the agromanagement definition, see the example above in YAML.
         """
 
-
         self.kiosk = kiosk
         self.crop_calendars = []
         self.timed_event_dispatchers = []
@@ -665,20 +725,25 @@ class AgroManager(AncillaryObject):
 
         # Walk through the different campaigns and build crop calendars and
         # timed/state event dispatchers
-        for campaign, campaign_start, next_campaign in \
-                zip(agromanagement, self.campaign_start_dates[:-1], self.campaign_start_dates[1:]):
+        for campaign, campaign_start, next_campaign in zip(
+            agromanagement,
+            self.campaign_start_dates[:-1],
+            self.campaign_start_dates[1:],
+        ):
 
             # Get the campaign definition for the start date
             campaign_def = campaign[campaign_start]
 
-            if self._is_empty_campaign(campaign_def):  # no campaign definition for this campaign, e.g. fallow
+            if self._is_empty_campaign(
+                campaign_def
+            ):  # no campaign definition for this campaign, e.g. fallow
                 self.crop_calendars.append(None)
                 self.timed_event_dispatchers.append(None)
                 self.state_event_dispatchers.append(None)
                 continue
 
             # get crop calendar definition for this campaign
-            cc_def = campaign_def['CropCalendar']
+            cc_def = campaign_def["CropCalendar"]
             if cc_def is not None:
                 cc = CropCalendar(kiosk, **cc_def)
                 cc.validate(campaign_start, next_campaign)
@@ -687,7 +752,7 @@ class AgroManager(AncillaryObject):
                 self.crop_calendars.append(None)
 
             # Get definition of timed events and build TimedEventsDispatchers
-            te_def = campaign_def['TimedEvents']
+            te_def = campaign_def["TimedEvents"]
             if te_def is not None:
                 te_dsp = self._build_TimedEventDispatchers(kiosk, te_def)
                 for te in te_dsp:
@@ -697,7 +762,7 @@ class AgroManager(AncillaryObject):
                 self.timed_event_dispatchers.append(None)
 
             # Get definition of state events and build StateEventsDispatchers
-            se_def = campaign_def['StateEvents']
+            se_def = campaign_def["StateEvents"]
             if se_def is not None:
                 se_dsp = self._build_StateEventDispatchers(kiosk, se_def)
                 self.state_event_dispatchers.append(se_dsp)
@@ -705,7 +770,7 @@ class AgroManager(AncillaryObject):
                 self.state_event_dispatchers.append(None)
 
     def _is_empty_campaign(self, campaign_def):
-        """"Check if the campaign definition is empty"""
+        """ "Check if the campaign definition is empty"""
 
         if campaign_def is None:
             return True
@@ -718,7 +783,7 @@ class AgroManager(AncillaryObject):
                     r.append(True)
                 else:
                     r.append(False)
-        if r == [True]*3:
+        if r == [True] * 3:
             return True
 
         return False
@@ -827,19 +892,25 @@ class AgroManager(AncillaryObject):
         if self._end_date is None:
 
             # First check if the last campaign definition is an empty trailing campaign and use that date.
-            if self.crop_calendars[-1] is None and \
-               self.timed_event_dispatchers[-1] is None and \
-               self.state_event_dispatchers[-1] is None:
-                self._end_date = self.campaign_start_dates[-2]  # use -2 here because None is
-                                                                # appended to campaign_start_dates
+            if (
+                self.crop_calendars[-1] is None
+                and self.timed_event_dispatchers[-1] is None
+                and self.state_event_dispatchers[-1] is None
+            ):
+                self._end_date = self.campaign_start_dates[
+                    -2
+                ]  # use -2 here because None is
+                # appended to campaign_start_dates
                 return self._end_date
 
             # Check if there are state events defined in the last campaign without specifying the end date
             # explicitly with an trailing empty campaign
             if self.state_event_dispatchers[-1] is not None:
-                msg = "In the AgroManagement definition, the last campaign with start date '%s' contains StateEvents. " \
-                      "When specifying StateEvents, the end date of the campaign must be explicitly" \
-                      "given by a trailing empty campaign."
+                msg = (
+                    "In the AgroManagement definition, the last campaign with start date '%s' contains StateEvents. "
+                    "When specifying StateEvents, the end date of the campaign must be explicitly"
+                    "given by a trailing empty campaign."
+                )
                 raise exc.PCSEError(msg)
 
             # Walk over the crop calendars and timed events to get the last date.
@@ -879,8 +950,10 @@ class AgroManager(AncillaryObject):
             self._tmp_date = campaign_start_date
         else:
             if campaign_start_date <= self._tmp_date:
-                msg = "The agricultural campaigns are not sequential " \
-                      "in the agromanagement definition."
+                msg = (
+                    "The agricultural campaigns are not sequential "
+                    "in the agromanagement definition."
+                )
                 raise exc.PCSEError(msg)
 
     def _build_TimedEventDispatchers(self, kiosk, event_definitions):
@@ -906,7 +979,7 @@ class AgroManager(AncillaryObject):
         """
 
         # Check if the agromanager should switch to a new campaign
-        if day == self.campaign_start_dates[self._icampaign+1]:
+        if day == self.campaign_start_dates[self._icampaign + 1]:
             self._icampaign += 1
             # if new campaign, throw out the previous campaign definition
             self.crop_calendars.pop(0)
@@ -934,8 +1007,7 @@ class AgroManager(AncillaryObject):
         3. There are no TimedEvents scheduled after the current date.
         """
 
-
-        if self.campaign_start_dates[self._icampaign+1] is not None:
+        if self.campaign_start_dates[self._icampaign + 1] is not None:
             return  #  e.g. There is a next campaign defined
 
         if self.state_event_dispatchers[0] is not None:
@@ -944,10 +1016,11 @@ class AgroManager(AncillaryObject):
         if self.timed_event_dispatchers[0] is not None:
             end_dates = [t.get_end_date() for t in self.timed_event_dispatchers[0]]
             if end_dates:
-                if max(end_dates) > day:  # There is at least one scheduled event after the current day
+                if (
+                    max(end_dates) > day
+                ):  # There is at least one scheduled event after the current day
                     return
         self._send_signal(signal=signals.terminate)
-
 
     @property
     def ndays_in_crop_cycle(self):

@@ -70,6 +70,7 @@ class WeatherDataContainer(SlotPickleMixin):
                    derived from (TMAX+TMIN)/2.
     :keyword SNOWDEPTH: Depth of snow cover (cm)
     """
+
     sitevar = ["LAT", "LON", "ELEV"]
     required = ["IRRAD", "TMIN", "TMAX", "VAP", "RAIN", "E0", "ES0", "ET0", "WIND"]
     optional = ["SNOWDEPTH", "TEMP", "TMINRA"]
@@ -77,34 +78,54 @@ class WeatherDataContainer(SlotPickleMixin):
     # by add '__dict__' to __slots__.
     __slots__ = sitevar + required + optional + ["DAY"]
 
-    units = {"IRRAD": "J/m2/day", "TMIN": "Celsius", "TMAX": "Celsius", "VAP": "hPa",
-             "RAIN": "cm/day", "E0": "cm/day", "ES0": "cm/day", "ET0": "cm/day",
-             "LAT": "Degrees", "LON": "Degrees", "ELEV": "m", "SNOWDEPTH": "cm",
-             "TEMP": "Celsius", "TMINRA": "Celsius", "WIND": "m/sec"}
+    units = {
+        "IRRAD": "J/m2/day",
+        "TMIN": "Celsius",
+        "TMAX": "Celsius",
+        "VAP": "hPa",
+        "RAIN": "cm/day",
+        "E0": "cm/day",
+        "ES0": "cm/day",
+        "ET0": "cm/day",
+        "LAT": "Degrees",
+        "LON": "Degrees",
+        "ELEV": "m",
+        "SNOWDEPTH": "cm",
+        "TEMP": "Celsius",
+        "TMINRA": "Celsius",
+        "WIND": "m/sec",
+    }
 
     # ranges for meteorological variables
-    ranges = {"LAT": (-90., 90.),
-              "LON": (-180., 180.),
-              "ELEV": (-300, 6000),
-              "IRRAD": (0., 40e6),
-              "TMIN": (-50., 60.),
-              "TMAX": (-50., 60.),
-              "VAP": (0.06, 199.3),  # hPa, computed as sat. vapour pressure at -50, 60 Celsius
-              "RAIN": (0, 25),
-              "E0": (0., 2.5),
-              "ES0": (0., 2.5),
-              "ET0": (0., 2.5),
-              "WIND": (0., 100.),
-              "SNOWDEPTH": (0., 250.),
-              "TEMP": (-50., 60.),
-              "TMINRA": (-50., 60.)}
+    ranges = {
+        "LAT": (-90.0, 90.0),
+        "LON": (-180.0, 180.0),
+        "ELEV": (-300, 6000),
+        "IRRAD": (0.0, 40e6),
+        "TMIN": (-50.0, 60.0),
+        "TMAX": (-50.0, 60.0),
+        "VAP": (
+            0.06,
+            199.3,
+        ),  # hPa, computed as sat. vapour pressure at -50, 60 Celsius
+        "RAIN": (0, 25),
+        "E0": (0.0, 2.5),
+        "ES0": (0.0, 2.5),
+        "ET0": (0.0, 2.5),
+        "WIND": (0.0, 100.0),
+        "SNOWDEPTH": (0.0, 250.0),
+        "TEMP": (-50.0, 60.0),
+        "TMINRA": (-50.0, 60.0),
+    }
 
     def __init__(self, *args, **kwargs):
 
         # only keyword parameters should be used for weather data container
         if len(args) > 0:
-            msg = ("WeatherDataContainer should be initialized by providing weather " +
-                   "variables through keywords only. Got '%s' instead.")
+            msg = (
+                "WeatherDataContainer should be initialized by providing weather "
+                + "variables through keywords only. Got '%s' instead."
+            )
             raise exc.PCSEError(msg % args)
 
         # First assign site variables
@@ -127,7 +148,9 @@ class WeatherDataContainer(SlotPickleMixin):
             try:
                 setattr(self, varname, float(value))
             except (KeyError, ValueError, TypeError) as e:
-                msg = "%s: Weather attribute '%s' missing or invalid numerical value: %s"
+                msg = (
+                    "%s: Weather attribute '%s' missing or invalid numerical value: %s"
+                )
                 logging.warning(msg, self.DAY, varname, value)
 
         # Loop over optional arguments
@@ -155,8 +178,10 @@ class WeatherDataContainer(SlotPickleMixin):
             if key in self.ranges:
                 vmin, vmax = self.ranges[key]
                 if not vmin <= value <= vmax:
-                    msg = "Value (%s) for meteo variable '%s' outside allowed range (%s, %s)." % (
-                    value, key, vmin, vmax)
+                    msg = (
+                        "Value (%s) for meteo variable '%s' outside allowed range (%s, %s)."
+                        % (value, key, vmin, vmax)
+                    )
                     raise exc.PCSEError(msg)
         SlotPickleMixin.__setattr__(self, key, value)
 
@@ -176,9 +201,9 @@ class WeatherDataContainer(SlotPickleMixin):
             else:
                 unit = self.units[v]
                 msg += "%5s: %12.2f %9s\n" % (v, value, unit)
-        msg += ("Latitude  (LAT): %8.2f degr.\n" % self.LAT)
-        msg += ("Longitude (LON): %8.2f degr.\n" % self.LON)
-        msg += ("Elevation (ELEV): %6.1f m.\n" % self.ELEV)
+        msg += "Latitude  (LAT): %8.2f degr.\n" % self.LAT
+        msg += "Longitude (LON): %8.2f degr.\n" % self.LON
+        msg += "Elevation (ELEV): %6.1f m.\n" % self.ELEV
         return msg
 
     def add_variable(self, varname, value, unit):
@@ -210,6 +235,7 @@ class WeatherDataProvider(object):
 
                 # remaining initialization stuff goes here.
     """
+
     supports_ensembles = False
 
     # Descriptive items for a WeatherDataProvider
@@ -229,8 +255,7 @@ class WeatherDataProvider(object):
 
     @property
     def logger(self):
-        loggername = "%s.%s" % (self.__class__.__module__,
-                                self.__class__.__name__)
+        loggername = "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
         return logging.getLogger(loggername)
 
     def _dump(self, cache_fname):
@@ -239,7 +264,14 @@ class WeatherDataProvider(object):
         Dumps the values of self.store, longitude, latitude, elevation and description
         """
         with open(cache_fname, "wb") as fp:
-            dmp = (self.store, self.elevation, self.longitude, self.latitude, self.description, self.ETmodel)
+            dmp = (
+                self.store,
+                self.elevation,
+                self.longitude,
+                self.latitude,
+                self.description,
+                self.ETmodel,
+            )
             pickle.dump(dmp, fp, pickle.HIGHEST_PROTOCOL)
 
     def _load(self, cache_fname):
@@ -250,7 +282,14 @@ class WeatherDataProvider(object):
         """
 
         with open(cache_fname, "rb") as fp:
-            (store, self.elevation, self.longitude, self.latitude, self.description, ETModel) = pickle.load(fp)
+            (
+                store,
+                self.elevation,
+                self.longitude,
+                self.latitude,
+                self.description,
+                ETModel,
+            ) = pickle.load(fp)
 
         # Check if the reference ET from the cache file is calculated with the same model as
         # specified by self.ETmodel
@@ -274,7 +313,9 @@ class WeatherDataProvider(object):
             days = sorted([r[0] for r in self.store.keys()])
             for day in days:
                 wdc = self(day)
-                r = {key: getattr(wdc, key) for key in wdc.__slots__ if hasattr(wdc, key)}
+                r = {
+                    key: getattr(wdc, key) for key in wdc.__slots__ if hasattr(wdc, key)
+                }
                 weather_data.append(r)
         return weather_data
 
@@ -320,6 +361,7 @@ class WeatherDataProvider(object):
         """
 
         import datetime as dt
+
         if isinstance(key, dt.datetime):
             return key.date()
         elif isinstance(key, dt.date):
@@ -339,8 +381,7 @@ class WeatherDataProvider(object):
             raise KeyError(msg % key)
 
     def _store_WeatherDataContainer(self, wdc, keydate, member_id=0):
-        """Stores the WDC under given keydate and member_id.
-        """
+        """Stores the WDC under given keydate and member_id."""
 
         if member_id != 0 and self.supports_ensembles is False:
             msg = "Storing ensemble weather is not supported."
@@ -356,7 +397,10 @@ class WeatherDataProvider(object):
     def __call__(self, day, member_id=0):
 
         if self.supports_ensembles is False and member_id != 0:
-            msg = "Retrieving ensemble weather is not supported by %s" % self.__class__.__name__
+            msg = (
+                "Retrieving ensemble weather is not supported by %s"
+                % self.__class__.__name__
+            )
             raise exc.WeatherDataProviderError(msg)
 
         keydate = self.check_keydate(day)
@@ -369,8 +413,10 @@ class WeatherDataProvider(object):
                 msg = "No weather data for %s." % keydate
                 raise exc.WeatherDataProviderError(msg)
         else:
-            msg = "Retrieving ensemble weather data for day %s member %i" % \
-                  (keydate, member_id)
+            msg = "Retrieving ensemble weather data for day %s member %i" % (
+                keydate,
+                member_id,
+            )
             self.logger.debug(msg)
             try:
                 return self.store[(keydate, member_id)]
@@ -383,10 +429,10 @@ class WeatherDataProvider(object):
         msg = "Weather data provided by: %s\n" % self.__class__.__name__
         msg += "--------Description---------\n"
         if isinstance(self.description, str):
-            msg += ("%s\n" % self.description)
+            msg += "%s\n" % self.description
         else:
             for l in self.description:
-                msg += ("%s\n" % str(l))
+                msg += "%s\n" % str(l)
         msg += "----Site characteristics----\n"
         msg += "Elevation: %6.1f\n" % self.elevation
         msg += "Latitude:  %6.3f\n" % self.latitude
@@ -394,4 +440,3 @@ class WeatherDataProvider(object):
         msg += "Data available for %s - %s\n" % (self.first_date, self.last_date)
         msg += "Number of missing days: %i\n" % self.missing
         return msg
-

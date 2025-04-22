@@ -10,8 +10,7 @@ import numpy as np
 from ..traitlets import Float, Int, Instance, Enum, Unicode, Bool, List
 from ..decorators import prepare_rates, prepare_states
 from ..util import limit, Afgen, merge_dict
-from ..base import ParamTemplate, StatesTemplate, RatesTemplate, \
-     SimulationObject
+from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 from .. import signals
 from .. import exceptions as exc
 from .snowmaus import SnowMAUS
@@ -24,38 +23,40 @@ class WaterbalancePP(SimulationObject):
     Keeps the soil moisture content at field capacity and only accumulates crop transpiration
     and soil evaporation rates through the course of the simulation
     """
+
     # Counter for Days-Dince-Last-Rain
     DSLR = Float(1)
     # rainfall rate of previous day
     RAINold = Float(0)
 
     class Parameters(ParamTemplate):
-        SMFCF = Float(-99.)
+        SMFCF = Float(-99.0)
 
     class StateVariables(StatesTemplate):
-        SM = Float(-99.)
-        WTRAT = Float(-99.)
-        EVST = Float(-99.)
+        SM = Float(-99.0)
+        WTRAT = Float(-99.0)
+        EVST = Float(-99.0)
 
     class RateVariables(RatesTemplate):
-        EVS = Float(-99.)
-        WTRA = Float(-99.)
+        EVS = Float(-99.0)
+        WTRA = Float(-99.0)
 
     def initialize(self, day, kiosk, parvalues):
-        """    
+        """
         :param day: start date of the simulation
         :param kiosk: variable kiosk of this PCSE  instance
         :param parvalues: ParameterProvider object containing all parameters
-    
-        This waterbalance keeps the soil moisture always at field capacity. Therefore   
+
+        This waterbalance keeps the soil moisture always at field capacity. Therefore
         `WaterbalancePP` has only one parameter (`SMFCF`: the field capacity of the
         soil) and one state variable (`SM`: the volumetric soil moisture).
         """
         self.params = self.Parameters(parvalues)
         self.rates = self.RateVariables(kiosk, publish="EVS")
-        self.states = self.StateVariables(kiosk, SM=self.params.SMFCF,
-                                          publish="SM", EVST=0, WTRAT=0)
-    
+        self.states = self.StateVariables(
+            kiosk, SM=self.params.SMFCF, publish="SM", EVST=0, WTRAT=0
+        )
+
     @prepare_rates
     def calc_rates(self, day, drv):
 
@@ -66,7 +67,7 @@ class WaterbalancePP(SimulationObject):
         # the potential soil/water evaporation rates directly because there is
         # no shading by the canopy.
         if "TRA" not in self.kiosk:
-            r.WTRA = 0.
+            r.WTRA = 0.0
             EVSMX = drv.ES0
         else:
             r.WTRA = self.kiosk["TRA"]
@@ -78,7 +79,7 @@ class WaterbalancePP(SimulationObject):
             # If rainfall amount >= 1cm on previous day assume maximum soil
             # evaporation
             r.EVS = EVSMX
-            self.DSLR = 1.
+            self.DSLR = 1.0
         else:
             # Else soil evaporation is a function days-since-last-rain (DSLR)
             self.DSLR += 1
@@ -97,7 +98,7 @@ class WaterbalancePP(SimulationObject):
         # Accumulated transpiration and soil evaporation amounts
         self.states.EVST += self.rates.EVS * delt
         self.states.WTRAT += self.rates.WTRA * delt
-        
+
 
 class WaterbalanceFD(SimulationObject):
     """Waterbalance for freely draining soils under water-limited production.
@@ -105,14 +106,14 @@ class WaterbalanceFD(SimulationObject):
     The purpose of the soil water balance calculations is to estimate the
     daily value of the soil moisture content. The soil moisture content
     influences soil moisture uptake and crop transpiration.
-    
-    The dynamic calculations are carried out in two sections, one for the 
+
+    The dynamic calculations are carried out in two sections, one for the
     calculation of rates of change per timestep (= 1 day) and one for the
     calculation of summation variables and state variables. The water balance
     is driven by rainfall, possibly buffered as surface storage, and
     evapotranspiration. The processes considered are infiltration, soil water
     retention, percolation (here conceived as downward water flow from rooted
-    zone to second layer), and the loss of water beyond the maximum root zone. 
+    zone to second layer), and the loss of water beyond the maximum root zone.
 
     The textural profile of the soil is conceived as homogeneous. Initially the
     soil profile consists of two layers, the actually rooted soil and the soil
@@ -128,9 +129,9 @@ class WaterbalanceFD(SimulationObject):
     exception that the depth of the soil is now completely determined by the
     maximum soil depth (RDMSOL) and not by the minimum of soil depth and crop
     maximum rooting depth (RDMCR).
-    
+
     **Simulation parameters:**
-    
+
     ======== =============================================== =======  ==========
      Name     Description                                     Type     Unit
     ======== =============================================== =======  ==========
@@ -143,7 +144,7 @@ class WaterbalanceFD(SimulationObject):
     RDMSOL    Soil rootable depth                              SSo     cm
     IFUNRN    Indicates whether non-infiltrating fraction of   SSi    -
               rain is a function of storm size (1)
-              or not (0)                                      
+              or not (0)
     SSMAX     Maximum surface storage                          SSi     cm
     SSI       Initial surface storage                          SSi     cm
     WAV       Initial amount of water in total soil            SSi     cm
@@ -170,7 +171,7 @@ class WaterbalanceFD(SimulationObject):
     WWLOW     Total amount of water in the  soil profile        N    cm
               WWLOW = WLOW + W
     WTRAT     Total water lost as transpiration as calculated   N    cm
-              by the water balance. This can be different 
+              by the water balance. This can be different
               from the CTRAT variable which only counts
               transpiration for a crop cycle.
     EVST      Total evaporation from the soil surface           N    cm
@@ -218,10 +219,10 @@ class WaterbalanceFD(SimulationObject):
     DTSR        Change in surface runoff                           N    |cmday-1|
     DSS         Change in surface storage                          N    |cmday-1|
     =========== ================================================= ==== ============
-    
-    
+
+
     **External dependencies:**
-    
+
     ============ ============================== ====================== =========
      Name        Description                         Provided by         Unit
     ============ ============================== ====================== =========
@@ -236,15 +237,16 @@ class WaterbalanceFD(SimulationObject):
     ============ ============================== ====================== =========
 
     **Exceptions raised:**
-    
+
     A WaterbalanceError is raised when the waterbalance is not closing at the
     end of the simulation cycle (e.g water has "leaked" away).
     """
+
     # previous and maximum rooting depth value
-    RDold = Float(-99.)
-    RDM = Float(-99.)
-    # Counter for Days-Dince-Last-Rain 
-    DSLR = Float(-99.)
+    RDold = Float(-99.0)
+    RDM = Float(-99.0)
+    # Counter for Days-Dince-Last-Rain
+    DSLR = Float(-99.0)
     # Infiltration rate of previous day
     RINold = Float(-99)
     # Fraction of non-infiltrating rainfall as function of storm size
@@ -256,66 +258,66 @@ class WaterbalanceFD(SimulationObject):
     # between the root zone and the lower zone
     rooted_layer_needs_reset = Bool(False)
     # placeholder for irrigation
-    _RIRR = Float(0.)
+    _RIRR = Float(0.0)
     # default depth of upper layer (root zone depth)
-    DEFAULT_RD = Float(10.)
+    DEFAULT_RD = Float(10.0)
     # Increments on WLOW due to state updates
     _increments_W = List()
 
     class Parameters(ParamTemplate):
         # Soil parameters
-        SMFCF  = Float(-99.)
-        SM0    = Float(-99.)
-        SMW    = Float(-99.)
-        CRAIRC = Float(-99.)
-        SOPE   = Float(-99.)
-        KSUB   = Float(-99.)
-        RDMSOL = Float(-99.)
+        SMFCF = Float(-99.0)
+        SM0 = Float(-99.0)
+        SMW = Float(-99.0)
+        CRAIRC = Float(-99.0)
+        SOPE = Float(-99.0)
+        KSUB = Float(-99.0)
+        RDMSOL = Float(-99.0)
         # Site parameters
-        IFUNRN = Float(-99.)
-        SSMAX  = Float(-99.)
-        SSI    = Float(-99.)
-        WAV    = Float(-99.)
-        NOTINF = Float(-99.)
+        IFUNRN = Float(-99.0)
+        SSMAX = Float(-99.0)
+        SSI = Float(-99.0)
+        WAV = Float(-99.0)
+        NOTINF = Float(-99.0)
 
     class StateVariables(StatesTemplate):
-        SM = Float(-99.)
-        SS = Float(-99.)
-        SSI = Float(-99.)
-        W  = Float(-99.)
-        WI = Float(-99.)
-        WLOW  = Float(-99.)
-        WLOWI = Float(-99.)
-        WWLOW = Float(-99.)
-        # Summation variables 
-        WTRAT  = Float(-99.)
-        EVST   = Float(-99.)
-        EVWT   = Float(-99.)
-        TSR    = Float(-99.)
-        RAINT  = Float(-99.)
-        WDRT   = Float(-99.)
-        TOTINF = Float(-99.)
-        TOTIRR = Float(-99.)
-        PERCT  = Float(-99.)
-        LOSST  = Float(-99.)
+        SM = Float(-99.0)
+        SS = Float(-99.0)
+        SSI = Float(-99.0)
+        W = Float(-99.0)
+        WI = Float(-99.0)
+        WLOW = Float(-99.0)
+        WLOWI = Float(-99.0)
+        WWLOW = Float(-99.0)
+        # Summation variables
+        WTRAT = Float(-99.0)
+        EVST = Float(-99.0)
+        EVWT = Float(-99.0)
+        TSR = Float(-99.0)
+        RAINT = Float(-99.0)
+        WDRT = Float(-99.0)
+        TOTINF = Float(-99.0)
+        TOTIRR = Float(-99.0)
+        PERCT = Float(-99.0)
+        LOSST = Float(-99.0)
         # Checksums for rootzone (RT) and total system (TT)
-        WBALRT = Float(-99.)
-        WBALTT = Float(-99.)
+        WBALRT = Float(-99.0)
+        WBALTT = Float(-99.0)
         DSOS = Int(-99)
 
     class RateVariables(RatesTemplate):
-        EVS   = Float(-99.)
-        EVW   = Float(-99.)
-        WTRA  = Float(-99.)
-        RIN   = Float(-99.)
-        RIRR  = Float(-99.)
-        PERC  = Float(-99.)
-        LOSS  = Float(-99.)
-        DW    = Float(-99.)
-        DWLOW = Float(-99.)
-        DTSR = Float(-99.)
-        DSS = Float(-99.)
-        DRAINT = Float(-99.)
+        EVS = Float(-99.0)
+        EVW = Float(-99.0)
+        WTRA = Float(-99.0)
+        RIN = Float(-99.0)
+        RIRR = Float(-99.0)
+        PERC = Float(-99.0)
+        LOSS = Float(-99.0)
+        DW = Float(-99.0)
+        DWLOW = Float(-99.0)
+        DTSR = Float(-99.0)
+        DSS = Float(-99.0)
+        DRAINT = Float(-99.0)
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -325,56 +327,76 @@ class WaterbalanceFD(SimulationObject):
         """
 
         # Check validity of maximum soil moisture amount in topsoil (SMLIM)
-        SMLIM = limit(parvalues["SMW"], parvalues["SM0"],  parvalues["SMLIM"])
+        SMLIM = limit(parvalues["SMW"], parvalues["SM0"], parvalues["SMLIM"])
 
         if SMLIM != parvalues["SMLIM"]:
             msg = "SMLIM not in valid range, changed from %f to %f."
             self.logger.warn(msg % (parvalues["SMLIM"], SMLIM))
 
-        # Assign parameter values            
+        # Assign parameter values
         self.params = self.Parameters(parvalues)
         p = self.params
-        
+
         # set default RD to 10 cm, also derive maximum depth and old rooting depth
         RD = self.DEFAULT_RD
         RDM = max(RD, p.RDMSOL)
         self.RDold = RD
         self.RDM = RDM
-        
+
         # Initial surface storage
         SS = p.SSI
-        
+
         # Initial soil moisture content and amount of water in rooted zone,
         # limited by SMLIM. Save initial value (WI)
-        SM = limit(p.SMW, SMLIM, (p.SMW + p.WAV/RD))
+        SM = limit(p.SMW, SMLIM, (p.SMW + p.WAV / RD))
         W = SM * RD
         WI = W
-        
+
         # initial amount of soil moisture between current root zone and maximum
         # rootable depth (WLOW). Save initial value (WLOWI)
-        WLOW  = limit(0., p.SM0*(RDM - RD), (p.WAV + RDM*p.SMW - W))
+        WLOW = limit(0.0, p.SM0 * (RDM - RD), (p.WAV + RDM * p.SMW - W))
         WLOWI = WLOW
-        
+
         # Total water depth in soil column (root zone + subsoil)
         WWLOW = W + WLOW
 
         # soil evaporation, days since last rain (DLSR) set to 1 if the
         # soil is wetter then halfway between SMW and SMFCF, else DSLR=5.
-        self.DSLR = 1. if (SM >= (p.SMW + 0.5*(p.SMFCF-p.SMW))) else 5.
+        self.DSLR = 1.0 if (SM >= (p.SMW + 0.5 * (p.SMFCF - p.SMW))) else 5.0
 
         # Initialize some remaining helper variables
-        self.RINold = 0.
+        self.RINold = 0.0
         self.in_crop_cycle = False
-        self.NINFTB = Afgen([0.0,0.0, 0.5,0.0, 1.5,1.0])
+        self.NINFTB = Afgen([0.0, 0.0, 0.5, 0.0, 1.5, 1.0])
 
-        # Initialize model state variables.       
-        self.states = self.StateVariables(kiosk, publish=["SM", "DSOS"], SM=SM, SS=SS,
-                           SSI=p.SSI, W=W, WI=WI, WLOW=WLOW, WLOWI=WLOWI,
-                           WWLOW=WWLOW, WTRAT=0., EVST=0., EVWT=0., TSR=0.,
-                           RAINT=0., WDRT=0., TOTINF=0., TOTIRR=0., DSOS=0,
-                           PERCT=0., LOSST=0., WBALRT=-999., WBALTT=-999.)
+        # Initialize model state variables.
+        self.states = self.StateVariables(
+            kiosk,
+            publish=["SM", "DSOS"],
+            SM=SM,
+            SS=SS,
+            SSI=p.SSI,
+            W=W,
+            WI=WI,
+            WLOW=WLOW,
+            WLOWI=WLOWI,
+            WWLOW=WWLOW,
+            WTRAT=0.0,
+            EVST=0.0,
+            EVWT=0.0,
+            TSR=0.0,
+            RAINT=0.0,
+            WDRT=0.0,
+            TOTINF=0.0,
+            TOTIRR=0.0,
+            DSOS=0,
+            PERCT=0.0,
+            LOSST=0.0,
+            WBALRT=-999.0,
+            WBALTT=-999.0,
+        )
         self.rates = self.RateVariables(kiosk, publish="EVS")
-        
+
         # Connect to CROP_START/CROP_FINISH signals for water balance to
         # search for crop transpiration values
         self._connect_signal(self._on_CROP_START, signals.crop_start)
@@ -393,7 +415,7 @@ class WaterbalanceFD(SimulationObject):
 
         # Rate of irrigation (RIRR)
         r.RIRR = self._RIRR
-        self._RIRR = 0.
+        self._RIRR = 0.0
 
         # Transpiration and maximum soil and surface water evaporation rates
         # are calculated by the crop evapotranspiration module.
@@ -401,7 +423,7 @@ class WaterbalanceFD(SimulationObject):
         # the potential soil/water evaporation rates directly because there is
         # no shading by the canopy.
         if "TRA" not in self.kiosk:
-            r.WTRA = 0.
+            r.WTRA = 0.0
             EVWMX = drv.E0
             EVSMX = drv.ES0
         else:
@@ -410,9 +432,9 @@ class WaterbalanceFD(SimulationObject):
             EVSMX = k.EVSMX
 
         # Actual evaporation rates
-        r.EVW = 0.
-        r.EVS = 0.
-        if s.SS > 1.:
+        r.EVW = 0.0
+        r.EVS = 0.0
+        if s.SS > 1.0:
             # If surface storage > 1cm then evaporate from water layer on
             # soil surface
             r.EVW = EVWMX
@@ -422,7 +444,7 @@ class WaterbalanceFD(SimulationObject):
                 # If infiltration >= 1cm on previous day assume maximum soil
                 # evaporation
                 r.EVS = EVSMX
-                self.DSLR = 1.
+                self.DSLR = 1.0
             else:
                 # Else soil evaporation is a function days-since-last-rain (DSLR)
                 EVSMXT = EVSMX * (sqrt(self.DSLR + 1) - sqrt(self.DSLR))
@@ -431,11 +453,10 @@ class WaterbalanceFD(SimulationObject):
 
         # Potentially infiltrating rainfall
         if p.IFUNRN == 0:
-            RINPRE = (1. - p.NOTINF) * drv.RAIN
+            RINPRE = (1.0 - p.NOTINF) * drv.RAIN
         else:
             # infiltration is function of storm size (NINFTB)
-            RINPRE = (1. - p.NOTINF * self.NINFTB(drv.RAIN)) * drv.RAIN
-
+            RINPRE = (1.0 - p.NOTINF * self.NINFTB(drv.RAIN)) * drv.RAIN
 
         # Second stage preliminary infiltration rate (RINPRE)
         # including surface storage and irrigation
@@ -444,27 +465,27 @@ class WaterbalanceFD(SimulationObject):
             # with surface storage, infiltration limited by SOPE
             AVAIL = RINPRE + r.RIRR - r.EVW
             RINPRE = min(p.SOPE, AVAIL)
-            
+
         RD = self._determine_rooting_depth()
-        
+
         # equilibrium amount of soil moisture in rooted zone
         WE = p.SMFCF * RD
         # percolation from rooted zone to subsoil equals amount of
         # excess moisture in rooted zone, not to exceed maximum percolation rate
         # of root zone (SOPE)
-        PERC1 = limit(0., p.SOPE, (s.W - WE) - r.WTRA - r.EVS)
+        PERC1 = limit(0.0, p.SOPE, (s.W - WE) - r.WTRA - r.EVS)
 
         # loss of water at the lower end of the maximum root zone
         # equilibrium amount of soil moisture below rooted zone
         WELOW = p.SMFCF * (self.RDM - RD)
-        r.LOSS = limit(0., p.KSUB, (s.WLOW - WELOW + PERC1))
+        r.LOSS = limit(0.0, p.KSUB, (s.WLOW - WELOW + PERC1))
 
         # percolation not to exceed uptake capacity of subsoil
         PERC2 = ((self.RDM - RD) * p.SM0 - s.WLOW) + r.LOSS
         r.PERC = min(PERC1, PERC2)
 
         # adjustment of infiltration rate
-        r.RIN = min(RINPRE, (p.SM0 - s.SM)*RD + r.WTRA + r.EVS + r.PERC)
+        r.RIN = min(RINPRE, (p.SM0 - s.SM) * RD + r.WTRA + r.EVS + r.PERC)
         self.RINold = r.RIN
 
         # rates of change in amounts of moisture W and WLOW
@@ -476,7 +497,10 @@ class WaterbalanceFD(SimulationObject):
         Wtmp = s.W + r.DW
         if Wtmp < 0.0:
             r.EVS += Wtmp
-            assert r.EVS >= 0., "Negative soil evaporation rate on day %s: %s" % (day, r.EVS)
+            assert r.EVS >= 0.0, "Negative soil evaporation rate on day %s: %s" % (
+                day,
+                r.EVS,
+            )
             r.DW = -s.W
 
         # Computation of rate of change in surface storage and surface runoff
@@ -496,7 +520,7 @@ class WaterbalanceFD(SimulationObject):
         s = self.states
         p = self.params
         r = self.rates
-        
+
         # INTEGRALS OF THE WATERBALANCE: SUMMATIONS AND STATE VARIABLES
 
         # total transpiration
@@ -517,7 +541,10 @@ class WaterbalanceFD(SimulationObject):
 
         # amount of water in rooted zone
         s.W += r.DW * delt
-        assert s.W >= 0., "Negative amount of water in root zone on day %s: %s" % (day, s.W)
+        assert s.W >= 0.0, "Negative amount of water in root zone on day %s: %s" % (
+            day,
+            s.W,
+        )
 
         # total percolation and loss of water by deep leaching
         s.PERCT += r.PERC * delt
@@ -536,7 +563,7 @@ class WaterbalanceFD(SimulationObject):
         self._redistribute_water(RDchange)
 
         # mean soil moisture content in rooted zone
-        s.SM = s.W/RD
+        s.SM = s.W / RD
 
         # Accumulate days since oxygen stress, but only if a crop is present
         if s.SM >= (p.SM0 - p.CRAIRC):  # and self.in_crop_cycle:
@@ -549,16 +576,39 @@ class WaterbalanceFD(SimulationObject):
 
     @prepare_states
     def finalize(self, day):
-        
+
         s = self.states
         p = self.params
 
         # Checksums waterbalance for systems without groundwater
         # for rootzone (WBALRT) and whole system (WBALTT)
         # The sum of all increments made are added to ensure a closing waterbalance
-        s.WBALRT = s.TOTINF + s.WI + s.WDRT - s.EVST - s.WTRAT - s.PERCT - s.W + sum(self._increments_W)
-        s.WBALTT = (s.SSI + s.RAINT + s.TOTIRR + s.WI - s.W + sum(self._increments_W) +
-                    s.WLOWI - s.WLOW - s.WTRAT - s.EVWT - s.EVST - s.TSR - s.LOSST - s.SS)
+        s.WBALRT = (
+            s.TOTINF
+            + s.WI
+            + s.WDRT
+            - s.EVST
+            - s.WTRAT
+            - s.PERCT
+            - s.W
+            + sum(self._increments_W)
+        )
+        s.WBALTT = (
+            s.SSI
+            + s.RAINT
+            + s.TOTIRR
+            + s.WI
+            - s.W
+            + sum(self._increments_W)
+            + s.WLOWI
+            - s.WLOW
+            - s.WTRAT
+            - s.EVWT
+            - s.EVST
+            - s.TSR
+            - s.LOSST
+            - s.SS
+        )
 
         if abs(s.WBALRT) > 0.0001:
             msg = "Water balance for root zone does not close."
@@ -566,15 +616,17 @@ class WaterbalanceFD(SimulationObject):
 
         if abs(s.WBALTT) > 0.0001:
             msg = "Water balance for complete soil profile does not close.\n"
-            msg += ("Total INIT + IN:   %f\n" % (s.WI + s.WLOWI + s.SSI + s.TOTIRR +
-                                                 s.RAINT))
-            msg += ("Total FINAL + OUT: %f\n" % (s.W + s.WLOW + s.SS + s.EVWT + s.EVST +
-                                                 s.WTRAT + s.TSR + s.LOSST))
+            msg += "Total INIT + IN:   %f\n" % (
+                s.WI + s.WLOWI + s.SSI + s.TOTIRR + s.RAINT
+            )
+            msg += "Total FINAL + OUT: %f\n" % (
+                s.W + s.WLOW + s.SS + s.EVWT + s.EVST + s.WTRAT + s.TSR + s.LOSST
+            )
             raise exc.WaterBalanceError(msg)
-        
+
         # Run finalize on the subSimulationObjects
         SimulationObject.finalize(self, day)
-    
+
     def _determine_rooting_depth(self):
         """Determines appropriate use of the rooting depth (RD)
 
@@ -601,20 +653,20 @@ class WaterbalanceFD(SimulationObject):
         """
         s = self.states
         p = self.params
-        
-        WDR = 0.
+
+        WDR = 0.0
         if RDchange > 0.001:
             # roots grow down by more than 0.001 cm
             # move water from previously unrooted zone and add to new rooted zone
-            WDR = s.WLOW * RDchange/(p.RDMSOL - self.RDold)
+            WDR = s.WLOW * RDchange / (p.RDMSOL - self.RDold)
             # Take minimum of WDR and WLOW to avoid negative WLOW due to rounding
             WDR = min(s.WLOW, WDR)
         else:
             # roots disappear upwards by more than 0.001 cm (especially when crop disappears)
             # move water from previously rooted zone and add to new unrooted zone
-            WDR = s.W * RDchange/self.RDold
+            WDR = s.W * RDchange / self.RDold
 
-        if WDR != 0.:
+        if WDR != 0.0:
             # reduce amount of water in subsoil
             s.WLOW -= WDR
             # increase amount of water in root zone
@@ -649,7 +701,7 @@ class WaterbalanceFD(SimulationObject):
         oSM = s.SM
         oW = s.W
         # new values
-        nW = nSM/oSM * s.W
+        nW = nSM / oSM * s.W
 
         # update states
         s.W = nW
@@ -674,6 +726,7 @@ class WaterbalanceFDSnow(SimulationObject):
     options for storing water on the soil surface: water (ponding), snow and
     also maybe interception by the canopy which is currently lacking.
     """
+
     waterbalance = Instance(SimulationObject)
     snowcover = Instance(SimulationObject)
 
@@ -696,7 +749,7 @@ class WaterbalanceFDSnow(SimulationObject):
             self.use_observed_snow_depth = True if parvalues["ISNOWSRC"] == 0 else False
 
         if self.use_observed_snow_depth:
-            self.states = self.StateVariables(kiosk, SNOWDEPTH=0.)
+            self.states = self.StateVariables(kiosk, SNOWDEPTH=0.0)
         else:
             self.snowcover = SnowMAUS(day, kiosk, parvalues)
 
@@ -722,14 +775,14 @@ class IndigoWaterbalanceFD(SimulationObject):
     The purpose of the soil water balance calculations is to estimate the
     daily value of the soil moisture content. The soil moisture content
     influences soil moisture uptake and crop transpiration.
-    
-    The dynamic calculations are carried out in two sections, one for the 
+
+    The dynamic calculations are carried out in two sections, one for the
     calculation of rates of change per timestep (= 1 day) and one for the
     calculation of summation variables and state variables. The water balance
     is driven by rainfall, possibly buffered as surface storage, and
     evapotranspiration. The processes considered are infiltration, soil water
     retention, percolation (here conceived as downward water flow from rooted
-    zone to second layer), and the loss of water beyond the maximum root zone. 
+    zone to second layer), and the loss of water beyond the maximum root zone.
 
     The textural profile of the soil is conceived as homogeneous. Initially the
     soil profile consists of two layers, the actually rooted soil and the soil
@@ -745,9 +798,9 @@ class IndigoWaterbalanceFD(SimulationObject):
     exception that the depth of the soil is now completely determined by the
     maximum soil depth (RDMSOL) and not by the minimum of soil depth and crop
     maximum rooting depth (RDMCR).
-    
+
     **Simulation parameters:**
-    
+
     ======== =============================================== =======  ==========
      Name     Description                                     Type     Unit
     ======== =============================================== =======  ==========
@@ -759,7 +812,7 @@ class IndigoWaterbalanceFD(SimulationObject):
     RDMSOL    Soil rootable depth                              SSo     cm
     IFUNRN    Indicates whether non-infiltrating fraction of   SSi    -
               rain is a function of storm size (1)
-              or not (0)                                      
+              or not (0)
     SSMAX     Maximum surface storage                          SSi     cm
     SSI       Initial surface storage                          SSi     cm
     WAV       Initial amount of water in total soil            SSi     cm
@@ -786,7 +839,7 @@ class IndigoWaterbalanceFD(SimulationObject):
     WWLOW     Total amount of water in the  soil profile        N    cm
               WWLOW = WLOW + W
     WTRAT     Total water lost as transpiration as calculated   N    cm
-              by the water balance. This can be different 
+              by the water balance. This can be different
               from the CTRAT variable which only counts
               transpiration for a crop cycle.
     EVST      Total evaporation from the soil surface           N    cm
@@ -834,10 +887,10 @@ class IndigoWaterbalanceFD(SimulationObject):
     DTSR        Change in surface runoff                           N    |cmday-1|
     DSS         Change in surface storage                          N    |cmday-1|
     =========== ================================================= ==== ============
-    
-    
+
+
     **External dependencies:**
-    
+
     ============ ============================== ====================== =========
      Name        Description                         Provided by         Unit
     ============ ============================== ====================== =========
@@ -852,15 +905,16 @@ class IndigoWaterbalanceFD(SimulationObject):
     ============ ============================== ====================== =========
 
     **Exceptions raised:**
-    
+
     A WaterbalanceError is raised when the waterbalance is not closing at the
     end of the simulation cycle (e.g water has "leaked" away).
     """
+
     # previous and maximum rooting depth value
-    RDold = Float(-99.)
-    RDM = Float(-99.)
-    # Counter for Days-Dince-Last-Rain 
-    DSLR = Float(-99.)
+    RDold = Float(-99.0)
+    RDM = Float(-99.0)
+    # Counter for Days-Dince-Last-Rain
+    DSLR = Float(-99.0)
     # Infiltration rate of previous day
     RINold = Float(-99)
     # Fraction of non-infiltrating rainfall as function of storm size
@@ -872,31 +926,31 @@ class IndigoWaterbalanceFD(SimulationObject):
     # between the root zone and the lower zone
     rooted_layer_needs_reset = Bool(False)
     # placeholder for irrigation
-    _RIRR = Float(0.)
+    _RIRR = Float(0.0)
     # default depth of upper layer (root zone depth)
-    DEFAULT_RD = Float(10.)
+    DEFAULT_RD = Float(10.0)
     # Increments on WLOW due to state updates
     _increments_W = List()
-    
-    AVGDUL = Float(-99.)
-    AVGLL = Float(-99.)
-    AVGBD = Float(-99.)
-    AVGPROS = Float(-99.)
+
+    AVGDUL = Float(-99.0)
+    AVGLL = Float(-99.0)
+    AVGBD = Float(-99.0)
+    AVGPROS = Float(-99.0)
 
     class Parameters(ParamTemplate):
         # Soil parameters
 
-        CRAIRC = Float(-99.)
-        SOPE   = Float(-99.)
-        KSUB   = Float(-99.)
-        RDMSOL = Float(-99.)
+        CRAIRC = Float(-99.0)
+        SOPE = Float(-99.0)
+        KSUB = Float(-99.0)
+        RDMSOL = Float(-99.0)
         # Site parameters
-        IFUNRN = Float(-99.)
-        SSMAX  = Float(-99.)
-        SSI    = Float(-99.)
-        WAV    = Float(-99.)
-        NOTINF = Float(-99.)
-        
+        IFUNRN = Float(-99.0)
+        SSMAX = Float(-99.0)
+        SSI = Float(-99.0)
+        WAV = Float(-99.0)
+        NOTINF = Float(-99.0)
+
         NLAYR = Int()  # Number of soil layers
         BD = List()  # Bulk density (g/cm3)
         DS = List()  # Depth of soil layers (cm)
@@ -905,50 +959,52 @@ class IndigoWaterbalanceFD(SimulationObject):
         DLAYR = List()  # Thickness of soil layers (cm)
 
     class StateVariables(StatesTemplate):
-        SM = Float(-99.)
-        SS = Float(-99.)
-        SSI = Float(-99.)
-        W  = Float(-99.)
-        WI = Float(-99.)
-        WLOW  = Float(-99.)
-        WLOWI = Float(-99.)
-        WWLOW = Float(-99.)
-        # Summation variables 
-        WTRAT  = Float(-99.)
-        EVST   = Float(-99.)
-        EVWT   = Float(-99.)
-        TSR    = Float(-99.)
-        RAINT  = Float(-99.)
-        WDRT   = Float(-99.)
-        TOTINF = Float(-99.)
-        TOTIRR = Float(-99.)
-        PERCT  = Float(-99.)
-        LOSST  = Float(-99.)
+        SM = Float(-99.0)
+        SS = Float(-99.0)
+        SSI = Float(-99.0)
+        W = Float(-99.0)
+        WI = Float(-99.0)
+        WLOW = Float(-99.0)
+        WLOWI = Float(-99.0)
+        WWLOW = Float(-99.0)
+        # Summation variables
+        WTRAT = Float(-99.0)
+        EVST = Float(-99.0)
+        EVWT = Float(-99.0)
+        TSR = Float(-99.0)
+        RAINT = Float(-99.0)
+        WDRT = Float(-99.0)
+        TOTINF = Float(-99.0)
+        TOTIRR = Float(-99.0)
+        PERCT = Float(-99.0)
+        LOSST = Float(-99.0)
         # Checksums for rootzone (RT) and total system (TT)
-        WBALRT = Float(-99.)
-        WBALTT = Float(-99.)
+        WBALRT = Float(-99.0)
+        WBALTT = Float(-99.0)
         DSOS = Int(-99)
 
     class RateVariables(RatesTemplate):
-        EVS   = Float(-99.)
-        EVW   = Float(-99.)
-        WTRA  = Float(-99.)
-        RIN   = Float(-99.)
-        RIRR  = Float(-99.)
-        PERC  = Float(-99.)
-        LOSS  = Float(-99.)
-        DW    = Float(-99.)
-        DWLOW = Float(-99.)
-        DTSR = Float(-99.)
-        DSS = Float(-99.)
-        DRAINT = Float(-99.)
+        EVS = Float(-99.0)
+        EVW = Float(-99.0)
+        WTRA = Float(-99.0)
+        RIN = Float(-99.0)
+        RIRR = Float(-99.0)
+        PERC = Float(-99.0)
+        LOSS = Float(-99.0)
+        DW = Float(-99.0)
+        DWLOW = Float(-99.0)
+        DTSR = Float(-99.0)
+        DSS = Float(-99.0)
+        DRAINT = Float(-99.0)
 
     def take_avg(self, values, depths):
         """Calculate average value of soil properties"""
-        value_list = [values[L]*(depths[L] - depths[L-1]) for L in range(1, self.params.NLAYR)]
+        value_list = [
+            values[L] * (depths[L] - depths[L - 1]) for L in range(1, self.params.NLAYR)
+        ]
         value_list.append(values[0] * depths[0])
-        return sum(value_list) / depths[self.params.NLAYR-1]
-    
+        return sum(value_list) / depths[self.params.NLAYR - 1]
+
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
@@ -956,67 +1012,90 @@ class IndigoWaterbalanceFD(SimulationObject):
         :param parvalues: ParameterProvider containing all parameters
         """
 
-
-        # Assign parameter values            
+        # Assign parameter values
         self.params = self.Parameters(parvalues)
         p = self.params
-        
-        #--- soil prop average
+
+        # --- soil prop average
         self.AVGDUL = self.take_avg(p.DUL, p.DS)
         self.AVGLL = self.take_avg(p.LL, p.DS)
         self.AVGBD = self.take_avg(p.BD, p.DS)
-        self.AVGPROS = (1 - self.AVGBD / 2.65)  # Average porosity (-) which is 2.65 g/cm3 for soil
-        #print("AVGPROS", self.AVGPROS)
-        #print("AVGDUL", self.AVGDUL)
-        #print("AVGLL", self.AVGLL)
-        
-                # Check validity of maximum soil moisture amount in topsoil (SMLIM)
-        SMLIM = limit(self.AVGLL, self.AVGPROS,  parvalues["SMLIM"])
+        self.AVGPROS = (
+            1 - self.AVGBD / 2.65
+        )  # Average porosity (-) which is 2.65 g/cm3 for soil
+        # print("AVGPROS", self.AVGPROS)
+        # print("AVGDUL", self.AVGDUL)
+        # print("AVGLL", self.AVGLL)
+
+        # Check validity of maximum soil moisture amount in topsoil (SMLIM)
+        SMLIM = limit(self.AVGLL, self.AVGPROS, parvalues["SMLIM"])
 
         if SMLIM != parvalues["SMLIM"]:
             msg = "SMLIM not in valid range, changed from %f to %f."
             self.logger.warn(msg % (parvalues["SMLIM"], SMLIM))
-        
+
         # set default RD to 10 cm, also derive maximum depth and old rooting depth
         RD = self.DEFAULT_RD
         RDM = max(RD, p.RDMSOL)
         self.RDold = RD
         self.RDM = RDM
-        
+
         # Initial surface storage
         SS = p.SSI
-        
+
         # Initial soil moisture content and amount of water in rooted zone,
         # limited by SMLIM. Save initial value (WI)
-        SM = limit(self.AVGLL, SMLIM, (self.AVGLL + p.WAV/RD))
+        SM = limit(self.AVGLL, SMLIM, (self.AVGLL + p.WAV / RD))
         W = SM * RD
         WI = W
-        
+
         # initial amount of soil moisture between current root zone and maximum
         # rootable depth (WLOW). Save initial value (WLOWI)
-        WLOW  = limit(0., self.AVGPROS*(RDM - RD), (p.WAV + RDM*self.AVGLL - W))
+        WLOW = limit(0.0, self.AVGPROS * (RDM - RD), (p.WAV + RDM * self.AVGLL - W))
         WLOWI = WLOW
-        
+
         # Total water depth in soil column (root zone + subsoil)
         WWLOW = W + WLOW
 
         # soil evaporation, days since last rain (DLSR) set to 1 if the
         # soil is wetter then halfway between SMW and SMFCF, else DSLR=5.
-        self.DSLR = 1. if (SM >= (self.AVGLL + 0.5*(self.AVGDUL-self.AVGLL))) else 5.
+        self.DSLR = (
+            1.0 if (SM >= (self.AVGLL + 0.5 * (self.AVGDUL - self.AVGLL))) else 5.0
+        )
 
         # Initialize some remaining helper variables
-        self.RINold = 0.
+        self.RINold = 0.0
         self.in_crop_cycle = False
-        self.NINFTB = Afgen([0.0,0.0, 0.5,0.0, 1.5,1.0])
+        self.NINFTB = Afgen([0.0, 0.0, 0.5, 0.0, 1.5, 1.0])
 
-        # Initialize model state variables.       
-        self.states = self.StateVariables(kiosk, publish=["SM", "DSOS"], SM=SM, SS=SS,
-                           SSI=p.SSI, W=W, WI=WI, WLOW=WLOW, WLOWI=WLOWI,
-                           WWLOW=WWLOW, WTRAT=0., EVST=0., EVWT=0., TSR=0.,
-                           RAINT=0., WDRT=0., TOTINF=0., TOTIRR=0., DSOS=0,
-                           PERCT=0., LOSST=0., WBALRT=-999., WBALTT=-999.)
+        # Initialize model state variables.
+        self.states = self.StateVariables(
+            kiosk,
+            publish=["SM", "DSOS"],
+            SM=SM,
+            SS=SS,
+            SSI=p.SSI,
+            W=W,
+            WI=WI,
+            WLOW=WLOW,
+            WLOWI=WLOWI,
+            WWLOW=WWLOW,
+            WTRAT=0.0,
+            EVST=0.0,
+            EVWT=0.0,
+            TSR=0.0,
+            RAINT=0.0,
+            WDRT=0.0,
+            TOTINF=0.0,
+            TOTIRR=0.0,
+            DSOS=0,
+            PERCT=0.0,
+            LOSST=0.0,
+            WBALRT=-999.0,
+            WBALTT=-999.0,
+        )
         self.rates = self.RateVariables(kiosk, publish="EVS")
-        
+
         # Connect to CROP_START/CROP_FINISH signals for water balance to
         # search for crop transpiration values
         self._connect_signal(self._on_CROP_START, signals.crop_start)
@@ -1035,7 +1114,7 @@ class IndigoWaterbalanceFD(SimulationObject):
 
         # Rate of irrigation (RIRR)
         r.RIRR = self._RIRR
-        self._RIRR = 0.
+        self._RIRR = 0.0
 
         # Transpiration and maximum soil and surface water evaporation rates
         # are calculated by the crop evapotranspiration module.
@@ -1043,7 +1122,7 @@ class IndigoWaterbalanceFD(SimulationObject):
         # the potential soil/water evaporation rates directly because there is
         # no shading by the canopy.
         if "TRA" not in self.kiosk:
-            r.WTRA = 0.
+            r.WTRA = 0.0
             EVWMX = drv.E0
             EVSMX = drv.ES0
         else:
@@ -1052,9 +1131,9 @@ class IndigoWaterbalanceFD(SimulationObject):
             EVSMX = k.EVSMX
 
         # Actual evaporation rates
-        r.EVW = 0.
-        r.EVS = 0.
-        if s.SS > 1.:
+        r.EVW = 0.0
+        r.EVS = 0.0
+        if s.SS > 1.0:
             # If surface storage > 1cm then evaporate from water layer on
             # soil surface
             r.EVW = EVWMX
@@ -1064,7 +1143,7 @@ class IndigoWaterbalanceFD(SimulationObject):
                 # If infiltration >= 1cm on previous day assume maximum soil
                 # evaporation
                 r.EVS = EVSMX
-                self.DSLR = 1.
+                self.DSLR = 1.0
             else:
                 # Else soil evaporation is a function days-since-last-rain (DSLR)
                 EVSMXT = EVSMX * (sqrt(self.DSLR + 1) - sqrt(self.DSLR))
@@ -1073,11 +1152,10 @@ class IndigoWaterbalanceFD(SimulationObject):
 
         # Potentially infiltrating rainfall
         if p.IFUNRN == 0:
-            RINPRE = (1. - p.NOTINF) * drv.RAIN
+            RINPRE = (1.0 - p.NOTINF) * drv.RAIN
         else:
             # infiltration is function of storm size (NINFTB)
-            RINPRE = (1. - p.NOTINF * self.NINFTB(drv.RAIN)) * drv.RAIN
-
+            RINPRE = (1.0 - p.NOTINF * self.NINFTB(drv.RAIN)) * drv.RAIN
 
         # Second stage preliminary infiltration rate (RINPRE)
         # including surface storage and irrigation
@@ -1086,27 +1164,27 @@ class IndigoWaterbalanceFD(SimulationObject):
             # with surface storage, infiltration limited by SOPE
             AVAIL = RINPRE + r.RIRR - r.EVW
             RINPRE = min(p.SOPE, AVAIL)
-            
+
         RD = self._determine_rooting_depth()
-        
+
         # equilibrium amount of soil moisture in rooted zone
         WE = self.AVGDUL * RD
         # percolation from rooted zone to subsoil equals amount of
         # excess moisture in rooted zone, not to exceed maximum percolation rate
         # of root zone (SOPE)
-        PERC1 = limit(0., p.SOPE, (s.W - WE) - r.WTRA - r.EVS)
+        PERC1 = limit(0.0, p.SOPE, (s.W - WE) - r.WTRA - r.EVS)
 
         # loss of water at the lower end of the maximum root zone
         # equilibrium amount of soil moisture below rooted zone
         WELOW = self.AVGDUL * (self.RDM - RD)
-        r.LOSS = limit(0., p.KSUB, (s.WLOW - WELOW + PERC1))
+        r.LOSS = limit(0.0, p.KSUB, (s.WLOW - WELOW + PERC1))
 
         # percolation not to exceed uptake capacity of subsoil
         PERC2 = ((self.RDM - RD) * self.AVGPROS - s.WLOW) + r.LOSS
         r.PERC = min(PERC1, PERC2)
 
         # adjustment of infiltration rate
-        r.RIN = min(RINPRE, (self.AVGPROS - s.SM)*RD + r.WTRA + r.EVS + r.PERC)
+        r.RIN = min(RINPRE, (self.AVGPROS - s.SM) * RD + r.WTRA + r.EVS + r.PERC)
         self.RINold = r.RIN
 
         # rates of change in amounts of moisture W and WLOW
@@ -1118,7 +1196,10 @@ class IndigoWaterbalanceFD(SimulationObject):
         Wtmp = s.W + r.DW
         if Wtmp < 0.0:
             r.EVS += Wtmp
-            assert r.EVS >= 0., "Negative soil evaporation rate on day %s: %s" % (day, r.EVS)
+            assert r.EVS >= 0.0, "Negative soil evaporation rate on day %s: %s" % (
+                day,
+                r.EVS,
+            )
             r.DW = -s.W
 
         # Computation of rate of change in surface storage and surface runoff
@@ -1138,7 +1219,7 @@ class IndigoWaterbalanceFD(SimulationObject):
         s = self.states
         p = self.params
         r = self.rates
-        
+
         # INTEGRALS OF THE WATERBALANCE: SUMMATIONS AND STATE VARIABLES
 
         # total transpiration
@@ -1159,7 +1240,10 @@ class IndigoWaterbalanceFD(SimulationObject):
 
         # amount of water in rooted zone
         s.W += r.DW * delt
-        assert s.W >= 0., "Negative amount of water in root zone on day %s: %s" % (day, s.W)
+        assert s.W >= 0.0, "Negative amount of water in root zone on day %s: %s" % (
+            day,
+            s.W,
+        )
 
         # total percolation and loss of water by deep leaching
         s.PERCT += r.PERC * delt
@@ -1178,7 +1262,7 @@ class IndigoWaterbalanceFD(SimulationObject):
         self._redistribute_water(RDchange)
 
         # mean soil moisture content in rooted zone
-        s.SM = s.W/RD
+        s.SM = s.W / RD
 
         # Accumulate days since oxygen stress, but only if a crop is present
         if s.SM >= (self.AVGPROS - p.CRAIRC):  # and self.in_crop_cycle:
@@ -1191,16 +1275,39 @@ class IndigoWaterbalanceFD(SimulationObject):
 
     @prepare_states
     def finalize(self, day):
-        
+
         s = self.states
         p = self.params
 
         # Checksums waterbalance for systems without groundwater
         # for rootzone (WBALRT) and whole system (WBALTT)
         # The sum of all increments made are added to ensure a closing waterbalance
-        s.WBALRT = s.TOTINF + s.WI + s.WDRT - s.EVST - s.WTRAT - s.PERCT - s.W + sum(self._increments_W)
-        s.WBALTT = (s.SSI + s.RAINT + s.TOTIRR + s.WI - s.W + sum(self._increments_W) +
-                    s.WLOWI - s.WLOW - s.WTRAT - s.EVWT - s.EVST - s.TSR - s.LOSST - s.SS)
+        s.WBALRT = (
+            s.TOTINF
+            + s.WI
+            + s.WDRT
+            - s.EVST
+            - s.WTRAT
+            - s.PERCT
+            - s.W
+            + sum(self._increments_W)
+        )
+        s.WBALTT = (
+            s.SSI
+            + s.RAINT
+            + s.TOTIRR
+            + s.WI
+            - s.W
+            + sum(self._increments_W)
+            + s.WLOWI
+            - s.WLOW
+            - s.WTRAT
+            - s.EVWT
+            - s.EVST
+            - s.TSR
+            - s.LOSST
+            - s.SS
+        )
 
         if abs(s.WBALRT) > 0.0001:
             msg = "Water balance for root zone does not close."
@@ -1208,15 +1315,17 @@ class IndigoWaterbalanceFD(SimulationObject):
 
         if abs(s.WBALTT) > 0.0001:
             msg = "Water balance for complete soil profile does not close.\n"
-            msg += ("Total INIT + IN:   %f\n" % (s.WI + s.WLOWI + s.SSI + s.TOTIRR +
-                                                 s.RAINT))
-            msg += ("Total FINAL + OUT: %f\n" % (s.W + s.WLOW + s.SS + s.EVWT + s.EVST +
-                                                 s.WTRAT + s.TSR + s.LOSST))
+            msg += "Total INIT + IN:   %f\n" % (
+                s.WI + s.WLOWI + s.SSI + s.TOTIRR + s.RAINT
+            )
+            msg += "Total FINAL + OUT: %f\n" % (
+                s.W + s.WLOW + s.SS + s.EVWT + s.EVST + s.WTRAT + s.TSR + s.LOSST
+            )
             raise exc.WaterBalanceError(msg)
-        
+
         # Run finalize on the subSimulationObjects
         SimulationObject.finalize(self, day)
-    
+
     def _determine_rooting_depth(self):
         """Determines appropriate use of the rooting depth (RD)
 
@@ -1243,20 +1352,20 @@ class IndigoWaterbalanceFD(SimulationObject):
         """
         s = self.states
         p = self.params
-        
-        WDR = 0.
+
+        WDR = 0.0
         if RDchange > 0.001:
             # roots grow down by more than 0.001 cm
             # move water from previously unrooted zone and add to new rooted zone
-            WDR = s.WLOW * RDchange/(p.RDMSOL - self.RDold)
+            WDR = s.WLOW * RDchange / (p.RDMSOL - self.RDold)
             # Take minimum of WDR and WLOW to avoid negative WLOW due to rounding
             WDR = min(s.WLOW, WDR)
         else:
             # roots disappear upwards by more than 0.001 cm (especially when crop disappears)
             # move water from previously rooted zone and add to new unrooted zone
-            WDR = s.W * RDchange/self.RDold
+            WDR = s.W * RDchange / self.RDold
 
-        if WDR != 0.:
+        if WDR != 0.0:
             # reduce amount of water in subsoil
             s.WLOW -= WDR
             # increase amount of water in root zone
@@ -1273,7 +1382,7 @@ class IndigoWaterbalanceFD(SimulationObject):
         self.rooted_layer_needs_reset = True
 
     def _on_IRRIGATE(self, amount, efficiency):
-        if amount < 7 :
+        if amount < 7:
             amount = 7
         self._RIRR = amount * efficiency
 
@@ -1293,7 +1402,7 @@ class IndigoWaterbalanceFD(SimulationObject):
         oSM = s.SM
         oW = s.W
         # new values
-        nW = nSM/oSM * s.W
+        nW = nSM / oSM * s.W
 
         # update states
         s.W = nW

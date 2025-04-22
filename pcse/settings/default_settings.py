@@ -23,7 +23,7 @@ and underscore to the name.
 import os as _os
 from .. import util as _util
 
-PCSE_USER_HOME =  _os.path.join(_util.get_user_home(), ".pcse")
+PCSE_USER_HOME = _os.path.join(_util.get_user_home(), ".pcse")
 
 # Location for meteo cache files
 METEO_CACHE_DIR = _os.path.join(PCSE_USER_HOME, "meteo_cache")
@@ -51,38 +51,29 @@ LOG_DIR = _os.path.join(PCSE_USER_HOME, "logs")
 LOG_FILE_NAME = _os.path.join(LOG_DIR, "pcse.log")
 LOG_LEVEL_FILE = "ERROR"
 LOG_LEVEL_CONSOLE = "ERROR"
-LOG_CONFIG = \
-            {
-                'version': 1,
-                'disable_existing_loggers': True,
-                'formatters': {
-                    'standard': {
-                        'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-                    },
-                    'brief': {
-                        'format': '[%(levelname)s] - %(message)s'
-                    },
-                },
-                'handlers': {
-                    'console': {
-                        'level':LOG_LEVEL_CONSOLE,
-                        'class':'logging.StreamHandler',
-                        'formatter':'brief'
-                    },
-                    'file': {
-                        'level':LOG_LEVEL_FILE,
-                        'class':'logging.handlers.RotatingFileHandler',
-                        'formatter':'brief',
-                        'filename':LOG_FILE_NAME,
-                        'maxBytes': 1024**2,
-                        'backupCount': 700,
-                        'mode':'a',
-                        'encoding': 'utf8'
-                    },
-                },
-                'root': {
-                         'handlers': ['console', 'file'],
-                         'propagate': True,
-                         'level':'NOTSET'
-                }
-            }
+LOG_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": True,
+    "formatters": {
+        "standard": {"format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"},
+        "brief": {"format": "[%(levelname)s] - %(message)s"},
+    },
+    "handlers": {
+        "console": {
+            "level": LOG_LEVEL_CONSOLE,
+            "class": "logging.StreamHandler",
+            "formatter": "brief",
+        },
+        "file": {
+            "level": LOG_LEVEL_FILE,
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "brief",
+            "filename": LOG_FILE_NAME,
+            "maxBytes": 1024**2,
+            "backupCount": 700,
+            "mode": "a",
+            "encoding": "utf8",
+        },
+    },
+    "root": {"handlers": ["console", "file"], "propagate": True, "level": "NOTSET"},
+}

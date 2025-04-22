@@ -4,7 +4,7 @@
 import logging
 from datetime import date
 
-from ..traitlets import (HasTraits, List, Float, Int, Instance, Dict, Bool, All)
+from ..traitlets import HasTraits, List, Float, Int, Instance, Dict, Bool, All
 from ..pydispatch import dispatcher
 from ..util import Afgen
 from .. import exceptions as exc
@@ -80,8 +80,7 @@ class ParamTemplate(HasTraits):
 
 
 def check_publish(publish):
-    """ Convert the list of published variables to a set with unique elements.
-    """
+    """Convert the list of published variables to a set with unique elements."""
 
     if publish is None:
         publish = []
@@ -109,8 +108,10 @@ class StatesRatesCommon(HasTraits):
 
         # Make sure that the variable kiosk is provided
         if not isinstance(kiosk, VariableKiosk):
-            msg = ("Variable Kiosk must be provided when instantiating rate " +
-                   "or state variables.")
+            msg = (
+                "Variable Kiosk must be provided when instantiating rate "
+                + "or state variables."
+            )
             raise RuntimeError(msg)
         self._kiosk = kiosk
 
@@ -150,17 +151,20 @@ class StatesRatesCommon(HasTraits):
         for attr in self._valid_vars:
             if attr in publish:
                 publish.remove(attr)
-                self._kiosk.register_variable(id(self), attr, type=self._vartype,
-                                              publish=True)
+                self._kiosk.register_variable(
+                    id(self), attr, type=self._vartype, publish=True
+                )
                 self.observe(handler=self._update_kiosk, names=attr, type=All)
             else:
-                self._kiosk.register_variable(id(self), attr, type=self._vartype,
-                                              publish=False)
+                self._kiosk.register_variable(
+                    id(self), attr, type=self._vartype, publish=False
+                )
         # Check if the set of published variables is exhausted, otherwise
         # raise an error.
         if len(publish) > 0:
-            msg = ("Unknown variable(s) specified with the publish " +
-                   "keyword: %s") % publish
+            msg = (
+                "Unknown variable(s) specified with the publish " + "keyword: %s"
+            ) % publish
             raise exc.PCSEError(msg)
 
     # def __setattr__(self, attr, value):
@@ -182,8 +186,7 @@ class StatesRatesCommon(HasTraits):
     #         raise AttributeError(msg)
 
     def _update_kiosk(self, change):
-        """Update the variable_kiosk through trait notification.
-        """
+        """Update the variable_kiosk through trait notification."""
         self._kiosk.set_variable(id(self), change["name"], change["new"])
 
     def unlock(self):
@@ -206,8 +209,7 @@ class StatesRatesCommon(HasTraits):
 
     @property
     def logger(self):
-        loggername = "%s.%s" % (self.__class__.__module__,
-                                self.__class__.__name__)
+        loggername = "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
         return logging.getLogger(loggername)
 
 
@@ -281,8 +283,9 @@ class StatesTemplate(StatesRatesCommon):
 
         # Check if kwargs is empty, otherwise issue a warning
         if len(kwargs) > 0:
-            msg = ("Initial value given for unknown state variable(s): " +
-                   "%s") % kwargs.keys()
+            msg = (
+                "Initial value given for unknown state variable(s): " + "%s"
+            ) % kwargs.keys()
             logging.warn(msg)
 
         # Lock the object to prevent further changes at this stage.
@@ -335,12 +338,12 @@ class StatesWithImplicitRatesTemplate(StatesTemplate):
         self.__initialized = True
 
         for s in self.__class__.listIntegratedStates():
-            self.rates['r' + s] = 0.0
+            self.rates["r" + s] = 0.0
 
     def integrate(self, delta):
         # integrate all:
         for s in self.listIntegratedStates():
-            rate = getattr(self, 'r' + s)
+            rate = getattr(self, "r" + s)
             state = getattr(self, s)
             newvalue = state + delta * rate
             setattr(self, s, newvalue)
@@ -351,11 +354,21 @@ class StatesWithImplicitRatesTemplate(StatesTemplate):
 
     @classmethod
     def listIntegratedStates(cls):
-        return sorted([a for a in cls.__dict__ if isinstance(getattr(cls, a), Float) and not a.startswith('_')])
+        return sorted(
+            [
+                a
+                for a in cls.__dict__
+                if isinstance(getattr(cls, a), Float) and not a.startswith("_")
+            ]
+        )
 
     @classmethod
     def initialValues(cls):
-        return dict((a, 0.0) for a in cls.__dict__ if isinstance(getattr(cls, a), Float) and not a.startswith('_'))
+        return dict(
+            (a, 0.0)
+            for a in cls.__dict__
+            if isinstance(getattr(cls, a), Float) and not a.startswith("_")
+        )
 
 
 class RatesTemplate(StatesRatesCommon):
@@ -402,7 +415,7 @@ class RatesTemplate(StatesRatesCommon):
         """
 
         # Define the zero value for Float, Int and Bool
-        zero_value = {Bool: False, Int: 0, Float: 0.}
+        zero_value = {Bool: False, Int: 0, Float: 0.0}
 
         d = {}
         for name, value in self.traits().items():
@@ -411,9 +424,11 @@ class RatesTemplate(StatesRatesCommon):
             try:
                 d[name] = zero_value[value.__class__]
             except KeyError:
-                msg = ("Rate variable '%s' not of type Float, Bool or Int. " +
-                       "Its zero value cannot be determined and it will " +
-                       "not be treated by zerofy().") % name
+                msg = (
+                    "Rate variable '%s' not of type Float, Bool or Int. "
+                    + "Its zero value cannot be determined and it will "
+                    + "not be treated by zerofy()."
+                ) % name
                 self.logger.warning(msg)
         return d
 

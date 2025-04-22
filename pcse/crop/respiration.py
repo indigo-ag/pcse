@@ -6,9 +6,10 @@ from ..decorators import prepare_rates, prepare_states
 from ..base import ParamTemplate, SimulationObject, RatesTemplate
 from ..util import AfgenTrait
 
+
 class WOFOST_Maintenance_Respiration(SimulationObject):
     """Maintenance respiration in WOFOST
-    
+
     WOFOST calculates the maintenance respiration as proportional to the dry
     weights of the plant organs to be maintained, where each plant organ can be
     assigned a different maintenance coefficient. Multiplying organ weight
@@ -19,7 +20,7 @@ class WOFOST_Maintenance_Respiration(SimulationObject):
     in temperature as defined by `Q10`.
 
     **Simulation parameters:** (To be provided in cropdata dictionary):
-    
+
     =======  ============================================= =======  ============
      Name     Description                                   Type     Unit
     =======  ============================================= =======  ============
@@ -35,10 +36,10 @@ class WOFOST_Maintenance_Respiration(SimulationObject):
     RMO      Relative maintenance respiration rate for
              storage organs                                 SCr     |kg CH2O kg-1 d-1|
     =======  ============================================= =======  ============
-    
+
 
     **State and rate variables:**
-    
+
     `WOFOSTMaintenanceRespiration` returns the potential maintenance respiration PMRES
      directly from the `__call__()` method, but also includes it as a rate variable
      within the object.
@@ -52,11 +53,11 @@ class WOFOST_Maintenance_Respiration(SimulationObject):
     =======  ================================================ ==== =============
 
     **Signals send or handled**
-    
+
     None
-    
+
     **External dependencies:**
-    
+
     =======  =================================== =============================  ============
      Name     Description                         Provided by                    Unit
     =======  =================================== =============================  ============
@@ -69,17 +70,17 @@ class WOFOST_Maintenance_Respiration(SimulationObject):
 
 
     """
-    
+
     class Parameters(ParamTemplate):
-        Q10 = Float(-99.)
-        RMR = Float(-99.)
-        RML = Float(-99.)
-        RMS = Float(-99.)
-        RMO = Float(-99.)
+        Q10 = Float(-99.0)
+        RMR = Float(-99.0)
+        RML = Float(-99.0)
+        RMS = Float(-99.0)
+        RMO = Float(-99.0)
         RFSETB = AfgenTrait()
 
     class RateVariables(RatesTemplate):
-        PMRES = Float(-99.)
+        PMRES = Float(-99.0)
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -92,16 +93,18 @@ class WOFOST_Maintenance_Respiration(SimulationObject):
         self.params = self.Parameters(parvalues)
         self.rates = self.RateVariables(kiosk)
         self.kiosk = kiosk
-        
+
     def __call__(self, day, drv):
         p = self.params
         kk = self.kiosk
-        
-        RMRES = (p.RMR * kk["WRT"] +
-                 p.RML * kk["WLV"] +
-                 p.RMS * kk["WST"] +
-                 p.RMO * kk["WSO"])
+
+        RMRES = (
+            p.RMR * kk["WRT"]
+            + p.RML * kk["WLV"]
+            + p.RMS * kk["WST"]
+            + p.RMO * kk["WSO"]
+        )
         RMRES *= p.RFSETB(kk["DVS"])
-        TEFF = p.Q10**((drv.TEMP-25.)/10.)
+        TEFF = p.Q10 ** ((drv.TEMP - 25.0) / 10.0)
         self.rates.PMRES = RMRES * TEFF
         return self.rates.PMRES

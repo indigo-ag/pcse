@@ -7,6 +7,7 @@ import inspect
 
 from . import default_settings
 
+
 class Settings(object):
     """
     Settings for PCSE.
@@ -25,7 +26,6 @@ class Settings(object):
                 os.mkdir(value)
         object.__setattr__(self, name, value)
 
-
     def __init__(self):
         # update this dict from global settings (but only for ALL_CAPS settings)
         for setting in dir(default_settings):
@@ -34,16 +34,21 @@ class Settings(object):
             elif setting.startswith("_"):
                 pass
             else:
-                msg = ("Warning: settings should be ALL_CAPS. Setting '%s' in default_" +
-                       "settings will be ignored.") % setting
+                msg = (
+                    "Warning: settings should be ALL_CAPS. Setting '%s' in default_"
+                    + "settings will be ignored."
+                ) % setting
                 print(msg)
 
         try:
             mod = importlib.import_module("user_settings")
         except ImportError as e:
             raise ImportError(
-                ("Could not import settings '%s' (Is it on sys.path? Is there an import" +
-                 " error in the settings file?): %s") % ("$HOME/.pcse/user_settings.py", e)
+                (
+                    "Could not import settings '%s' (Is it on sys.path? Is there an import"
+                    + " error in the settings file?): %s"
+                )
+                % ("$HOME/.pcse/user_settings.py", e)
             )
 
         for setting in dir(mod):
@@ -52,9 +57,12 @@ class Settings(object):
             elif setting.startswith("_"):
                 pass
             else:
-                msg = ("Warning: settings should be ALL_CAPS. Setting '%s' in user_" +
-                       "settings will be ignored.") % setting
+                msg = (
+                    "Warning: settings should be ALL_CAPS. Setting '%s' in user_"
+                    + "settings will be ignored."
+                ) % setting
                 print(msg)
+
 
 # Initialize the settings from default_settings and users_settings
 settings = Settings()

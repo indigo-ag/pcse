@@ -19,7 +19,8 @@ from ... import exceptions as exc
 from ..cgms12.data_providers import fetch_crop_name
 from ...base import WeatherDataProvider, WeatherDataContainer
 
-#----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
 class GridWeatherDataProvider(WeatherDataProvider):
     """Retrieves meteodata from the GRID_WEATHER table in a CGMS database.
 
@@ -39,12 +40,20 @@ class GridWeatherDataProvider(WeatherDataProvider):
     instance. This makes that class instances can be pickled.
 
     """
+
     # default values for the Angstrom parameters in the sunshine duration model
     angstA = 0.29
     angstB = 0.49
 
-    def __init__(self, engine, grid_no, start_date=None, end_date=None,
-                 recalc_ET=False, use_cache=True):
+    def __init__(
+        self,
+        engine,
+        grid_no,
+        start_date=None,
+        end_date=None,
+        recalc_ET=False,
+        use_cache=True,
+    ):
 
         WeatherDataProvider.__init__(self)
         self.grid_no = int(grid_no)
@@ -96,7 +105,7 @@ class GridWeatherDataProvider(WeatherDataProvider):
                     pass
         return False
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def _fetch_location_from_db(self, metadata):
         """Retrieves latitude, longitude, elevation from 'grid' table and
         assigns them to self.latitude, self.longitude, self.elevation."""
@@ -104,10 +113,11 @@ class GridWeatherDataProvider(WeatherDataProvider):
         # Pull Latitude value for grid nr from database
 
         try:
-            table_grid = Table('grid', metadata, autoload=True)
-            r = select([table_grid.c.latitude, table_grid.c.longitude,
-                        table_grid.c.altitude],
-                       table_grid.c.grid_no==self.grid_no).execute()
+            table_grid = Table("grid", metadata, autoload=True)
+            r = select(
+                [table_grid.c.latitude, table_grid.c.longitude, table_grid.c.altitude],
+                table_grid.c.grid_no == self.grid_no,
+            ).execute()
             row = r.fetchone()
             r.close()
             if row is None:
@@ -120,71 +130,89 @@ class GridWeatherDataProvider(WeatherDataProvider):
         self.longitude = row.longitude
         self.elevation = row.altitude
 
-        msg = "Succesfully retrieved location information from 'grid' table "+\
-              "for grid %s"
+        msg = (
+            "Succesfully retrieved location information from 'grid' table "
+            + "for grid %s"
+        )
         self.logger.info(msg % self.grid_no)
 
     def _fetch_grid_weather_from_db(self, metadata):
-        """Retrieves the meteo data from table 'grid_weather'.
-        """
+        """Retrieves the meteo data from table 'grid_weather'."""
 
         try:
-            table_gw = Table('grid_weather', metadata, autoload=True)
-            r = select([table_gw],and_(table_gw.c.grid_no==self.grid_no,
-                                       table_gw.c.day>=self.start_date,
-                                       table_gw.c.day<=self.end_date)
-                       ).execute()
+            table_gw = Table("grid_weather", metadata, autoload=True)
+            r = select(
+                [table_gw],
+                and_(
+                    table_gw.c.grid_no == self.grid_no,
+                    table_gw.c.day >= self.start_date,
+                    table_gw.c.day <= self.end_date,
+                ),
+            ).execute()
             rows = r.fetchall()
 
             c = len(rows)
             if c < self.timeinterval:
-                msg =  "Only %i records selected from table 'grid_weather' "+\
-                       "for grid %i, period %s -- %s."
-                self.logger.warn(msg % (c, self.grid_no, self.start_date,
-                                        self.end_date))
+                msg = (
+                    "Only %i records selected from table 'grid_weather' "
+                    + "for grid %i, period %s -- %s."
+                )
+                self.logger.warn(
+                    msg % (c, self.grid_no, self.start_date, self.end_date)
+                )
 
             meteopackager = self._make_WeatherDataContainer
             for row in rows:
                 DAY = self.check_keydate(row.day)
-                t = {"DAY": DAY, "LAT": self.latitude,
-                     "LON": self.longitude, "ELEV": self.elevation}
+                t = {
+                    "DAY": DAY,
+                    "LAT": self.latitude,
+                    "LON": self.longitude,
+                    "ELEV": self.elevation,
+                }
                 wdc = meteopackager(row, t)
                 self._store_WeatherDataContainer(wdc, DAY)
         except Exception as e:
             errstr = "Failure reading meteodata for day %s: %s" % (row.day, str(e))
             raise exc.PCSEError(errstr)
 
-        msg = ("Successfully retrieved weather data from 'grid_weather' table "
-               "for grid %s between %s and %s")
+        msg = (
+            "Successfully retrieved weather data from 'grid_weather' table "
+            "for grid %s between %s and %s"
+        )
         self.logger.info(msg % (self.grid_no, self.start_date, self.end_date))
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def _make_WeatherDataContainer(self, row, t):
         """Process record from grid_weather including unit conversion."""
 
-        t.update({"TMAX": float(row.maximum_temperature),
-                  "TMIN": float(row.minimum_temperature),
-                  "VAP":  float(row.vapour_pressure),
-                  "WIND": wind10to2(float(row.windspeed)),
-                  "RAIN": float(row.rainfall)/10.,
-                  "IRRAD": float(row.calculated_radiation)*1000.,
-                  "SNOWDEPTH": safe_float(row.snow_depth)})
+        t.update(
+            {
+                "TMAX": float(row.maximum_temperature),
+                "TMIN": float(row.minimum_temperature),
+                "VAP": float(row.vapour_pressure),
+                "WIND": wind10to2(float(row.windspeed)),
+                "RAIN": float(row.rainfall) / 10.0,
+                "IRRAD": float(row.calculated_radiation) * 1000.0,
+                "SNOWDEPTH": safe_float(row.snow_depth),
+            }
+        )
 
         if not self.recalc_ET:
-            t.update({"E0":  float(row.e0)/10.,
-                      "ES0": float(row.es0)/10.,
-                      "ET0": float(row.et0)/10.})
+            t.update(
+                {
+                    "E0": float(row.e0) / 10.0,
+                    "ES0": float(row.es0) / 10.0,
+                    "ET0": float(row.et0) / 10.0,
+                }
+            )
         else:
-            e0, es0, et0 = reference_ET(ANGSTA=self.angstA,
-                                        ANGSTB=self.angstB, **t)
-            t.update({"E0":  e0/10.,
-                      "ES0": es0/10.,
-                      "ET0": et0/10.})
+            e0, es0, et0 = reference_ET(ANGSTA=self.angstA, ANGSTB=self.angstB, **t)
+            t.update({"E0": e0 / 10.0, "ES0": es0 / 10.0, "ET0": et0 / 10.0})
 
         wdc = WeatherDataContainer(**t)
 
         return wdc
-
 
 
 class AgroManagementDataProvider(list):
@@ -203,6 +231,7 @@ class AgroManagementDataProvider(list):
     and an earlier start date should be used. In that case use the `set_campaign_start_date(date)`
     to update the campaign_start_date.
     """
+
     agro_management_template = """
           - {campaign_start_date}:
                 CropCalendar:
@@ -228,13 +257,21 @@ class AgroManagementDataProvider(list):
         metadata = MetaData(engine)
         table_cc = Table("crop_calendar", metadata, autoload=True)
 
-        r = select([table_cc], and_(table_cc.c.grid_no == self.grid_no,
-                                    table_cc.c.crop_no == self.crop_no,
-                                    table_cc.c.year == self.campaign_year)).execute()
+        r = select(
+            [table_cc],
+            and_(
+                table_cc.c.grid_no == self.grid_no,
+                table_cc.c.crop_no == self.crop_no,
+                table_cc.c.year == self.campaign_year,
+            ),
+        ).execute()
         row = r.fetchone()
         r.close()
         if row is None:
-            msg = "Failed deriving crop calendar for grid_no %s, crop_no %s " % (grid_no, crop_no)
+            msg = "Failed deriving crop calendar for grid_no %s, crop_no %s " % (
+                grid_no,
+                crop_no,
+            )
             raise exc.PCSEError(msg)
 
         # Determine the start date.
@@ -260,21 +297,25 @@ class AgroManagementDataProvider(list):
         # Determine crop end date/type and the end of the campaign
         self.crop_end_type = str(row.end_type).strip().lower()
         if self.crop_end_type not in ["harvest", "earliest", "maturity"]:
-            msg = ("Unrecognized option for END_TYPE in table "
-                   "CROP_CALENDAR: %s" % row.end_type)
+            msg = (
+                "Unrecognized option for END_TYPE in table "
+                "CROP_CALENDAR: %s" % row.end_type
+            )
             raise exc.PCSEError(msg)
 
         # Note that we end one day to the campaign end date in order to avoid that the
         # crop_end_date and campaign_end_date fall on the same date.
         if self.crop_end_type == "maturity":
             self.crop_end_date = "null"
-            self.campaign_end_date = self.crop_start_date + dt.timedelta(days=self.max_duration+1)
+            self.campaign_end_date = self.crop_start_date + dt.timedelta(
+                days=self.max_duration + 1
+            )
         else:
             month = int(row.end_month)
             day = int(row.end_monthday)
             self.crop_end_date = dt.date(year, month, day)
             if self.crop_end_date <= self.crop_start_date:
-                self.crop_end_date = dt.date(year+1, month, day)
+                self.crop_end_date = dt.date(year + 1, month, day)
             self.campaign_end_date = self.crop_end_date + dt.timedelta(days=1)
 
         input = self._build_yaml_agromanagement()
@@ -286,16 +327,17 @@ class AgroManagementDataProvider(list):
         # We do not get a variety_name from the CGMS database, so we make one
         # as <crop_name>_<grid>_<year>
         variety_name = "%s_%s_%s" % (self.crop_name, self.grid_no, self.campaign_year)
-        input = self.agro_management_template.format(campaign_start_date=self.campaign_start_date,
-                                                     crop_name=self.crop_name,
-                                                     variety_name=variety_name,
-                                                     crop_start_date=self.crop_start_date,
-                                                     crop_start_type=self.crop_start_type,
-                                                     crop_end_date=self.crop_end_date,
-                                                     crop_end_type=self.crop_end_type,
-                                                     duration=self.max_duration,
-                                                     campaign_end_date=self.campaign_end_date
-                                                     )
+        input = self.agro_management_template.format(
+            campaign_start_date=self.campaign_start_date,
+            crop_name=self.crop_name,
+            variety_name=variety_name,
+            crop_start_date=self.crop_start_date,
+            crop_start_type=self.crop_start_type,
+            crop_end_date=self.crop_end_date,
+            crop_end_type=self.crop_end_type,
+            duration=self.max_duration,
+            campaign_end_date=self.campaign_end_date,
+        )
         return input
 
     def _parse_yaml(self, input):

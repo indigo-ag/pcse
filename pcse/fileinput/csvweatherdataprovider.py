@@ -27,11 +27,9 @@ class OutOfRange(PCSEError):
 
 
 class IRRADFromSunshineDuration:
-
     def __init__(self, latitude, angstA, angstB):
 
-        assert -90 < latitude < 90, \
-            "Invalid latitude value (%s) encountered" % latitude
+        assert -90 < latitude < 90, "Invalid latitude value (%s) encountered" % latitude
         check_angstromAB(angstA, angstB)
         self.latitude = latitude
         self.angstA = angstA
@@ -44,8 +42,9 @@ class IRRADFromSunshineDuration:
         :param day: the day
         :return: irradiance in J/m2/day
         """
-        assert 0 <= value <= 24, \
-            "Invalid sunshine duration value (%s) encountered at day %s" % (value, day)
+        assert (
+            0 <= value <= 24
+        ), "Invalid sunshine duration value (%s) encountered at day %s" % (value, day)
         irrad = angstrom(day, self.latitude, value, self.angstA, self.angstB)
 
         return irrad
@@ -67,15 +66,15 @@ def NoConversion(x, d):
 
 
 def kJ_to_J(x, d):
-    return float(x)*1000.
+    return float(x) * 1000.0
 
 
 def mm_to_cm(x, d):
-    return float(x)/10.
+    return float(x) / 10.0
 
 
 def kPa_to_hPa(x, d):
-    return float(x)*10.
+    return float(x) * 10.0
 
 
 class CSVWeatherDataProvider(WeatherDataProvider):
@@ -137,11 +136,17 @@ class CSVWeatherDataProvider(WeatherDataProvider):
         "VAP": kPa_to_hPa,
         "WIND": NoConversion,
         "RAIN": mm_to_cm,
-        "SNOWDEPTH": NoConversion
+        "SNOWDEPTH": NoConversion,
     }
 
-    def __init__(self, csv_fname, delimiter=',', dateformat='%Y%m%d',
-                 ETmodel='PM', force_reload=False):
+    def __init__(
+        self,
+        csv_fname,
+        delimiter=",",
+        dateformat="%Y%m%d",
+        ETmodel="PM",
+        force_reload=False,
+    ):
         WeatherDataProvider.__init__(self)
 
         self.fp_csv_fname = os.path.abspath(csv_fname)
@@ -152,7 +157,7 @@ class CSVWeatherDataProvider(WeatherDataProvider):
             raise PCSEError(msg)
 
         if force_reload or not self._load_cache_file(self.fp_csv_fname):
-            with open(csv_fname, 'r') as csv_file:
+            with open(csv_fname, "r") as csv_file:
                 csv_file.readline()  # Skip first line
                 self._read_meta(csv_file)
                 self._read_observations(csv_file, delimiter)
@@ -161,48 +166,51 @@ class CSVWeatherDataProvider(WeatherDataProvider):
     def _read_meta(self, csv_file):
         header = {}
         for line in csv_file:
-            if line.startswith('## Daily weather observations'):
+            if line.startswith("## Daily weather observations"):
                 break
-            statements = line.split(';')
+            statements = line.split(";")
             for stmt in statements:
-               # print(stmt) 
-                key, val = stmt.split('=')
+                # print(stmt)
+                key, val = stmt.split("=")
                 header[key.strip()] = literal_eval(val.strip())
 
         self.nodata_value = -99
-        self.description = [u"Weather data for:",
-                            u"Country: %s" % header['Country'],
-                            u"Station: %s" % header['Station'],
-                            u"Description: %s" % header['Description'],
-                            u"Source: %s" % header['Source'],
-                            u"Contact: %s" % header['Contact']]
+        self.description = [
+            "Weather data for:",
+            "Country: %s" % header["Country"],
+            "Station: %s" % header["Station"],
+            "Description: %s" % header["Description"],
+            "Source: %s" % header["Source"],
+            "Contact: %s" % header["Contact"],
+        ]
 
-        self.longitude = float(header['Longitude'])
-        self.latitude = float(header['Latitude'])
-        self.elevation = float(header['Elevation'])
-        angstA = float(header['AngstromA'])
-        angstB = float(header['AngstromB'])
+        self.longitude = float(header["Longitude"])
+        self.latitude = float(header["Latitude"])
+        self.elevation = float(header["Elevation"])
+        angstA = float(header["AngstromA"])
+        angstB = float(header["AngstromB"])
         self.angstA, self.angstB = check_angstromAB(angstA, angstB)
-        self.has_sunshine = bool(header['HasSunshine'])
+        self.has_sunshine = bool(header["HasSunshine"])
 
         # If the file has sunshine duration, we replace the convertor with the angstrom module
         if self.has_sunshine:
-            self.obs_conversions["IRRAD"] = IRRADFromSunshineDuration(self.latitude, self.angstA, self.angstB)
+            self.obs_conversions["IRRAD"] = IRRADFromSunshineDuration(
+                self.latitude, self.angstA, self.angstB
+            )
 
     def _read_observations(self, csv_file, delimiter):
-        """Processes the rows with meteo data and converts into the correct units.
-        """
+        """Processes the rows with meteo data and converts into the correct units."""
         obs = csv.DictReader(csv_file, delimiter=delimiter, quotechar='"')
         for i, d in enumerate(obs):
             try:
                 day = None
                 day = csvdate_to_date(d.pop("DAY"), self.dateformat)
-                row = {"DAY":  day}
+                row = {"DAY": day}
                 for label in self.obs_conversions.keys():
                     func = self.obs_conversions[label]
                     value = float(d[label])
                     r = func(value, day)
-                    #print(f"Value: {value}, r: {r} label: {label}")
+                    # print(f"Value: {value}, r: {r} label: {label}")
                     if math.isnan(r):
                         if label == "SNOWDEPTH":
                             continue
@@ -210,18 +218,28 @@ class CSVWeatherDataProvider(WeatherDataProvider):
                     row[label] = r
 
                 # Reference ET in mm/day
-                e0, es0, et0 = reference_ET(LAT=self.latitude, ELEV=self.elevation,
-                                            ANGSTA=self.angstA, ANGSTB=self.angstB,
-                                            ETMODEL=self.ETmodel, **row)
+                e0, es0, et0 = reference_ET(
+                    LAT=self.latitude,
+                    ELEV=self.elevation,
+                    ANGSTA=self.angstA,
+                    ANGSTB=self.angstB,
+                    ETMODEL=self.ETmodel,
+                    **row
+                )
                 # convert to cm/day
-                row["E0"] = e0/10.
-                row["ES0"] = es0/10.
-                row["ET0"] = et0/10.
+                row["E0"] = e0 / 10.0
+                row["ES0"] = es0 / 10.0
+                row["ET0"] = et0 / 10.0
 
-                wdc = WeatherDataContainer(LAT=self.latitude, LON=self.longitude, ELEV=self.elevation, **row)
+                wdc = WeatherDataContainer(
+                    LAT=self.latitude, LON=self.longitude, ELEV=self.elevation, **row
+                )
                 self._store_WeatherDataContainer(wdc, day)
             except (ParseError, KeyError):
-                msg = "Failed reading element '%s' for day '%s' at line %i. Skipping ..." % (label, day, i)
+                msg = (
+                    "Failed reading element '%s' for day '%s' at line %i. Skipping ..."
+                    % (label, day, i)
+                )
                 self.logger.warn(msg)
             except ValueError as e:  # strange value in cell
                 msg = "Failed computing a value for day '%s' at row %i" % (day, i)
@@ -252,8 +270,7 @@ class CSVWeatherDataProvider(WeatherDataProvider):
         return None
 
     def _get_cache_filename(self, csv_fname):
-        """Constructs the filename used for cache files given csv_fname
-        """
+        """Constructs the filename used for cache files given csv_fname"""
         basename = os.path.basename(csv_fname)
         filename, ext = os.path.splitext(basename)
 

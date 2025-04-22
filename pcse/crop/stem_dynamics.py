@@ -5,24 +5,30 @@
 from ..traitlets import Float, Int, Instance
 from ..decorators import prepare_rates, prepare_states
 from ..util import limit, AfgenTrait
-from ..base import ParamTemplate, StatesTemplate, RatesTemplate, \
-    SimulationObject, VariableKiosk
+from ..base import (
+    ParamTemplate,
+    StatesTemplate,
+    RatesTemplate,
+    SimulationObject,
+    VariableKiosk,
+)
+
 
 class WOFOST_Stem_Dynamics(SimulationObject):
     """Implementation of stem biomass dynamics.
-    
+
     Stem biomass increase results from the assimilates partitioned to
     the stem system. Stem death is defined as the current stem biomass
     multiplied by a relative death rate (`RDRSTB`). The latter as a function
     of the development stage (`DVS`).
-    
+
     Stems are green elements of the plant canopy and can as such contribute
     to the total photosynthetic active area. This is expressed as the Stem
     Area Index which is obtained by multiplying stem biomass with the
     Specific Stem Area (SSATB), which is a function of DVS.
 
     **Simulation parameters**:
-    
+
     =======  ============================================= =======  ============
      Name     Description                                   Type     Unit
     =======  ============================================= =======  ============
@@ -32,7 +38,7 @@ class WOFOST_Stem_Dynamics(SimulationObject):
     SSATB    Specific Stem Area as a function of            TCr       |ha kg-1|
              development stage
     =======  ============================================= =======  ============
-    
+
 
     **State variables**
 
@@ -54,40 +60,40 @@ class WOFOST_Stem_Dynamics(SimulationObject):
     DRST     Death rate stem biomass                            N   |kg ha-1 d-1|
     GWST     Net change in stem biomass                         N   |kg ha-1 d-1|
     =======  ================================================= ==== ============
-    
+
     **Signals send or handled**
-    
+
     None
-    
+
     **External dependencies:**
-    
+
     =======  =================================== =================  ============
      Name     Description                         Provided by         Unit
     =======  =================================== =================  ============
     DVS      Crop development stage              DVS_Phenology       -
     ADMI     Above-ground dry matter             CropSimulation     |kg ha-1 d-1|
              increase
-    FR       Fraction biomass to roots           DVS_Partitioning    - 
-    FS       Fraction biomass to stems           DVS_Partitioning    - 
+    FR       Fraction biomass to roots           DVS_Partitioning    -
+    FS       Fraction biomass to stems           DVS_Partitioning    -
     =======  =================================== =================  ============
     """
 
-    class Parameters(ParamTemplate):      
+    class Parameters(ParamTemplate):
         RDRSTB = AfgenTrait()
-        SSATB  = AfgenTrait()
-        TDWI   = Float(-99.)
+        SSATB = AfgenTrait()
+        TDWI = Float(-99.0)
 
     class StateVariables(StatesTemplate):
-        WST  = Float(-99.)
-        DWST = Float(-99.)
-        TWST = Float(-99.)
-        SAI  = Float(-99.) # Stem Area Index
+        WST = Float(-99.0)
+        DWST = Float(-99.0)
+        TWST = Float(-99.0)
+        SAI = Float(-99.0)  # Stem Area Index
 
     class RateVariables(RatesTemplate):
-        GRST = Float(-99.)
-        DRST = Float(-99.)
-        GWST = Float(-99.)
-        
+        GRST = Float(-99.0)
+        DRST = Float(-99.0)
+        GWST = Float(-99.0)
+
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
@@ -95,32 +101,38 @@ class WOFOST_Stem_Dynamics(SimulationObject):
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """
-        
+
         self.params = self.Parameters(parvalues)
-        self.rates  = self.RateVariables(kiosk, publish=["DRST", "GRST"])
-        self.kiosk  = kiosk
+        self.rates = self.RateVariables(kiosk, publish=["DRST", "GRST"])
+        self.kiosk = kiosk
 
         # INITIAL STATES
         params = self.params
         # Set initial stem biomass
         FS = self.kiosk["FS"]
         FR = self.kiosk["FR"]
-        WST  = (params.TDWI * (1-FR)) * FS
-        DWST = 0.
+        WST = (params.TDWI * (1 - FR)) * FS
+        DWST = 0.0
         TWST = WST + DWST
         # Initial Stem Area Index
         DVS = self.kiosk["DVS"]
         SAI = WST * params.SSATB(DVS)
 
-        self.states = self.StateVariables(kiosk, publish=["TWST","WST","SAI"],
-                                          WST=WST, DWST=DWST, TWST=TWST, SAI=SAI)
+        self.states = self.StateVariables(
+            kiosk,
+            publish=["TWST", "WST", "SAI"],
+            WST=WST,
+            DWST=DWST,
+            TWST=TWST,
+            SAI=SAI,
+        )
 
     @prepare_rates
     def calc_rates(self, day, drv):
-        rates  = self.rates
+        rates = self.rates
         states = self.states
         params = self.params
-        
+
         DVS = self.kiosk["DVS"]
         FS = self.kiosk["FS"]
         ADMI = self.kiosk["ADMI"]
@@ -158,7 +170,5 @@ class WOFOST_Stem_Dynamics(SimulationObject):
         s.TWST = s.DWST + nWST
         s.SAI = s.WST * p.SSATB(k.DVS)
 
-        increments = {"WST": s.WST - oWST,
-                      "SAI": s.SAI - oSAI,
-                      "TWST": s.TWST - oTWST}
+        increments = {"WST": s.WST - oWST, "SAI": s.SAI - oSAI, "TWST": s.TWST - oTWST}
         return increments
