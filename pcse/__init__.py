@@ -3,11 +3,11 @@
 # Allard de Wit (allard.dewit@wur.nl), April 2018
 """
 The Python Crop Simulation Environment (PCSE) has been developed
-to facilitate implementing crop simulation models that were 
+to facilitate implementing crop simulation models that were
 developed in Wageningen. PCSE provides a set of building blocks
 that on the one hand facilitates implementing the crop simulation
 models themselves and other hand allows to interface these models with
-external inputs and outputs (files, databases, webservers) 
+external inputs and outputs (files, databases, webservers)
 
 PCSE builds on existing ideas implemented in the FORTRAN
 Translator (FST) and its user interface FSE. It inherits ideas
@@ -31,7 +31,7 @@ from __future__ import print_function
 __author__ = "Allard de Wit <allard.dewit@wur.nl>"
 __license__ = "European Union Public License"
 __stable__ = True
-__version__ = "5.5.6"
+__version__ = "1.0.0"
 
 
 import sys, os

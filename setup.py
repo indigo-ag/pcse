@@ -3,8 +3,8 @@ from setuptools import setup, find_packages
 import os
 import io
 
-PACKAGE = "pcse"
-NAME = "PCSE"
+PACKAGE = "indigo-pcse"
+NAME = "indigo-pcse"
 DESCRIPTION = 'Framework for developing crop simulation models, ' \
               'includes an implementation of '\
               'the WOFOST and LINTUL crop simulation models and ' \
@@ -13,7 +13,7 @@ AUTHOR = "Allard de Wit"
 AUTHOR_EMAIL = 'allard.dewit@wur.nl'
 URL = 'http://github.com/ajwdewit/pcse/'
 LICENSE="EUPL"
-VERSION = "5.6.0"
+VERSION = "1.0.0"
 
 here = os.path.abspath(os.path.dirname(__file__))
 
