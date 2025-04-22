@@ -70,23 +70,13 @@ jobs:
 #            - shared/save_workspace_cache
 
   release:
-    working_directory: ~/circleci
     resource_class: small
     executor:
-      name: shared/language-executor
-      language: python
-      version: '3.9'
+      name: shared/default
+      indigo_image_version: python:3.9-buster-indigo
     steps:
-      - checkout
-      - shared/restore_node_modules
-      - shared/install_deps:
-          enable_code_artifact: true
-      - *restore_pip_local_env
-      - shared/setup_local_env_install_requirements
-      - shared/setup_local_env_install_requirements:
-          requirements_file_location: requirements-dev.txt
-          enable_pip_oct_2020_resolver: true
-      - *save_pip_local_env
+      - attach_workspace:
+          at: ~/circleci
       - shared/semantic_release_publish
 
 workflows:
