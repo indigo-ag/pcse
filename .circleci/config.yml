@@ -2,104 +2,91 @@ version: 2.1
 orbs:
   shared: indigo/shared@volatile
 
-references:
-  pip_cache_key: &pip_cache_key pip-3.9-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt"}}
-
-  save_pip_local_env: &save_pip_local_env
-    shared/save_venv_cache:
-      cache_key: *pip_cache_key
-      cache_version: v2
-
-  restore_pip_local_env: &restore_pip_local_env
-    shared/restore_venv_cache:
-      cache_key: *pip_cache_key
-      cache_version: v2
+commands:
+  install_package_and_deps:
+    steps:
+      - shared/restore_venv_cache:
+          cache_key:
+            &pip_cache_key '{{ checksum "setup.py" }}-{{ checksum "requirements.txt" }}-{{ checksum
+            "requirements-dev.txt" }}}'
+      - shared/run_pip_install:
+          pip_install_args: pip-tools
+          venv_folder: local-env
+          enable_pip_oct_2020_resolver: true
+      - run:
+          name: Install dependencies
+          command: |
+            . local-env/bin/activate
+            pip-sync requirements-dev.txt
+            pip install -e .[dev,all]
+      - shared/save_venv_cache:
+          cache_key: *pip_cache_key
 
 jobs:
+#  test:
+#    parameters:
+#      python_version:
+#        type: string
+#    executor:
+#      name: shared/language-executor
+#      language: python
+#      version: << parameters.python_version >>
+#    resource_class: small
+#    steps:
+#      - checkout
+#      - install_package_and_deps
+#      - run:
+#          name: Run tests
+#          command: |
+#            . local-env/bin/activate
+#            yarn test --cov-report=xml --cov=src --junitxml=test-results/junit.xml
+#      - store_test_results:
+#          path: test-results
+#      - shared/verify_python_package
+
   lint:
-    working_directory: ~/circleci
-    resource_class: small
     executor:
       name: shared/language-executor
       language: python
       version: '3.9'
+    resource_class: small
     steps:
       - checkout
-      - shared/restore_node_modules
-      - shared/install_deps:
-          enable_code_artifact: true
-      - *restore_pip_local_env
-      - shared/setup_local_env_install_requirements
-      - shared/setup_local_env_install_requirements:
-          requirements_file_location: requirements-dev.txt
-          enable_pip_oct_2020_resolver: true
-      - *save_pip_local_env
+      - install_package_and_deps
       - run:
-          name: Lint
+          name: Linting
           command: |
             . local-env/bin/activate
             yarn lint
 
-#  test:
-#    parameters:
-#      num_pytest_workers:
-#        type: integer
-#        default: 2
-#      save_workspace_cache:
-#        type: boolean
-#        default: true
-#    working_directory: ~/circleci
-#    resource_class: small
-#    executor:
-#      name: shared/language-executor
-#      language: python
-#      version: '3.9'
-#    steps:
-#      - checkout
-#      - shared/restore_node_modules
-#      - shared/install_deps:
-#          enable_code_artifact: true
-#      - shared/save_yarn_cache
-#      - *restore_pip_local_env
-#      - shared/setup_local_env_install_requirements
-#      - *save_pip_local_env
-#      - shared/configure_aws_env
-#      - when:
-#          condition: << parameters.save_workspace_cache >>
-#          steps:
-#            - shared/save_workspace_cache
-
   release:
-    resource_class: small
     executor:
-      name: shared/default
-      indigo_image_version: python:3.9-buster-indigo
+      name: shared/language-executor
+      language: python
+      version: '3.9'
+    resource_class: small
     steps:
-      - attach_workspace:
-          at: ~/circleci
+      - checkout
       - shared/semantic_release_publish
 
 workflows:
   version: 2
-  build_test_and_deploy:
+  build_and_test:
     jobs:
+#      - test:
+#          context: org-global
+#          matrix:
+#            parameters:
+#              python_version:
+#                - '3.9'
       - lint:
           context: org-global
           filters:
             branches:
               ignore:
                 - main
-#      - test:
-#          # Name should be unique for jobs using parameters, otherwise would get `test-1`
-#          # https://discuss.circleci.com/t/dash-number-being-appended-to-job/38385
-#          # https://circleci.com/docs/2.0/reusing-config/#authoring-parameterized-jobs
-#          name: unit_tests
-#          save_workspace_cache: false
-#          context: org-global
       - release:
           context: org-global
-#          requires:
-#            - test
           filters:
             branches:
               only:
