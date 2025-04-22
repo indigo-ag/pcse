@@ -5,11 +5,16 @@
 within the same model.
 """
 from pcse.base import SimulationObject
-from .classic_waterbalance import WaterbalanceFD, WaterbalancePP
-from .npk_soil_dynamics import NPK_Soil_Dynamics, NPK_PotentialProduction
+from .classic_waterbalance import WaterbalanceFD, WaterbalancePP, IndigoWaterbalanceFD
+from .npk_soil_dynamics import NPK_Soil_Dynamics, NPK_PotentialProduction,Indigo_NPK_Soil_Dynamics
 from .n_soil_dynamics import N_PotentialProduction, N_Soil_Dynamics
 from ..traitlets import Instance
 from ..decorators import prepare_states
+from array import array
+from .Soil_Temp import SoilTemperature
+from .Tillage import TillageSignal
+from .SOC import Ensemble_SOC_Indigo
+from .SOCMineralization import SOCMineralization_Indigo
 
 
 class SoilModuleWrapper_PP(SimulationObject):
@@ -109,3 +114,47 @@ class SoilModuleWrapper_N_WLP_FD(SimulationObject):
     def integrate(self, day, delt=1.0):
         self.WaterbalanceFD.integrate(day, delt)
         self.N_Soil_Dynamics.integrate(day, delt)
+
+
+class SoilModuleWrapper_Indigo(SimulationObject):
+    
+    """This wraps the soil water balance for free drainage conditions and NPK balance
+    for production conditions limited by both soil water and NPK. Built by Indigo Ag.
+    We are also working on adding the soil carbon dynamics.
+    """
+    IndigoWaterbalanceFD = Instance(SimulationObject)
+    NPK_Soil_Dynamics = Instance(SimulationObject)
+    SoilTemperature = Instance(SimulationObject)
+    TillageSignal = Instance(SimulationObject)
+    Ensemble_SOC_Indigo = Instance(SimulationObject)
+    SOCMineralization_Indigo = Instance(SimulationObject)
+
+    def initialize(self, day, kiosk, parvalues):
+        """
+        :param day: start date of the simulation
+        :param kiosk: variable kiosk of this PCSE instance
+        :param parvalues: dictionary with parameter key/value pairs
+        """
+        self.IndigoWaterbalanceFD = IndigoWaterbalanceFD(day, kiosk, parvalues)
+        self.NPK_Soil_Dynamics = Indigo_NPK_Soil_Dynamics(day, kiosk, parvalues)
+        self.SoilTemperature = SoilTemperature(day, kiosk, parvalues)
+        self.TillageSignal = TillageSignal(day, kiosk, parvalues)
+        self.Ensemble_SOC_Indigo = Ensemble_SOC_Indigo(day, kiosk, parvalues)
+        self.SOCMineralization_Indigo = SOCMineralization_Indigo(day, kiosk, parvalues)
+
+    def calc_rates(self, day, drv):
+        self.IndigoWaterbalanceFD.calc_rates(day, drv)
+        self.SoilTemperature.calc_states(day, drv)
+        self.TillageSignal.calc_rates(day, drv)# this doesn't have the cal_rate
+        self.Ensemble_SOC_Indigo.calc_rates(day, drv)
+        self.SOCMineralization_Indigo.calc_rates(day, drv)
+        self.NPK_Soil_Dynamics.calc_rates(day, drv)
+
+    def integrate(self, day, delt=1.0):
+        self.IndigoWaterbalanceFD.integrate(day, delt)
+        self.NPK_Soil_Dynamics.integrate(day, delt)
+        # SoilTemperature directly estimates the states without the need for integration, we put 
+        # in the rates to let it use the drivers
+        self.TillageSignal.integrate(day, delt)
+        self.Ensemble_SOC_Indigo.integrate(day, delt)
+        

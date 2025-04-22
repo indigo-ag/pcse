@@ -49,7 +49,7 @@ ZEROFY = True
 # getting large log file sizes.
 LOG_DIR = _os.path.join(PCSE_USER_HOME, "logs")
 LOG_FILE_NAME = _os.path.join(LOG_DIR, "pcse.log")
-LOG_LEVEL_FILE = "INFO"
+LOG_LEVEL_FILE = "ERROR"
 LOG_LEVEL_CONSOLE = "ERROR"
 LOG_CONFIG = \
             {
@@ -72,10 +72,10 @@ LOG_CONFIG = \
                     'file': {
                         'level':LOG_LEVEL_FILE,
                         'class':'logging.handlers.RotatingFileHandler',
-                        'formatter':'standard',
+                        'formatter':'brief',
                         'filename':LOG_FILE_NAME,
                         'maxBytes': 1024**2,
-                        'backupCount': 7,
+                        'backupCount': 700,
                         'mode':'a',
                         'encoding': 'utf8'
                     },

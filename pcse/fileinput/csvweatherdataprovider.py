@@ -165,6 +165,7 @@ class CSVWeatherDataProvider(WeatherDataProvider):
                 break
             statements = line.split(';')
             for stmt in statements:
+               # print(stmt) 
                 key, val = stmt.split('=')
                 header[key.strip()] = literal_eval(val.strip())
 
@@ -201,6 +202,7 @@ class CSVWeatherDataProvider(WeatherDataProvider):
                     func = self.obs_conversions[label]
                     value = float(d[label])
                     r = func(value, day)
+                    #print(f"Value: {value}, r: {r} label: {label}")
                     if math.isnan(r):
                         if label == "SNOWDEPTH":
                             continue

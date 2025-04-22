@@ -318,7 +318,7 @@ class Engine(BaseEngine):
             # that the standard python GC did not garbage collect the crop
             # simulation object. This caused signals to be received by crop simulation
             # objects that were supposed to be garbage collected already.
-            gc.collect()
+            #gc.collect()
 
     def _terminate_simulation(self, day):
         """Terminates the entire simulation.
@@ -334,7 +334,12 @@ class Engine(BaseEngine):
     def _get_driving_variables(self, day):
         """Get driving variables, compute derived properties and return it.
         """
-        drv = self.weatherdataprovider(day)
+        try:
+            #print(day)
+            drv = self.weatherdataprovider(day)
+        except KeyError as e:
+            msg = "No weather data available for date %s" % day
+            raise exc.PCSEError(msg)
         
         # average temperature and average daytemperature (if needed)
         if not hasattr(drv, "TEMP"):

@@ -13,6 +13,7 @@ include pcse/conf/Wofost72_WLP_FD.conf
 include pcse/conf/Wofost80_NWLP_FD.conf
 include pcse/conf/Wofost80_PP.conf
 include pcse/conf/Wofost80_WLP_FD.conf
+include pcse/conf/Indigo_Wofost.conf
 
 # Test data and input files
 include pcse/tests/test_data/10870_munchen_flughafen.csv

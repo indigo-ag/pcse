@@ -66,6 +66,20 @@ class Wofost80_PP_beta(Engine):
                         config=self.config)
 
 
+class Indigo_Wofost(Engine):
+    """Convenience class for running WOFOST8.0 water-limited production (includes NPK dynamics)
+
+    :param parameterprovider: A ParameterProvider instance providing all parameter values
+    :param weatherdataprovider: A WeatherDataProvider object
+    :param agromanagement: Agromanagement data
+    """
+    config = "Indigo_Wofost.conf"
+
+    def __init__(self, parameterprovider, weatherdataprovider, agromanagement):
+        Engine.__init__(self, parameterprovider, weatherdataprovider, agromanagement,
+                        config=self.config)
+
+
 class Wofost80_WLP_FD_beta(Engine):
     """Convenience class for running WOFOST8.0 water-limited production (includes NPK dynamics)
 

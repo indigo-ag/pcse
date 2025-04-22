@@ -244,5 +244,6 @@ class NPK_Stress(SimulationObject):
 
         # Nutrient reduction factor for assimilation
         r.RFNPK = limit(0., 1.0, 1. - (p.NLUE_NPK * (1.0001 - r.NPKI) ** 2))
+       # print(f"{day}: NNI: {r.NNI} PNI: {r.PNI} KNI: {r.KNI} NPKI: {r.NPKI} RFNPK: {r.RFNPK}")
          
         return r.NNI, r.NPKI, r.RFNPK

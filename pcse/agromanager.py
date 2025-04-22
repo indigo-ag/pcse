@@ -321,6 +321,8 @@ class TimedEventsDispatcher(HasTraits, DispatcherObject):
                 msg = "Time event dispatched from '%s' at day %s" % (self.name, day)
                 self.logger.info(msg)
                 kwargs = event[day]
+                kwargs['day'] = day
+         
                 self._send_signal(signal=self.event_signal, **kwargs)
 
     def get_end_date(self):
