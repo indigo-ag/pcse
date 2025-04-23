@@ -2,6 +2,7 @@ from __future__ import print_function
 from setuptools import setup, find_packages
 import os
 import io
+from pcse import __version__ as version
 
 PACKAGE = "indigo-pcse"
 NAME = "indigo-pcse"
@@ -13,7 +14,7 @@ AUTHOR = "Allard de Wit"
 AUTHOR_EMAIL = 'allard.dewit@wur.nl'
 URL = 'http://github.com/ajwdewit/pcse/'
 LICENSE="EUPL"
-VERSION = "0.0.0"
+VERSION = version
 
 here = os.path.abspath(os.path.dirname(__file__))
 

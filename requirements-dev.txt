@@ -3,3 +3,4 @@ isort==5.10.1
 mypy==1.7.1
 pylint==3.2.2
 pytest==7.4.3
+mypy-extensions==1.0.0
