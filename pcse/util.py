@@ -7,14 +7,10 @@ import os, sys
 from pathlib import Path
 import datetime
 import copy
-import platform
-import tempfile
-import logging
 from math import log10, cos, sin, asin, sqrt, exp, pi, radians
 from collections import namedtuple
 from bisect import bisect_left
 import textwrap
-import sqlite3
 
 if sys.version_info > (3, 8):
     from collections.abc import Iterable
@@ -868,17 +864,6 @@ def is_a_dekad(day):
     return False
 
 
-def load_SQLite_dump_file(dump_file_name, SQLite_db_name):
-    """Build an SQLite database <SQLite_db_name> from dump file <dump_file_name>."""
-
-    with open(dump_file_name) as fp:
-        sql_dump = fp.readlines()
-    str_sql_dump = "".join(sql_dump)
-    con = sqlite3.connect(SQLite_db_name)
-    con.executescript(str_sql_dump)
-    con.close()
-
-
 def safe_float(x):
     """Returns the value of x converted to float, if fails return None."""
     try:
@@ -1119,28 +1104,3 @@ class WOFOST80SiteDataProvider(_GenericSiteDataProvider):
         "KAVAILI": (None, (0, 250), float),
     }
     _required = ["WAV", "NAVAILI", "PAVAILI", "KAVAILI"]
-
-
-def get_user_home():
-    """A reasonable platform independent way to get the user home folder.
-    If PCSE runs under a system user then return the temp directory as returned
-    by tempfile.gettempdir()
-    """
-    user_home = None
-    if platform.system() == "Windows":
-        user = os.getenv("USERNAME")
-        if user is not None:
-            user_home = os.path.expanduser("~")
-    elif platform.system() == "Linux" or platform.system() == "Darwin":
-        user = os.getenv("USER")
-        if user is not None:
-            user_home = os.path.expanduser("~")
-    else:
-        msg = "Platform not recognized, using system temp directory for PCSE settings."
-        logger = logging.getLogger("pcse")
-        logger.warning(msg)
-
-    if user_home is None:
-        user_home = tempfile.gettempdir()
-
-    return user_home

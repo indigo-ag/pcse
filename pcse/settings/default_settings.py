@@ -21,7 +21,7 @@ and underscore to the name.
 """
 
 import os as _os
-from .. import util as _util
+from .. import init_utils as _util
 
 PCSE_USER_HOME = _os.path.join(_util.get_user_home(), ".pcse")
 

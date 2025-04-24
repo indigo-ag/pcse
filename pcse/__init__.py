@@ -33,9 +33,8 @@ __license__ = "European Union Public License"
 __stable__ = True
 __version__ = "0.1.0"
 
-
 import sys, os
-from . import util
+from . import init_utils as util
 
 
 # First define and run setup before importing the rest of the stuff
@@ -81,7 +80,6 @@ logging.config.dictConfig(settings.LOG_CONFIG)
 
 from . import db
 from . import fileinput
-from . import tests
 from . import agromanager
 from . import soil
 from . import crop
@@ -109,4 +107,6 @@ if not __stable__:
 
 def test(dsn=None):
     """Run all available tests for PCSE."""
+    from . import tests
+
     tests.test_all(dsn)
