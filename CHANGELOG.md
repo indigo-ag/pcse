@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.1 (2025-04-24)
+### Fix
+* **CP-39618:** Fix init file imports ([#16](https://github.com/indigo-ag/indigo-pcse/issues/16)) ([`b5d5919`](https://github.com/indigo-ag/indigo-pcse/commit/b5d591944f2e70509af070e8c91034e5cee2275c))
+* **CP-39618:** Synchronize PCSE Version Information ([#15](https://github.com/indigo-ag/indigo-pcse/issues/15)) ([`4edbb56`](https://github.com/indigo-ag/indigo-pcse/commit/4edbb569c3c64bf8b0e1a3c34955077030866105))
+
 ## v0.1.0 (2025-04-22)
 ### Feature
 * **CP-39604:** Update default branch name ([#13](https://github.com/indigo-ag/indigo-pcse/issues/13)) ([`a4f0a93`](https://github.com/indigo-ag/indigo-pcse/commit/a4f0a936785a88f8b5960aad4c3a54ff3151aef4))
