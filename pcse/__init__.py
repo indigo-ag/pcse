@@ -31,7 +31,7 @@ from __future__ import print_function
 __author__ = "Allard de Wit <allard.dewit@wur.nl>"
 __license__ = "European Union Public License"
 __stable__ = True
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 import sys, os
 from . import init_utils as util

@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.2 (2025-04-29)
+### Fix
+* **CP-39618:** Version bump ([#18](https://github.com/indigo-ag/indigo-pcse/issues/18)) ([`f515022`](https://github.com/indigo-ag/indigo-pcse/commit/f515022a5d48b94169eb610276dd313feb1c1747))
+* **CP-39618:** Fix init directory creation ([#17](https://github.com/indigo-ag/indigo-pcse/issues/17)) ([`2ca7a2a`](https://github.com/indigo-ag/indigo-pcse/commit/2ca7a2a7ba3c126639f043f33e19703d7e997338))
+
 ## v0.1.1 (2025-04-24)
 ### Fix
 * **CP-39618:** Fix init file imports ([#16](https://github.com/indigo-ag/indigo-pcse/issues/16)) ([`b5d5919`](https://github.com/indigo-ag/indigo-pcse/commit/b5d591944f2e70509af070e8c91034e5cee2275c))
