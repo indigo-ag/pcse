@@ -20,10 +20,10 @@ class Settings(object):
     def __setattr__(self, name, value):
         if name == "METEO_CACHE_DIR":
             if not os.path.exists(value):
-                os.mkdir(value)
+                os.makedirs(value, exist_ok=True)
         if name == "LOG_DIR":
             if not os.path.exists(value):
-                os.mkdir(value)
+                os.makedirs(value, exist_ok=True)
         object.__setattr__(self, name, value)
 
     def __init__(self):

@@ -31,7 +31,7 @@ from __future__ import print_function
 __author__ = "Allard de Wit <allard.dewit@wur.nl>"
 __license__ = "European Union Public License"
 __stable__ = True
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 import sys, os
 from . import init_utils as util
@@ -47,7 +47,7 @@ def setup():
     user_home = util.get_user_home()
     pcse_user_home = os.path.join(user_home, ".pcse")
     if not os.path.exists(pcse_user_home):
-        os.mkdir(pcse_user_home)
+        os.makedirs(pcse_user_home, exist_ok=True)
 
     # Add PCSE home to python PATH
     sys.path.append(pcse_user_home)
