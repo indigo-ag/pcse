@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.0 (2025-05-01)
+### Feature
+* **CP-39730:** Include simulator package ([#19](https://github.com/indigo-ag/indigo-pcse/issues/19)) ([`0ba2cd5`](https://github.com/indigo-ag/indigo-pcse/commit/0ba2cd5c9ae8242055e58351702314a556112f5d))
+
 ## v0.1.2 (2025-04-29)
 ### Fix
 * **CP-39618:** Version bump ([#18](https://github.com/indigo-ag/indigo-pcse/issues/18)) ([`f515022`](https://github.com/indigo-ag/indigo-pcse/commit/f515022a5d48b94169eb610276dd313feb1c1747))
