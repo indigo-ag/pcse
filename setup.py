@@ -13,7 +13,7 @@ AUTHOR = "Allard de Wit"
 AUTHOR_EMAIL = 'allard.dewit@wur.nl'
 URL = 'http://github.com/ajwdewit/pcse/'
 LICENSE="EUPL"
-VERSION = "0.1.2"
+VERSION = "0.2.0"
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -42,7 +42,11 @@ setup(
                       'openpyxl>=3.0.0',
                       'requests>=2.0.0',
                       'pandas>=0.25',
-                      'traitlets-pcse==5.0.0.dev'],
+                      'traitlets-pcse>=5.0.0.dev',
+                      'tqdm>=4.0.0',
+                      'dask>=2024.8.0',
+                      'scipy>=1.0.0',
+                      'numpy>=1.26.4'],
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,
     long_description=long_description,

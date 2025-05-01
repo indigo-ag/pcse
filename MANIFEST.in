@@ -54,3 +54,8 @@ include pcse/tests/test_data/NL1.998
 include pcse/tests/test_data/NL1.999
 include pcse/tests/test_data/respiration_testdata.py
 
+# Simulator Resources
+include pcse/simulator/resources/wofost_crop_parameters/*.yaml
+include pcse/simulator/resources/*.yaml
+include pcse/simulator/resources/*.csv
+include pcse/simulator/resources/wofost_npk.site

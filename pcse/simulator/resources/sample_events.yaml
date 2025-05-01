@@ -1,0 +1,180 @@
+AgroManagement:
+- 2013-01-01:
+    CropCalendar: null
+    StateEvents: null
+    TimedEvents: null
+- 2013-09-28:
+    CropCalendar: null
+    StateEvents: null
+    TimedEvents: null
+- 2014-06-25:
+    CropCalendar: null
+    StateEvents: null
+    TimedEvents: null
+- 2015-03-22:
+    CropCalendar:
+      crop_end_date: 2015-09-19
+      crop_end_type: harvest
+      crop_name: maize
+      crop_start_date: 2015-06-01
+      crop_start_type: sowing
+      max_duration: 300
+      variety_name: Grain_maize_205
+    StateEvents: null
+    TimedEvents:
+    - comment: All fertilizer amounts in kg/ha
+      event_signal: apply_n
+      events_table:
+      - 2015-04-19:
+          N_amount: 58.68761709206906
+          N_recovery: 0.7
+      - 2015-06-07:
+          N_amount: 148.44514911523348
+          N_recovery: 0.7
+      name: Timed N application table for the simple N balance
+- 2015-09-20:
+    CropCalendar:
+      crop_end_date: 2016-02-14
+      crop_end_type: harvest
+      crop_name: barley
+      crop_start_date: 2015-09-20
+      crop_start_type: sowing
+      max_duration: 300
+      variety_name: Spring_barley_301
+    StateEvents: null
+    TimedEvents: null
+- 2016-02-15:
+    CropCalendar:
+      crop_end_date: 2016-10-10
+      crop_end_type: harvest
+      crop_name: soybean
+      crop_start_date: 2016-05-01
+      crop_start_type: sowing
+      max_duration: 300
+      variety_name: Soybean_VanHeemst_1988
+    StateEvents: null
+    TimedEvents: null
+- 2016-10-11:
+    CropCalendar:
+      crop_end_date: 2017-09-19
+      crop_end_type: harvest
+      crop_name: maize
+      crop_start_date: 2017-06-01
+      crop_start_type: sowing
+      max_duration: 300
+      variety_name: Grain_maize_205
+    StateEvents: null
+    TimedEvents:
+    - comment: All fertilizer amounts in kg/ha
+      event_signal: apply_n
+      events_table:
+      - 2017-04-19:
+          N_amount: 58.68761709206906
+          N_recovery: 0.7
+      - 2017-06-07:
+          N_amount: 148.44514911523348
+          N_recovery: 0.7
+      name: Timed N application table for the simple N balance
+- 2017-09-20:
+    CropCalendar:
+      crop_end_date: 2018-02-14
+      crop_end_type: harvest
+      crop_name: barley
+      crop_start_date: 2017-09-20
+      crop_start_type: sowing
+      max_duration: 300
+      variety_name: Spring_barley_301
+    StateEvents: null
+    TimedEvents: null
+- 2018-02-15:
+    CropCalendar:
+      crop_end_date: 2018-10-10
+      crop_end_type: harvest
+      crop_name: soybean
+      crop_start_date: 2018-05-01
+      crop_start_type: sowing
+      max_duration: 300
+      variety_name: Soybean_VanHeemst_1988
+    StateEvents: null
+    TimedEvents: null
+- 2018-10-11:
+    CropCalendar:
+      crop_end_date: 2019-10-01
+      crop_end_type: harvest
+      crop_name: maize
+      crop_start_date: 2019-05-22
+      crop_start_type: sowing
+      max_duration: 300
+      variety_name: Grain_maize_205
+    StateEvents: null
+    TimedEvents:
+    - comment: All fertilizer amounts in kg/ha
+      event_signal: apply_n
+      events_table:
+      - 2019-06-29:
+          N_amount: 200.2283406670591
+          N_recovery: 0.7
+      name: Timed N application table for the simple N balance
+- 2019-10-02:
+    CropCalendar:
+      crop_end_date: 2020-10-15
+      crop_end_type: harvest
+      crop_name: soybean
+      crop_start_date: 2020-05-07
+      crop_start_type: sowing
+      max_duration: 300
+      variety_name: Soybean_VanHeemst_1988
+    StateEvents: null
+    TimedEvents: null
+- 2020-10-16:
+    CropCalendar: null
+    StateEvents: null
+    TimedEvents:
+    - comment: All fertilizer amounts in kg/ha
+      event_signal: apply_n
+      events_table:
+      - 2021-06-15:
+          N_amount: 217.48940451766765
+          N_recovery: 0.7
+      name: Timed N application table for the simple N balance
+- 2022-03-13:
+    CropCalendar:
+      crop_end_date: 2022-10-13
+      crop_end_type: harvest
+      crop_name: soybean
+      crop_start_date: 2022-04-28
+      crop_start_type: sowing
+      max_duration: 300
+      variety_name: Soybean_VanHeemst_1988
+    StateEvents: null
+    TimedEvents: null
+- 2022-10-14:
+    CropCalendar:
+      crop_end_date: 2023-04-13
+      crop_end_type: harvest
+      crop_name: wheat
+      crop_start_date: 2022-10-14
+      crop_start_type: sowing
+      max_duration: 300
+      variety_name: Winter_wheat_102
+    StateEvents: null
+    TimedEvents: null
+- 2023-04-14:
+    CropCalendar:
+      crop_end_date: 2023-10-25
+      crop_end_type: harvest
+      crop_name: maize
+      crop_start_date: 2023-04-14
+      crop_start_type: sowing
+      max_duration: 300
+      variety_name: Grain_maize_205
+    StateEvents: null
+    TimedEvents:
+    - comment: All fertilizer amounts in kg/ha
+      event_signal: apply_n
+      events_table:
+      - 2023-06-02:
+          N_amount: 127.73187249450321
+          N_recovery: 0.7
+      name: Timed N application table for the simple N balance
+Version: '1.0'
