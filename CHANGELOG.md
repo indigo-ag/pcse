@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.1 (2025-05-01)
+### Fix
+* **CP-39730:** Remove YAML pickling ([#20](https://github.com/indigo-ag/indigo-pcse/issues/20)) ([`d6037e4`](https://github.com/indigo-ag/indigo-pcse/commit/d6037e46d55537a1146dae90f9a24be57f776905))
+
 ## v0.2.0 (2025-05-01)
 ### Feature
 * **CP-39730:** Include simulator package ([#19](https://github.com/indigo-ag/indigo-pcse/issues/19)) ([`0ba2cd5`](https://github.com/indigo-ag/indigo-pcse/commit/0ba2cd5c9ae8242055e58351702314a556112f5d))
