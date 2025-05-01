@@ -115,10 +115,12 @@ class YAMLCropDataProvider(MultiCropDataProvider):
                 self.logger.info(msg)
                 self.read_remote_repository(self.default_repository)
 
-            with open(self._get_cache_fname(fpath), "wb") as fp:
-                pickle.dump(
-                    (self.compatible_version, self._store), fp, pickle.HIGHEST_PROTOCOL
-                )
+            # TODO (CP-39743): Reinstantiate pickling when in-memory provider is ready
+            # Temporarily removing cache pickling due to permissions issues when importing as a package
+            # with open(self._get_cache_fname(fpath), "wb") as fp:
+            #     pickle.dump(
+            #         (self.compatible_version, self._store), fp, pickle.HIGHEST_PROTOCOL
+            #     )
 
     def read_local_repository(self, fpath):
         """Reads the crop YAML files on the local file system
