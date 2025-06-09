@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.3.0 (2025-06-09)
+### Feature
+* **CP-40124:** Correct Runaway Ens_SOC bug ([#21](https://github.com/indigo-ag/indigo-pcse/issues/21)) ([`1f5d869`](https://github.com/indigo-ag/indigo-pcse/commit/1f5d86937dd4e03a6cc4ff4adbd718fa6b22c44b))
+
 ## v0.2.1 (2025-05-01)
 ### Fix
 * **CP-39730:** Remove YAML pickling ([#20](https://github.com/indigo-ag/indigo-pcse/issues/20)) ([`d6037e4`](https://github.com/indigo-ag/indigo-pcse/commit/d6037e46d55537a1146dae90f9a24be57f776905))
