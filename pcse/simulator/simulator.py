@@ -719,34 +719,9 @@ class SiteSimulation:
                     )
 
                     soil_propr = self.run_info["soil_sample"][0]
-                    # Get initial SOC from params
-                    intial_soc_dict = {
-                        "soil_carbon_concentration": 0.612,
-                        "bottom_depth_cm_soil_carbon_concentration": 30,
-                        "bulk_density": 1.2097,
-                    }
 
-                    intial_soc_dict["bulk_density"] = (
-                        1.2097
-                        if np.isnan(soil_propr["BULK_DENSITY"])
-                        else soil_propr["BULK_DENSITY"]
-                    )
-                    intial_soc_dict["soil_carbon_concentration"] = (
-                        0.612
-                        if np.isnan(soil_propr["SOIL_CARBON_CONCENTRATION"])
-                        else soil_propr["SOIL_CARBON_CONCENTRATION"]
-                    )
-                    intial_soc_dict["bottom_depth_cm_soil_carbon_concentration"] = 30
-
-                    # # Calculate initial SOC (gC/m2)
-                    intial_soc_dict["initial_soc"] = (
-                        (intial_soc_dict["soil_carbon_concentration"] / 100)
-                        * intial_soc_dict["bulk_density"]
-                        * intial_soc_dict["bottom_depth_cm_soil_carbon_concentration"]
-                        * (10**4)
-                    )
-
-                    intial_soc = intial_soc_dict["initial_soc"]
+                    # Collect initial SOC (gC/m2)
+                    intial_soc = soil_propr["SOIL_CARBON_CONCENTRATION"]
                     self.run_info["intial_soc"] = intial_soc
 
                     FHP = params["FHP"]
