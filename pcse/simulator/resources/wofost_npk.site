@@ -12,20 +12,20 @@ PAVAILI = 0.0
 KAVAILI = 0.0
 
 * Background supply of N [kg/ha/day]
-BG_N_SUPPLY = 0.091
+BG_N_SUPPLY = 0.05
 * Soil N mineralization
-NSOILBASE   =     10.    ! total mineral soil N available at start of growth period [kg N/ha]
+NSOILBASE   =     0.    ! total mineral soil N available at start of growth period [kg N/ha]
 NSOILBASE_FR  =   0.025  ! fraction of soil mineral coming available per day [day-1]
 
 
 * Background supply of P [kg/ha/day]
-BG_P_SUPPLY = 0.091
+BG_P_SUPPLY = 0.5
 * Soil P mineralization
 PSOILBASE   =    10.     ! total mineral soil N available at start of growth period [kg P/ha]
 PSOILBASE_FR  =   0.025  ! fraction of soil mineral coming available per day [day-1]
 
 * Background supply of K [kg/ha/day]
-BG_K_SUPPLY = 0.091
+BG_K_SUPPLY = 0.5
 * Soil K mineralization
 KSOILBASE   =    10.     ! total mineral soil K available at start of growth period [kg K/ha]
 KSOILBASE_FR  =   0.025  ! fraction of soil mineral coming available per day [day-1]

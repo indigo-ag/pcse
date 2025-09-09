@@ -852,7 +852,7 @@ class SiteSimulation:
             f"{self.run_info['start_year']}-01-01"
         ) + pd.Timedelta(days=int(self.run_info["start_doy"]) - 1)
         if self.additionality_date is not None:
-            start_date = pd.to_datetime(self.additionality_date)
+            start_date = pd.to_datetime(self.additionality_date) - pd.Timedelta(days=7)
         end_date = pd.to_datetime(f"{self.run_info['end_year']}-01-01") + pd.Timedelta(
             days=int(self.run_info["end_doy"]) - 1
         )

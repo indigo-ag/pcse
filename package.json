@@ -5,7 +5,7 @@
   "scripts": {
     "install:deps": "pip install -r requirements.txt",
     "lint": "set -x && black --check --diff pcse/",
-    "lint:fix": "mypy indigoag/ && yarn indigo-scripts",
+    "lint:fix": "mypy pcse/ && yarn indigo-scripts",
     "test": "pytest"
   },
   "dependencies": {

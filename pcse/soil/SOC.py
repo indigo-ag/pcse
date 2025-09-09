@@ -1,19 +1,19 @@
-from math import sqrt, pi, exp, log, cos
-import numpy as np
-import math
-from ..traitlets import Float, Int, Instance, Enum, Unicode, Bool, List
-from ..decorators import prepare_rates, prepare_states
-
-from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
-from .. import signals
-from .. import exceptions as exc
 import calendar
+import math
+from math import cos, exp, log, pi, sqrt
+
+import numpy as np
+
+from .. import exceptions as exc
+from .. import signals
+from ..base import ParamTemplate, RatesTemplate, SimulationObject, StatesTemplate
 from ..db.tillage_parameters import (
     cult_factor_ranges,
     cultivation_methods,
     get_tillage_code_params,
 )
-
+from ..decorators import prepare_rates, prepare_states
+from ..traitlets import Bool, Enum, Float, Instance, Int, List, Unicode
 
 # Next steps to improve the efficiency :
 
@@ -33,6 +33,7 @@ class Ensemble_SOC_Indigo(SimulationObject):
     MillennialV2_SOC_Indigo = Instance(SimulationObject)
     RothC_SOC_Indigo = Instance(SimulationObject)
     MIMICS_SOC_Indigo = Instance(SimulationObject)
+    IOM = Float(0.0)
 
     class Parameters(ParamTemplate):
         Ens_Weights = List()  # Thickness of soil layers (cm)
@@ -57,6 +58,8 @@ class Ensemble_SOC_Indigo(SimulationObject):
         SOM_1_0 = Float()
         SOM_2_0 = Float()
         SOM_3_0 = Float()
+
+        TIsoc = Float()  # Total inital soc
 
     class StateVariables(StatesTemplate):
         Ens_SOC = Float()
@@ -209,6 +212,12 @@ class MIMICS_SOC_Indigo(SimulationObject):
     MOD2 = np.array([np.nan, np.nan])
     npp_dead_in_season = Float()
     residue_perc_removed = Float()
+
+    _increments_SOM1 = List()
+    _increments_SOM2 = List()
+    _increments_SOM3 = List()
+    _increments_MIC1 = List()
+    _increments_MIC2 = List()
 
     def _on_manage_residue(self, **kwargs):
         """Apply tillage"""
@@ -564,6 +573,41 @@ class MIMICS_SOC_Indigo(SimulationObject):
 
         return diff_eq
 
+    def _set_variable_SOM_1(self, nSOM1):
+        """Force the model states based on the input value."""
+        increment = nSOM1 - self.states.SOM_1
+        self.states.SOM_1 = nSOM1
+        self._increments_SOM1.append(increment)
+        return {"SOM_1": increment}
+
+    def _set_variable_SOM_2(self, nSOM2):
+        """Force the model states based on the input value."""
+        increment = nSOM2 - self.states.SOM_2
+        self.states.SOM_2 = nSOM2
+        self._increments_SOM2.append(increment)
+        return {"SOM_2": increment}
+
+    def _set_variable_SOM_3(self, nSOM3):
+        """Force the model states based on the input value."""
+        increment = nSOM3 - self.states.SOM_3
+        self.states.SOM_3 = nSOM3
+        self._increments_SOM3.append(increment)
+        return {"SOM_3": increment}
+
+    def _set_variable_MIC_1(self, nMIC1):
+        """Force the model states based on the input value."""
+        increment = nMIC1 - self.states.MIC_1
+        self.states.MIC_1 = nMIC1
+        self._increments_MIC1.append(increment)
+        return {"MIC_1": increment}
+
+    def _set_variable_MIC_2(self, nMIC2):
+        """Force the model states based on the input value."""
+        increment = nMIC2 - self.states.MIC_2
+        self.states.MIC_2 = nMIC2
+        self._increments_MIC2.append(increment)
+        return {"MIC_2": increment}
+
 
 # https://zenodo.org/records/10732265
 
@@ -586,6 +630,12 @@ class RothC_SOC_Indigo(SimulationObject):
     in_crop_cycle = Bool(False)
     npp_dead_in_season = Float()
     residue_perc_removed = Float()
+
+    _increments_DPM = List()
+    _increments_RPM = List()
+    _increments_BIO = List()
+    _increments_HUM = List()
+    _increments_IOM = List()
 
     def _on_manage_residue(self, **kwargs):
         """Apply tillage"""
@@ -944,6 +994,41 @@ class RothC_SOC_Indigo(SimulationObject):
 
         return b, np.abs(self.accTSMD)
 
+    def _set_variable_DPM(self, nDPM):
+        """Force the model states based on the input value."""
+        increment = nDPM - self.states.DPM
+        self.states.DPM = nDPM
+        self._increments_DPM.append(increment)
+        return {"DPM": increment}
+
+    def _set_variable_RPM(self, nRPM):
+        """Force the model states based on the input value."""
+        increment = nRPM - self.states.RPM
+        self.states.RPM = nRPM
+        self._increments_RPM.append(increment)
+        return {"RPM": increment}
+
+    def _set_variable_BIO(self, nBIO):
+        """Force the model states based on the input value."""
+        increment = nBIO - self.states.BIO
+        self.states.BIO = nBIO
+        self._increments_BIO.append(increment)
+        return {"BIO": increment}
+
+    def _set_variable_HUM(self, nHUM):
+        """Force the model states based on the input value."""
+        increment = nHUM - self.states.HUM
+        self.states.HUM = nHUM
+        self._increments_HUM.append(increment)
+        return {"HUM": increment}
+
+    def _set_variable_IOM(self, nIOM):
+        """Force the model states based on the input value."""
+        increment = nIOM - self.states.IOM
+        self.states.IOM = nIOM
+        self._increments_IOM.append(increment)
+        return {"IOM": increment}
+
 
 class MillennialV2_SOC_Indigo(SimulationObject):
     """
@@ -1013,6 +1098,11 @@ class MillennialV2_SOC_Indigo(SimulationObject):
     param_bulkd = Float(-99.0)
     in_crop_cycle = Bool(False)
 
+    _increments_POM = List()
+    _increments_LMWC = List()
+    _increments_AGG = List()
+    _increments_MIC = List()
+    _increments_MAOM = List()
     residue_perc_removed = Float()
 
     def _on_manage_residue(self, **kwargs):
@@ -1310,6 +1400,41 @@ class MillennialV2_SOC_Indigo(SimulationObject):
     def finalize(self, day):
         pass
 
+    def _set_variable_POM(self, nPOM):
+        """Force the model states based on the input value."""
+        increment = nPOM - self.states.POM
+        self.states.POM = nPOM
+        self._increments_POM.append(increment)
+        return {"POM": increment}
+
+    def _set_variable_LMWC(self, nLMWC):
+        """Force the model states based on the input value."""
+        increment = nLMWC - self.states.LMWC
+        self.states.LMWC = nLMWC
+        self._increments_LMWC.append(increment)
+        return {"LMWC": increment}
+
+    def _set_variable_AGG(self, nAGG):
+        """Force the model states based on the input value."""
+        increment = nAGG - self.states.AGG
+        self.states.AGG = nAGG
+        self._increments_AGG.append(increment)
+        return {"AGG": increment}
+
+    def _set_variable_MIC(self, nMIC):
+        """Force the model states based on the input value."""
+        increment = nMIC - self.states.MIC
+        self.states.MIC = nMIC
+        self._increments_MIC.append(increment)
+        return {"MIC": increment}
+
+    def _set_variable_MAOM(self, nMAOM):
+        """Force the model states based on the input value."""
+        increment = nMAOM - self.states.MAOM
+        self.states.MAOM = nMAOM
+        self._increments_MAOM.append(increment)
+        return {"MAOM": increment}
+
 
 class Century_SOC_Indigo(SimulationObject):
     """
@@ -1368,6 +1493,9 @@ class Century_SOC_Indigo(SimulationObject):
     in_crop_cycle = Bool(False)
     npp_dead_in_season = Float()
     residue_perc_removed = Float()
+    _increments_active = List()
+    _increments_slow = List()
+    _increments_passive = List()
 
     def _on_manage_residue(self, **kwargs):
         """Apply tillage"""
@@ -1631,3 +1759,33 @@ class Century_SOC_Indigo(SimulationObject):
 
     def finalize(self, day):
         pass
+
+    def _set_variable_SOC_ACTIVE(self, nactive):
+        """Force the model states based on the given soil SOC_ACTIVE value.
+
+        Further, the increment made to SOC_ACTIVE is added to self._increments_SOC_ACTIVE
+        """
+        increment = nactive - self.states.SOC_ACTIVE
+        self.states.SOC_ACTIVE = nactive
+        self._increments_active.append(increment)
+        return {"SOC_ACTIVE": increment}
+
+    def _set_variable_SOC_SLOW(self, nslow):
+        """Force the model states based on the given soil SOC_SLOW value.
+
+        Further, the increment made to SOC_SLOW is added to self._increments_SOC_SLOW
+        """
+        increment = nslow - self.states.SOC_SLOW
+        self.states.SOC_SLOW = nslow
+        self._increments_slow.append(increment)
+        return {"SOC_SLOW": increment}
+
+    def _set_variable_SOC_PASSIVE(self, npassive):
+        """Force the model states based on the given soil SOC_PASSIVE value.
+
+        Further, the increment made to SOC_PASSIVE is added to self._increments_SOC_PASSIVE
+        """
+        increment = npassive - self.states.SOC_PASSIVE
+        self.states.SOC_PASSIVE = npassive
+        self._increments_passive.append(increment)
+        return {"SOC_PASSIVE": increment}
