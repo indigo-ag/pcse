@@ -21,7 +21,8 @@ commands:
             . local-env/bin/activate
             pip install "pip<25.3"
             pip-sync requirements-dev.txt
-            pip install -e .[dev,all]
+            pip install -r requirements.txt
+            pip install .
       - shared/save_venv_cache:
           cache_key: *pip_cache_key
 

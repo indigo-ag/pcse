@@ -1,5 +1,6 @@
 from __future__ import print_function
 from setuptools import setup, find_packages
+from pcse import __version__ as version
 import os
 import io
 
@@ -13,7 +14,7 @@ AUTHOR = "Allard de Wit"
 AUTHOR_EMAIL = 'allard.dewit@wur.nl'
 URL = 'http://github.com/ajwdewit/pcse/'
 LICENSE="EUPL"
-VERSION = "0.4.1"
+VERSION = version
 
 here = os.path.abspath(os.path.dirname(__file__))
 
