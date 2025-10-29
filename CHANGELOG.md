@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.1 (2025-10-29)
+### Fix
+* **ST-4194:** Always load crop parameter cache ([#25](https://github.com/indigo-ag/indigo-pcse/issues/25)) ([`3afc00e`](https://github.com/indigo-ag/indigo-pcse/commit/3afc00e53cdf12a4fc1b45dae56edc52e854f18c))
+
 ## v0.4.0 (2025-09-09)
 ### Feature
 * **DAM-1483:** Bump Semantic Version ([#23](https://github.com/indigo-ag/indigo-pcse/issues/23)) ([`3972620`](https://github.com/indigo-ag/indigo-pcse/commit/39726204bc824c48accd34fe3c53a0048ac6c34a))
