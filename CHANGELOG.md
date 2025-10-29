@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.3 (2025-10-29)
+### Fix
+* **ST-1012:** Ease Initialization for Consumers ([#29](https://github.com/indigo-ag/indigo-pcse/issues/29)) ([`ea4bd05`](https://github.com/indigo-ag/indigo-pcse/commit/ea4bd053c7f53849f45445b4cc164330c72fb2ca))
+
 ## v0.4.2 (2025-10-29)
 ### Fix
 * **ST-1012:** Fix semantic version release v2 ([#28](https://github.com/indigo-ag/indigo-pcse/issues/28)) ([`e7e5ecf`](https://github.com/indigo-ag/indigo-pcse/commit/e7e5ecfbf1b723b117db10efe2f4c27e5be63423))
