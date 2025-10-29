@@ -182,3 +182,8 @@ def __getattr__(name):
 
         return _test
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
+# Ensure minimal compatibility for direct submodule imports (e.g., pcse.base)
+# This has no heavy dependencies and does not configure logging/DB.
+setup()
