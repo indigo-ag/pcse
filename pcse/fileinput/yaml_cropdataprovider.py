@@ -27,7 +27,7 @@ class YAMLCropDataProvider(MultiCropDataProvider):
     """A crop data provider for reading crop parameter sets stored in the YAML format.
 
         :param fpath: full path to directory containing YAML files
-        :param repository: URL to repository containg YAML files. This url should be
+        :param repository: URL to repository containing YAML files. This url should be
          the *raw* content (e.g. starting with 'https://raw.githubusercontent.com')
         :param force_reload: If set to True, the cache file is ignored and al
          parameters are reloaded (default False).
@@ -48,7 +48,7 @@ class YAMLCropDataProvider(MultiCropDataProvider):
         YAMLCropDataProvider - crop and variety not set: no activate crop parameter set!
 
     All crops and varieties have been loaded from the YAML file, however no activate
-    crop has been set. Therefore, we need to activate a a particular crop and variety:
+    crop has been set. Therefore, we need to activate a particular crop and variety:
 
         >>> p.set_active_crop('wheat', 'Winter_wheat_101')
         >>> print(p)
@@ -115,7 +115,7 @@ class YAMLCropDataProvider(MultiCropDataProvider):
                 self.logger.info(msg)
                 self.read_remote_repository(self.default_repository)
 
-            # TODO (CP-39743): Reinstantiate pickling when in-memory provider is ready
+            # TODO (ST-1099): Re-instantiate pickling when in-memory provider is ready
             # Temporarily removing cache pickling due to permissions issues when importing as a package
             # with open(self._get_cache_fname(fpath), "wb") as fp:
             #     pickle.dump(
@@ -181,16 +181,18 @@ class YAMLCropDataProvider(MultiCropDataProvider):
 
                 # First we check that the cache file reflects the contents of the YAML files.
                 # This only works for files not for github repos
-                if fpath is not None:
-                    yaml_file_names = self._get_yaml_files(fpath)
-                    yaml_file_dates = [
-                        os.stat(fn).st_mtime for crop, fn in yaml_file_names.items()
-                    ]
-                    # retrieve modification date of cache file
-                    cache_date = os.stat(cache_fname_fp).st_mtime
-                    # Ensure cache file is more recent then any of the YAML files
-                    if any([d > cache_date for d in yaml_file_dates]):
-                        return False
+                # TODO (ST-1099): This probably gets removed altogether when we switch to an in-memory
+                # provider?
+                # if fpath is not None:
+                #     yaml_file_names = self._get_yaml_files(fpath)
+                #     yaml_file_dates = [
+                #         os.stat(fn).st_mtime for crop, fn in yaml_file_names.items()
+                #     ]
+                #     # retrieve modification date of cache file
+                #     cache_date = os.stat(cache_fname_fp).st_mtime
+                #     # Ensure cache file is more recent then any of the YAML files
+                #     if any([d > cache_date for d in yaml_file_dates]):
+                #         return False
 
                 # Now start loading the cache file
                 with open(cache_fname_fp, "rb") as fp:

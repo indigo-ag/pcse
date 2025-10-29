@@ -15,8 +15,11 @@ commands:
           enable_pip_oct_2020_resolver: true
       - run:
           name: Install dependencies
+          # pip-tools 7.5.1 is not compatible with pip 25.3
+          # https://github.com/jazzband/pip-tools/issues/2252
           command: |
             . local-env/bin/activate
+            pip install "pip<25.3"
             pip-sync requirements-dev.txt
             pip install -e .[dev,all]
       - shared/save_venv_cache:
@@ -48,7 +51,7 @@ jobs:
     executor:
       name: shared/language-executor
       language: python
-      version: '3.9'
+      version: '3.10'
     resource_class: small
     steps:
       - checkout
@@ -63,7 +66,7 @@ jobs:
     executor:
       name: shared/language-executor
       language: python
-      version: '3.9'
+      version: '3.10'
     resource_class: small
     steps:
       - checkout
@@ -78,7 +81,7 @@ workflows:
 #          matrix:
 #            parameters:
 #              python_version:
-#                - '3.9'
+#                - '3.10
       - lint:
           context: org-global
           filters:
