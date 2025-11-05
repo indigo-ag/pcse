@@ -17,6 +17,7 @@ Functions defined here:
 """
 import os
 import random
+import sys
 import unittest
 
 from sqlalchemy import create_engine, MetaData, select, Table, and_, func
@@ -313,3 +314,8 @@ def suite(dsn=None):
     random.shuffle(tests)
     suite.addTests(tests)
     return suite
+
+
+if __name__ == "__main__":
+    result = unittest.TextTestRunner(verbosity=2).run(suite())
+    sys.exit(not result.wasSuccessful())

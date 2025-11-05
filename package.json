@@ -6,7 +6,7 @@
     "install:deps": "pip install -r requirements.txt",
     "lint": "set -x && black --check --diff pcse/",
     "lint:fix": "mypy pcse/ && yarn indigo-scripts",
-    "test": "pytest"
+    "test": "python -c 'import pcse; pcse.test()' && python -m tests"
   },
   "dependencies": {
     "yarn": "^1.22.19"

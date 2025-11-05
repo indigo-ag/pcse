@@ -3,6 +3,7 @@
 # Allard de Wit (allard.dewit@wur.nl), April 2014
 """ Collection of tests for PCSE.
 """
+import sys
 import unittest
 import warnings
 
@@ -42,4 +43,5 @@ def test_all(dsn=None):
     allsuites = make_test_suite(dsn)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        unittest.TextTestRunner(verbosity=2).run(allsuites)
+        result = unittest.TextTestRunner(verbosity=2).run(allsuites)
+    sys.exit(not result.wasSuccessful())

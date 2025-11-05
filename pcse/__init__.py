@@ -96,6 +96,7 @@ def setup():
 
 # Internal guard to ensure one-time initialization
 __initialized = False
+settings = None
 
 
 def _ensure_initialized():
@@ -106,37 +107,43 @@ def _ensure_initialized():
     # Minimal environment setup
     setup()
 
-    # Configure logging using settings
-    try:
-        from .settings import settings as _settings
+    global settings
+    if settings is None:
+        try:
+            from .settings import settings as _settings
 
-        logging.config.dictConfig(_settings.LOG_CONFIG)
-    except Exception:
-        # If logging configuration fails, fall back to basicConfig
+            settings = _settings
+        except Exception:
+            pass
+
+    # Configure logging using settings
+    if settings is not None:
+        logging.config.dictConfig(settings.LOG_CONFIG)
+    # If logging configuration fails, fall back to basicConfig
+    else:
         logging.basicConfig(level=logging.INFO)
 
     # If no PCSE demo database, build it (best-effort)
-    try:
-        from .settings import settings as _settings
-
-        pcse_db_file = os.path.join(_settings.PCSE_USER_HOME, "pcse.db")
-        if not os.path.exists(pcse_db_file):
-            print("Building PCSE demo database at: %s ..." % pcse_db_file, end=" ")
-            pcse_home = os.path.dirname(__file__)
-            pcse_db_dump_file = os.path.join(pcse_home, "db", "pcse", "pcse_dump.sql")
-            try:
-                util.load_SQLite_dump_file(pcse_db_dump_file, pcse_db_file)
-                print("OK")
-            except Exception as e:
-                logger = logging.getLogger()
-                msg1 = "Failed to create the PCSE demo database: %s" % e
-                msg2 = (
-                    "PCSE will likely be functional, but some tests and demos may fail."
+    if settings is not None:
+        try:
+            pcse_db_file = os.path.join(settings.PCSE_USER_HOME, "pcse.db")
+            if not os.path.exists(pcse_db_file):
+                print("Building PCSE demo database at: %s ..." % pcse_db_file, end=" ")
+                pcse_home = os.path.dirname(__file__)
+                pcse_db_dump_file = os.path.join(
+                    pcse_home, "db", "pcse", "pcse_dump.sql"
                 )
-                logger.warning(msg1)
-                logger.warning(msg2)
-    finally:
-        __initialized = True
+                try:
+                    util.load_SQLite_dump_file(pcse_db_dump_file, pcse_db_file)
+                    print("OK")
+                except Exception as e:
+                    logger = logging.getLogger()
+                    msg1 = "Failed to create the PCSE demo database: %s" % e
+                    msg2 = "PCSE will likely be functional, but some tests and demos may fail."
+                    logger.warning(msg1)
+                    logger.warning(msg2)
+        finally:
+            __initialized = True
 
     if not __stable__:
         print("Warning: You are running a PCSE development version:  %s" % __version__)
@@ -159,7 +166,6 @@ def test(dsn=None):
 def __getattr__(name):
     # Map attribute names to import targets and optional attribute to fetch
     targets = {
-        "settings": (".settings", "settings"),
         "db": (".db", None),
         "fileinput": (".fileinput", None),
         "agromanager": (".agromanager", None),

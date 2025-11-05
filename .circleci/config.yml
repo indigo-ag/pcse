@@ -27,26 +27,23 @@ commands:
           cache_key: *pip_cache_key
 
 jobs:
-#  test:
-#    parameters:
-#      python_version:
-#        type: string
-#    executor:
-#      name: shared/language-executor
-#      language: python
-#      version: << parameters.python_version >>
-#    resource_class: small
-#    steps:
-#      - checkout
-#      - install_package_and_deps
-#      - run:
-#          name: Run tests
-#          command: |
-#            . local-env/bin/activate
-#            yarn test --cov-report=xml --cov=src --junitxml=test-results/junit.xml
-#      - store_test_results:
-#          path: test-results
-#      - shared/verify_python_package
+  test:
+    parameters:
+      python_version:
+        type: string
+    executor:
+      name: shared/language-executor
+      language: python
+      version: << parameters.python_version >>
+    resource_class: small
+    steps:
+      - checkout
+      - install_package_and_deps
+      - run:
+          name: Run tests
+          command: |
+            . local-env/bin/activate
+            yarn test
 
   lint:
     executor:
@@ -77,21 +74,21 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-#      - test:
-#          context: org-global
-#          matrix:
-#            parameters:
-#              python_version:
-#                - '3.10
-      - lint:
-          context: org-global
-          filters:
-            branches:
-              ignore:
-                - master
-      - release:
-          context: org-global
-          filters:
-            branches:
-              only:
-                - master
+    - test:
+        context: org-global
+        matrix:
+          parameters:
+            python_version:
+              [ '3.10' ]
+    - lint:
+        context: org-global
+        filters:
+          branches:
+            ignore:
+              - master
+    - release:
+        context: org-global
+        filters:
+          branches:
+            only:
+              - master

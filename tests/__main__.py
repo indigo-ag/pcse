@@ -5,6 +5,7 @@
 full test suite with `python -m tests --full`
 """
 import argparse
+import sys
 import unittest
 
 from .run_tests import make_test_suite
@@ -27,8 +28,8 @@ def main():
     else:
         suite = make_test_suite(quick=True)
 
-    unittest.TextTestRunner(verbosity=2).run(suite)
-
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    sys.exit(not result.wasSuccessful())
 
 if __name__ == "__main__":
     main()

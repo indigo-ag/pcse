@@ -143,12 +143,22 @@ class TestEngine(Engine):
     def __init__(self, parameterprovider, weatherdataprovider, agromanagement, test_config, external_states=None):
         BaseEngine.__init__(self)
 
+        self.crop = None
+        self.soil = None
+
         # Load the model configuration
         self.mconf = test_config
         self.parameterprovider = parameterprovider
 
         # Variable kiosk for registering and publishing variables
         self.kiosk = TestVariableKiosk(external_states)
+
+        self.flag_terminate = False
+        self.flag_crop_finish = False
+        self.flag_crop_start = False
+        self.flag_crop_delete = False
+        self.flag_output = False
+        self.flag_summary_output = False
 
         # Placeholder for variables to be saved during a model run
         self._saved_output = list()

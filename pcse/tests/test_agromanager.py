@@ -2,6 +2,7 @@
 # Copyright (c) 2004-2014 Alterra, Wageningen-UR
 # Allard de Wit (allard.dewit@wur.nl), April 2014
 
+import sys
 import unittest
 from datetime import date
 import yaml
@@ -287,4 +288,5 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner(verbosity=2).run(suite())
+    result = unittest.TextTestRunner(verbosity=2).run(suite())
+    sys.exit(not result.wasSuccessful())
