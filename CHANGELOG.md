@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.4 (2025-11-05)
+### Fix
+* **ST-4293:** Run unit tests ([#31](https://github.com/indigo-ag/indigo-pcse/issues/31)) ([`1a0f69f`](https://github.com/indigo-ag/indigo-pcse/commit/1a0f69fde9f9c65848b1ff67a610566fecd09e3e))
+
 ## v0.4.3 (2025-10-29)
 ### Fix
 * **ST-1012:** Ease Initialization for Consumers ([#29](https://github.com/indigo-ag/indigo-pcse/issues/29)) ([`ea4bd05`](https://github.com/indigo-ag/indigo-pcse/commit/ea4bd053c7f53849f45445b4cc164330c72fb2ca))
