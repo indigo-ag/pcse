@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.5 (2025-11-11)
+### Fix
+* **ST-4194:** Include crop parameter pickle file in manifest ([#33](https://github.com/indigo-ag/indigo-pcse/issues/33)) ([`8df11b4`](https://github.com/indigo-ag/indigo-pcse/commit/8df11b4cfdbfdad31363a49dfdfd44cd1adaa961))
+
 ## v0.4.4 (2025-11-05)
 ### Fix
 * **ST-4293:** Run unit tests ([#31](https://github.com/indigo-ag/indigo-pcse/issues/31)) ([`1a0f69f`](https://github.com/indigo-ag/indigo-pcse/commit/1a0f69fde9f9c65848b1ff67a610566fecd09e3e))
