@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.6 (2025-11-11)
+### Fix
+* **ST-4374:** Put some limits on find_packages ([#34](https://github.com/indigo-ag/indigo-pcse/issues/34)) ([`f06aa1d`](https://github.com/indigo-ag/indigo-pcse/commit/f06aa1d3767fa20ec9e1cf7500401e5e2dd0dc5a))
+
 ## v0.4.5 (2025-11-11)
 ### Fix
 * **ST-4194:** Include crop parameter pickle file in manifest ([#33](https://github.com/indigo-ag/indigo-pcse/issues/33)) ([`8df11b4`](https://github.com/indigo-ag/indigo-pcse/commit/8df11b4cfdbfdad31363a49dfdfd44cd1adaa961))
