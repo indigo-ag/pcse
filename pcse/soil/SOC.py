@@ -196,6 +196,28 @@ class Ensemble_SOC_Indigo(SimulationObject):
 
 
 class MIMICS_SOC_Indigo(SimulationObject):
+    """
+    Based on MIMICS v0.1 Copyright (c) 2015 will wieder
+
+    MIMICS v0.1 is licensed under the terms of the MIT license:
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the “Software”),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the Software
+    is furnished to do so, subject to the following conditions. The above copyright
+    notice and this permission notice shall be included in all copies or substantial
+    portions of the Software. THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF
+    ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+    EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
+    OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+
+    Changes made by Hamze Dokoohaki © Indigo Ag, Inc. 2024-2025:
+    adapted for interoperability with the PCSE framework
+    """
 
     tao = Float()
     Tao_MOD1 = Float()  # Modifier based on net primary productivity
@@ -613,7 +635,21 @@ class MIMICS_SOC_Indigo(SimulationObject):
 
 
 class RothC_SOC_Indigo(SimulationObject):
-    """Soil Organic Carbon (SOC) Model"""
+    """
+    Soil Organic Carbon (SOC) Model based on RothC python version v1.0.0
+    Copyright (c) 2024 Rothamsted Research.
+
+    RothC_Py v1.0.0 licensed under the Apache License, Version 2.0 (the “License”);
+    you may not use RothC_Py v1.0.0 except in compliance with the License. You may
+    obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless
+    required by applicable law or agreed to in writing, software distributed under the
+    License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the specific language governing
+    permissions and limitations under the License.
+
+    Changes made by Hamze Dokoohaki © Indigo Ag, Inc. 2024-2025:
+    adapted for interoperability with the PCSE framework
+    """
 
     iom_power = Float(1.255)
     accTSMD = Float(0.0)
@@ -1032,7 +1068,24 @@ class RothC_SOC_Indigo(SimulationObject):
 
 class MillennialV2_SOC_Indigo(SimulationObject):
     """
-    Millennial V2 Model
+    Based on Millennial Version 2 Copyright (c) 2021 rabramoff
+    Millennial Version 2 is licensed under the terms of the MIT license:
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the “Software”), to deal
+    in the Software without restriction, including without limitation the rights to
+    use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+    the Software, and to permit persons to whom the Software is furnished to do so,
+    subject to the following conditions. The above copyright notice and this permission
+    notice shall be included in all copies or substantial portions of the Software.
+    THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+    PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+    FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+    DEALINGS IN THE SOFTWARE.
+
+    Changes made by Hamze Dokoohaki © Indigo Ag, Inc. 2024-2025:
+    adapted for interoperability with the PCSE framework
 
     The Millennial V2 model simulates the dynamics of soil carbon pools and their interactions.
     It takes into account soil properties, hydrological properties, and decomposition processes.
@@ -1438,7 +1491,25 @@ class MillennialV2_SOC_Indigo(SimulationObject):
 
 class Century_SOC_Indigo(SimulationObject):
     """
-    Century Model
+    Based on derivs_V2_Century.R Copyright (c) 2021 rabramoff
+
+    derivs_V2_Century.R is licensed under the terms of the MIT license:
+    Permission is hereby granted, free of charge, to any person obtaining a copy of
+    this software and associated documentation files (the “Software”), to deal in the
+    Software without restriction, including without limitation the rights to use, copy,
+    modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+    and to permit persons to whom the Software is furnished to do so, subject to the
+    following conditions. The above copyright notice and this permission notice shall
+    be included in all copies or substantial portions of the Software. THE SOFTWARE IS
+    PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+    NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE
+    AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+    FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
+    OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+    OR OTHER DEALINGS IN THE SOFTWARE.
+
+    Changes made by Hamze Dokoohaki © Indigo Ag, Inc. 2024-2025:
+    adapted for interoperability with the PCSE framework
 
     The Century model simulates the dynamics of soil carbon pools and their interactions,
     considering the influence of soil temperature, moisture, and plant inputs.

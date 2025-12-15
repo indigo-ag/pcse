@@ -58,6 +58,14 @@ To contribute to PCSE, you can fork your own copy at
 
 Full documentation is available on <http://pcse.readthedocs.io>
 
+## Indigo Ag Features Added
+
+Indigo Ag have added 4 Soil Organic Carbon (SOC) models with an ensembling
+capability as well as a soil temperature model. These models were adapted
+from earlier implementations in order to work within the PCSE framework.
+See pcse/soil/SOC.py and pcse/soil/Soil_Temp.py for license information.
+Changes made by Hamze Dokoohaki © Indigo Ag, Inc. 2024-2025.
+
 ## Testing PCSE
 
 The PCSE package has some built-in tests that can used to test if any
