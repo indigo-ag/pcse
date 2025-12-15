@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.7 (2025-12-15)
+### Fix
+* **ST-4779:** Add license text ([#35](https://github.com/indigo-ag/indigo-pcse/issues/35)) ([`45697c8`](https://github.com/indigo-ag/indigo-pcse/commit/45697c85d210d93cf4a6ef5b6a2799d32e1f1d45))
+
 ## v0.4.6 (2025-11-11)
 ### Fix
 * **ST-4374:** Put some limits on find_packages ([#34](https://github.com/indigo-ag/indigo-pcse/issues/34)) ([`f06aa1d`](https://github.com/indigo-ag/indigo-pcse/commit/f06aa1d3767fa20ec9e1cf7500401e5e2dd0dc5a))
