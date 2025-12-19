@@ -176,7 +176,7 @@ class VariableKiosk(dict):
             if varname in self.published_rates:
                 self.published_rates.pop(varname)
         else:
-            msg = "Failed to deregister variabe '%s'!" % varname
+            msg = "Failed to deregister variable '%s'!" % varname
             raise exc.VariableKioskError(msg)
 
         # Finally remove the value from the internal dictionary

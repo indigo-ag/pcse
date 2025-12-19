@@ -2,11 +2,10 @@
 # Copyright (c) 2004-2014 Alterra, Wageningen-UR
 # Allard de Wit (allard.dewit@wur.nl), April 2014
 
-from ..traitlets import Float
+
 from ..decorators import prepare_rates, prepare_states
-from ..util import limit, merge_dict
+from ..util import limit
 from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
-from .. import signals
 from .. import exceptions as exc
 
 
@@ -24,7 +23,7 @@ class SnowMAUS(SimulationObject):
     Snow density is taken as a fixed value despite the fact that the snow
     density is known to vary with the type of snowfall, the temperature and
     the age of the snow pack. However, more complicated algorithms for snow
-    density would not be consistent with the simplicy of SnowMAUS.
+    density would not be consistent with the simplicity of SnowMAUS.
 
     A drawback of the current implementation is that there is no link to the
     water balance yet.
@@ -80,28 +79,50 @@ class SnowMAUS(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        TMINACCU1 = Float(-99.0)
-        TMINACCU2 = Float(-99.0)
-        TMINCRIT = Float(-99.0)
-        TMAXCRIT = Float(-99.0)
-        RMELT = Float(-99.0)
-        SCTHRESHOLD = Float(-99.0)
-        SNOWDENSITY = Float(-99)
-        SWEDEPTHI = Float(-99)
+
+        __slots__ = [
+            "TMINACCU1",
+            "TMINACCU2",
+            "TMINCRIT",
+            "TMAXCRIT",
+            "RMELT",
+            "SCTHRESHOLD",
+            "SNOWDENSITY",
+            "SWEDEPTHI",
+        ]
+
+        TMINACCU1: float
+        TMINACCU2: float
+        TMINCRIT: float
+        TMAXCRIT: float
+        RMELT: float
+        SCTHRESHOLD: float
+        SNOWDENSITY: float
+        SWEDEPTHI: float
 
     class StateVariables(StatesTemplate):
-        SWEDEPTH = Float(-99.0)
-        SNOWDEPTH = Float(-99.0)
+
+        __slots__ = ["SWEDEPTH", "SNOWDEPTH"]
+
+        SWEDEPTH: float
+        SNOWDEPTH: float
 
     class RateVariables(RatesTemplate):
-        RSNOWACCUM = Float(-99.0)
-        RSNOWSUBLIM = Float(-99.0)
-        RSNOWMELT = Float(-99.0)
+
+        __slots__ = [
+            "RSNOWACCUM",
+            "RSNOWSUBLIM",
+            "RSNOWMELT",
+        ]
+
+        RSNOWACCUM: float
+        RSNOWSUBLIM: float
+        RSNOWMELT: float
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param sitedata: dictionary with WOFOST sitedata key/value pairs
         """
 

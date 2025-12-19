@@ -2,7 +2,7 @@
 from ..base import ParamTemplate, SimulationObject
 from ..base import StatesWithImplicitRatesTemplate as StateVariables
 from ..decorators import prepare_rates, prepare_states
-from ..traitlets import Float, Bool
+
 from ..util import limit
 from math import sqrt
 from ..exceptions import WaterBalanceError
@@ -105,29 +105,53 @@ class Lintul3Soil(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        DRATE = Float(-99)  # Maximum drainage rate of the soil (mm/day)
-        IRRIGF = Bool()  # Irrigation factor
-        WCFC = Float(-99)  # Soil hydraulic properties
-        WCI = Float(-99)  # Initial water content in cm3 of water/(cm3 of soil).
-        WCST = Float(-99)  # Soil hydraulic properties
-        WCSUBS = Float(-99)  # water content subsoil (?)
-        WCAD = Float(-99)  # Water content at air dryness m3/ m3
-        WCWP = Float(-99)  # Soil hydraulic properties
-        WMFAC = (
-            Bool()
-        )  # water management (0=irrigated up to the field capacity, 1 = irrigated up to saturation)
-        ROOTDI = Float(-99)  # initial rooting depth [m]
+
+        __slots__ = [
+            "DRATE",
+            "WCFC",
+            "WCI",
+            "WCST",
+            "WCSUBS",
+            "WCAD",
+            "WCWP",
+            "WMFAC",
+            "ROOTDI",
+        ]
+
+        DRATE: float  # Maximum drainage rate of the soil (mm/day)
+        IRRIGF: bool  # Irrigation factor
+        WCFC: float  # Soil hydraulic properties
+        WCI: float  # Initial water content in cm3 of water/(cm3 of soil).
+        WCST: float  # Soil hydraulic properties
+        WCSUBS: float  # water content subsoil (?)
+        WCAD: float  # Water content at air dryness m3/ m3
+        WCWP: float  # Soil hydraulic properties
+        WMFAC: bool  # water management (0=irrigated up to the field capacity, 1 = irrigated up to saturation)
+        ROOTDI: float  # initial rooting depth [m]
 
     class Lintul3SoilStates(StateVariables):
-        WA = Float(-99.0)  # Amount of soil water
-        WC = Float(-99.0)  # Volumetric soil water content
-        TRUNOF = Float(-99.0)  # total run off
-        TTRAN = Float(-99.0)  # Crop transpiration accumulated over growth period
-        TEVAP = Float(-99.0)  # soil evaporation accumulated over growth period
-        TDRAIN = Float(-99.0)  # todtal drained
-        TRAIN = Float(-99.0)  # total rain
-        TEXPLO = Float(-99.0)  # Total Exploration
-        TIRRIG = Float(-99.0)  # total irrigation
+
+        __slots__ = [
+            "WA",
+            "WC",
+            "TRUNOF",
+            "TTRAN",
+            "TEVAP",
+            "TDRAIN",
+            "TRAIN",
+            "TEXPLO",
+            "TIRRIG",
+        ]
+
+        WA: float  # Amount of soil water
+        WC: float  # Volumetric soil water content
+        TRUNOF: float  # total run off
+        TTRAN: float  # Crop transpiration accumulated over growth period
+        TEVAP: float  # soil evaporation accumulated over growth period
+        TDRAIN: float  # total drained
+        TRAIN: float  # total rain
+        TEXPLO: float  # Total Exploration
+        TIRRIG: float  # total irrigation
 
     # Counter for days since last rain
     DSLR = 0
@@ -137,7 +161,7 @@ class Lintul3Soil(SimulationObject):
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """

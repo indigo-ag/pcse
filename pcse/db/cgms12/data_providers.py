@@ -12,7 +12,6 @@ import os
 import datetime as dt
 
 from sqlalchemy import MetaData, select, Table, and_
-import numpy as np
 import yaml
 
 from ...util import wind10to2, safe_float, check_date, reference_ET

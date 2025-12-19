@@ -4,7 +4,7 @@
 
 import datetime
 
-from ..traitlets import Float, Int, Instance, Enum, Unicode
+
 from ..decorators import prepare_rates, prepare_states
 from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 from .. import signals
@@ -92,46 +92,87 @@ class Wofost(SimulationObject):
 
     """
 
+    __slots__ = [
+        "pheno",
+        "part",
+        "assim",
+        "mres",
+        "evtra",
+        "lv_dynamics",
+        "st_dynamics",
+        "ro_dynamics",
+        "so_dynamics",
+    ]
+
     # sub-model components for crop simulation
-    pheno = Instance(SimulationObject)
-    part = Instance(SimulationObject)
-    assim = Instance(SimulationObject)
-    mres = Instance(SimulationObject)
-    evtra = Instance(SimulationObject)
-    lv_dynamics = Instance(SimulationObject)
-    st_dynamics = Instance(SimulationObject)
-    ro_dynamics = Instance(SimulationObject)
-    so_dynamics = Instance(SimulationObject)
+    pheno: SimulationObject
+    part: SimulationObject
+    assim: SimulationObject
+    mres: SimulationObject
+    evtra: SimulationObject
+    lv_dynamics: SimulationObject
+    st_dynamics: SimulationObject
+    ro_dynamics: SimulationObject
+    so_dynamics: SimulationObject
 
     # Parameters, rates and states which are relevant at the main crop
     # simulation level
     class Parameters(ParamTemplate):
-        CVL = Float(-99.0)
-        CVO = Float(-99.0)
-        CVR = Float(-99.0)
-        CVS = Float(-99.0)
+
+        __slots__ = [
+            "CVL",
+            "CVO",
+            "CVR",
+            "CVS",
+        ]
+
+        CVL: float
+        CVO: float
+        CVR: float
+        CVS: float
 
     class StateVariables(StatesTemplate):
-        TAGP = Float(-99.0)
-        GASST = Float(-99.0)
-        MREST = Float(-99.0)
-        CTRAT = Float(-99.0)
-        CEVST = Float(-99.0)
-        HI = Float(-99.0)
-        DOF = Instance(datetime.date)
-        FINISH_TYPE = Unicode(allow_none=True)
+
+        __slots__ = [
+            "TAGP",
+            "GASST",
+            "MREST",
+            "CTRAT",
+            "CEVST",
+            "HI",
+            "DOF",
+            "FINISH_TYPE",
+        ]
+
+        TAGP: float
+        GASST: float
+        MREST: float
+        CTRAT: float
+        CEVST: float
+        HI: float
+        DOF: datetime.date
+        FINISH_TYPE: str | None
 
     class RateVariables(RatesTemplate):
-        GASS = Float(-99.0)
-        MRES = Float(-99.0)
-        ASRC = Float(-99.0)
-        DMI = Float(-99.0)
-        ADMI = Float(-99.0)
+
+        __slots__ = [
+            "GASS",
+            "MRES",
+            "ASRC",
+            "DMI",
+            "ADMI",
+        ]
+
+        GASS: float
+        MRES: float
+        ASRC: float
+        DMI: float
+        ADMI: float
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """

@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2004-2014 Alterra, Wageningen-UR
 # Allard de Wit (allard.dewit@wur.nl), April 2014
-import sys, os
-import datetime as dt
+import os
 
-from sqlalchemy import create_engine, MetaData, Table
+from sqlalchemy import create_engine, MetaData
 
 from .db.pcse import (
     GridWeatherDataProvider,

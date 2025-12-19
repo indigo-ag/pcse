@@ -20,7 +20,6 @@ from pcse.base.weather import WeatherDataProvider, WeatherDataContainer
 from pcse.base.variablekiosk import VariableKiosk
 from pcse.base.simulationobject import SimulationObject
 from pcse.util import ConfigurationLoader
-from pcse.traitlets import Instance
 from pcse.agromanager import AgroManager
 from pcse.timer import Timer
 from pcse import signals
@@ -40,8 +39,13 @@ class TestSimulationObject(SimulationObject):
 
     """
 
-    test_class = None
-    subsimobject = Instance(SimulationObject)
+    __slots__ = ["test_class", "subsimobject"]
+
+    test_class: type[SimulationObject]
+    subsimobject: SimulationObject
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        super().__init__(day, kiosk, *args, **kwargs)
 
     def initialize(self, day, kiosk, parvalues):
         self.subsimobject = self.test_class(day, kiosk, parvalues)

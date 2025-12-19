@@ -508,7 +508,7 @@ class SiteSimulation:
                 self.status = SimulationStatus.RUN_FAILED
                 raise ValueError(
                     f"Simulation failed for experiment {self.experiment_id} - {self.treatment_schedule}: {e}"
-                )
+                ) from e
         else:
             print(
                 f"{self.status} - Simulation not run for experiment {self.experiment_id} - {self.treatment_schedule}"

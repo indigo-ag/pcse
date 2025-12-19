@@ -4,26 +4,26 @@
 from collections import namedtuple
 from math import exp
 
-from ..traitlets import Float, Int, Instance
-from ..decorators import prepare_rates, prepare_states
-from ..base import ParamTemplate, StatesTemplate, SimulationObject, VariableKiosk
+
+from ..decorators import prepare_states
+from ..base import ParamTemplate, StatesTemplate, SimulationObject
 from .. import exceptions as exc
 from warnings import warn
-from ..util import AfgenTrait
+from ..util import Afgen
 
 
 # Template for namedtuple containing partitioning factors
-class PartioningFactors(namedtuple("partitioning_factors", "FR FL FS FO")):
+class PartitioningFactors(namedtuple("partitioning_factors", "FR FL FS FO")):
     pass
 
 
 class DVS_Partitioning(SimulationObject):
-    """Class for assimilate partioning based on development stage (`DVS`).
+    """Class for assimilate partitioning based on development stage (`DVS`).
 
-    `DVS_partioning` calculates the partitioning of the assimilates to roots,
+    `DVS_partitioning` calculates the partitioning of the assimilates to roots,
     stems, leaves and storage organs using fixed partitioning tables as a
     function of crop development stage. The available assimilates are first
-    split into below-ground and abovegrond using the values in FRTB. In a
+    split into below-ground and aboveground using the values in FRTB. In a
     second stage they are split into leaves (`FLTB`), stems (`FSTB`) and storage
     organs (`FOTB`).
 
@@ -54,7 +54,7 @@ class DVS_Partitioning(SimulationObject):
     FR        Fraction partitioned to roots.                     Y    -
     FS        Fraction partitioned to stems.                     Y    -
     FL        Fraction partitioned to leaves.                    Y    -
-    FO        Fraction partitioned to storage orgains            Y    -
+    FO        Fraction partitioned to storage organs             Y    -
     =======  ================================================= ==== ============
 
     **Rate variables**
@@ -80,17 +80,23 @@ class DVS_Partitioning(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        FRTB = AfgenTrait()
-        FLTB = AfgenTrait()
-        FSTB = AfgenTrait()
-        FOTB = AfgenTrait()
+
+        __slots__ = ["FRTB", "FLTB", "FSTB", "FOTB"]
+
+        FRTB: Afgen
+        FLTB: Afgen
+        FSTB: Afgen
+        FOTB: Afgen
 
     class StateVariables(StatesTemplate):
-        FR = Float(-99.0)
-        FL = Float(-99.0)
-        FS = Float(-99.0)
-        FO = Float(-99.0)
-        PF = Instance(PartioningFactors)
+
+        __slots__ = ["FR", "FL", "FS", "FO", "PF"]
+
+        FR: float
+        FL: float
+        FS: float
+        FO: float
+        PF: PartitioningFactors
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -111,7 +117,7 @@ class DVS_Partitioning(SimulationObject):
         FO = self.params.FOTB(DVS)
 
         # Pack partitioning factors into tuple
-        PF = PartioningFactors(FR, FL, FS, FO)
+        PF = PartitioningFactors(FR, FL, FS, FO)
 
         # Initial states
         self.states = self.StateVariables(
@@ -154,7 +160,7 @@ class DVS_Partitioning(SimulationObject):
         self.states.FO = params.FOTB(DVS)
 
         # Pack partitioning factors into tuple
-        self.states.PF = PartioningFactors(
+        self.states.PF = PartitioningFactors(
             self.states.FR, self.states.FL, self.states.FS, self.states.FO
         )
 
@@ -162,7 +168,7 @@ class DVS_Partitioning(SimulationObject):
 
     def calc_rates(self, day, drv):
         """Return partitioning factors based on current DVS."""
-        # rate calculation does nothing for partioning as it is a derived
+        # rate calculation does nothing for partitioning as it is a derived
         # state
         return self.states.PF
 
@@ -194,7 +200,7 @@ class DVS_Partitioning_NPK(SimulationObject):
              development stage.
     FLTB     Partitioning to leaves as a function of         TCr       -
              development stage.
-    FOTB     Partitioning to starge organs as a function     TCr       -
+    FOTB     Partitioning to storage organs as a function    TCr       -
              of development stage.
     NPART    Coefficient for the effect of N stress on       SCR       -
              leaf biomass allocation
@@ -209,7 +215,7 @@ class DVS_Partitioning_NPK(SimulationObject):
     FR        Fraction partitioned to roots.                     Y    -
     FS        Fraction partitioned to stems.                     Y    -
     FL        Fraction partitioned to leaves.                    Y    -
-    FO        Fraction partitioned to storage orgains            Y    -
+    FO        Fraction partitioned to storage organs             Y    -
     =======  ================================================= ==== ============
 
     **Rate variables**
@@ -238,20 +244,30 @@ class DVS_Partitioning_NPK(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        FRTB = AfgenTrait()
-        FLTB = AfgenTrait()
-        FSTB = AfgenTrait()
-        FOTB = AfgenTrait()
-        NPART = Float(
-            -99.0
-        )  # coefficient for the effect of N stress on leaf allocation
+
+        __slots__ = [
+            "FRTB",
+            "FLTB",
+            "FSTB",
+            "FOTB",
+            "NPART",
+        ]
+
+        FRTB: Afgen
+        FLTB: Afgen
+        FSTB: Afgen
+        FOTB: Afgen
+        NPART: float  # coefficient for the effect of N stress on leaf allocation
 
     class StateVariables(StatesTemplate):
-        FR = Float(-99.0)
-        FL = Float(-99.0)
-        FS = Float(-99.0)
-        FO = Float(-99.0)
-        PF = Instance(PartioningFactors)
+
+        __slots__ = ["FR", "FL", "FS", "FO", "PF"]
+
+        FR: float
+        FL: float
+        FS: float
+        FO: float
+        PF: PartitioningFactors
 
     def initialize(self, day, kiosk, parameters):
         """
@@ -261,7 +277,7 @@ class DVS_Partitioning_NPK(SimulationObject):
         """
         self.params = self.Parameters(parameters)
 
-        # initial partioning factors (pf)
+        # initial partitioning factors (pf)
         k = self.kiosk
         FR = self.params.FRTB(k.DVS)
         FL = self.params.FLTB(k.DVS)
@@ -269,7 +285,7 @@ class DVS_Partitioning_NPK(SimulationObject):
         FO = self.params.FOTB(k.DVS)
 
         # Pack partitioning factors into tuple
-        PF = PartioningFactors(FR, FL, FS, FO)
+        PF = PartitioningFactors(FR, FL, FS, FO)
 
         # Initial states
         self.states = self.StateVariables(
@@ -327,7 +343,7 @@ class DVS_Partitioning_NPK(SimulationObject):
             s.FO = p.FOTB(k.DVS)
 
         # Pack partitioning factors into tuple
-        s.PF = PartioningFactors(s.FR, s.FL, s.FS, s.FO)
+        s.PF = PartitioningFactors(s.FR, s.FL, s.FS, s.FO)
 
         self._check_partitioning()
 

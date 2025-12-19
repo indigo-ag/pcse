@@ -11,10 +11,8 @@ from .npk_soil_dynamics import (
     NPK_PotentialProduction,
     Indigo_NPK_Soil_Dynamics,
 )
-from .n_soil_dynamics import N_PotentialProduction, N_Soil_Dynamics
-from ..traitlets import Instance
-from ..decorators import prepare_states
-from array import array
+from .n_soil_dynamics import N_Soil_Dynamics
+
 from .Soil_Temp import SoilTemperature
 from .Tillage import TillageSignal
 from .SOC import Ensemble_SOC_Indigo
@@ -24,8 +22,10 @@ from .SOCMineralization import SOCMineralization_Indigo
 class SoilModuleWrapper_PP(SimulationObject):
     """This wraps the soil water balance and soil NPK balance for potential production."""
 
-    WaterbalancePP = Instance(SimulationObject)
-    NPK_PotentialProduction = Instance(SimulationObject)
+    __slots__ = ["WaterbalancePP", "NPK_PotentialProduction"]
+
+    WaterbalancePP: SimulationObject
+    NPK_PotentialProduction: SimulationObject
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -50,8 +50,10 @@ class SoilModuleWrapper_WLP_FD(SimulationObject):
     for production conditions limited by soil water only.
     """
 
-    WaterbalanceFD = Instance(SimulationObject)
-    NPK_Soil_Dynamics = Instance(SimulationObject)
+    __slots__ = ["WaterbalanceFD", "NPK_Soil_Dynamics"]
+
+    WaterbalanceFD: SimulationObject
+    NPK_Soil_Dynamics: SimulationObject
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -76,8 +78,10 @@ class SoilModuleWrapper_NPK_WLP_FD(SimulationObject):
     for production conditions limited by both soil water and NPK.
     """
 
-    WaterbalanceFD = Instance(SimulationObject)
-    NPK_Soil_Dynamics = Instance(SimulationObject)
+    __slots__ = ["WaterbalanceFD", "NPK_Soil_Dynamics"]
+
+    WaterbalanceFD: SimulationObject
+    NPK_Soil_Dynamics: SimulationObject
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -102,8 +106,10 @@ class SoilModuleWrapper_N_WLP_FD(SimulationObject):
     for production conditions limited by both soil water and N.
     """
 
-    WaterbalanceFD = Instance(SimulationObject)
-    N_Soil_Dynamics = Instance(SimulationObject)
+    __slots__ = ["WaterbalanceFD", "N_Soil_Dynamics"]
+
+    WaterbalanceFD: SimulationObject
+    N_Soil_Dynamics: SimulationObject
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -129,12 +135,21 @@ class SoilModuleWrapper_Indigo(SimulationObject):
     We are also working on adding the soil carbon dynamics.
     """
 
-    IndigoWaterbalanceFD = Instance(SimulationObject)
-    NPK_Soil_Dynamics = Instance(SimulationObject)
-    SoilTemperature = Instance(SimulationObject)
-    TillageSignal = Instance(SimulationObject)
-    Ensemble_SOC_Indigo = Instance(SimulationObject)
-    SOCMineralization_Indigo = Instance(SimulationObject)
+    __slots__ = [
+        "IndigoWaterbalanceFD",
+        "NPK_Soil_Dynamics",
+        "SoilTemperature",
+        "TillageSignal",
+        "Ensemble_SOC_Indigo",
+        "SOCMineralization_Indigo",
+    ]
+
+    IndigoWaterbalanceFD: SimulationObject
+    NPK_Soil_Dynamics: SimulationObject
+    SoilTemperature: SimulationObject
+    TillageSignal: SimulationObject
+    Ensemble_SOC_Indigo: SimulationObject
+    SOCMineralization_Indigo: SimulationObject
 
     def initialize(self, day, kiosk, parvalues):
         """

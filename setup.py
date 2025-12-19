@@ -43,7 +43,6 @@ setup(
                       'openpyxl>=3.0.0',
                       'requests>=2.0.0',
                       'pandas>=0.25',
-                      'traitlets-pcse>=5.0.0.dev',
                       'tqdm>=4.0.0',
                       'dask>=2024.8.0',
                       'scipy>=1.0.0',

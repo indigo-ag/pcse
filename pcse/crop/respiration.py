@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2004-2014 Alterra, Wageningen-UR
 # Allard de Wit (allard.dewit@wur.nl), April 2014
-from ..traitlets import Float, Int, Instance, Dict
-from ..decorators import prepare_rates, prepare_states
+
 from ..base import ParamTemplate, SimulationObject, RatesTemplate
-from ..util import AfgenTrait
+from ..util import Afgen
 
 
 class WOFOST_Maintenance_Respiration(SimulationObject):
@@ -13,7 +12,7 @@ class WOFOST_Maintenance_Respiration(SimulationObject):
     WOFOST calculates the maintenance respiration as proportional to the dry
     weights of the plant organs to be maintained, where each plant organ can be
     assigned a different maintenance coefficient. Multiplying organ weight
-    with the maintenance coeffients yields the relative maintenance respiration
+    with the maintenance coefficients yields the relative maintenance respiration
     (`RMRES`) which is than corrected for senescence (parameter `RFSETB`). Finally,
     the actual maintenance respiration rate is calculated using the daily mean
     temperature, assuming a relative increase for each 10 degrees increase
@@ -24,7 +23,7 @@ class WOFOST_Maintenance_Respiration(SimulationObject):
     =======  ============================================= =======  ============
      Name     Description                                   Type     Unit
     =======  ============================================= =======  ============
-    Q10      Relative increase in maintenance repiration    SCr       -
+    Q10      Relative increase in maintenance respiration   SCr       -
              rate with each 10 degrees increase in
              temperature
     RMR      Relative maintenance respiration rate for
@@ -72,20 +71,33 @@ class WOFOST_Maintenance_Respiration(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        Q10 = Float(-99.0)
-        RMR = Float(-99.0)
-        RML = Float(-99.0)
-        RMS = Float(-99.0)
-        RMO = Float(-99.0)
-        RFSETB = AfgenTrait()
+
+        __slots__ = [
+            "Q10",
+            "RMR",
+            "RML",
+            "RMS",
+            "RMO",
+            "RFSETB",
+        ]
+
+        Q10: float
+        RMR: float
+        RML: float
+        RMS: float
+        RMO: float
+        RFSETB: Afgen
 
     class RateVariables(RatesTemplate):
-        PMRES = Float(-99.0)
+
+        __slots__ = ["PMRES"]
+
+        PMRES: float
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """

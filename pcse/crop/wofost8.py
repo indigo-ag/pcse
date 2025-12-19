@@ -2,7 +2,7 @@
 
 import datetime
 
-from ..traitlets import Float, Instance, Unicode
+
 from ..decorators import prepare_rates, prepare_states
 from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 from .. import signals
@@ -20,7 +20,6 @@ from .partitioning import DVS_Partitioning_NPK as Partitioning
 from .evapotranspiration import EvapotranspirationCO2 as Evapotranspiration
 
 from .npk_dynamics import NPK_Crop_Dynamics as NPK_crop
-from pcse.soil.npk_soil_dynamics import NPK_Soil_Dynamics as NPK_soil
 from .nutrients.npk_stress import NPK_Stress as NPK_Stress
 
 
@@ -91,50 +90,89 @@ class Wofost80(SimulationObject):
     PMRES    Potential maintenance respiration rate             N  |kg CH2O ha-1 d-1|
     ASRC     Net available assimilates (GASS - MRES)            N  |kg CH2O ha-1 d-1|
     DMI      Total dry matter increase, calculated as ASRC
-             times a weighted conversion efficieny.             Y  |kg ha-1 d-1|
+             times a weighted conversion efficiency.            Y  |kg ha-1 d-1|
     ADMI     Aboveground dry matter increase                    Y  |kg ha-1 d-1|
     =======  ================================================ ==== =============
 
     """
 
+    __slots__ = [
+        "pheno",
+        "part",
+        "assim",
+        "mres",
+        "evtra",
+        "lv_dynamics",
+        "st_dynamics",
+        "ro_dynamics",
+        "so_dynamics",
+        "npk_crop_dynamics",
+        "npk_stress",
+    ]
+
     # sub-model components for crop simulation
-    pheno = Instance(SimulationObject)
-    part = Instance(SimulationObject)
-    assim = Instance(SimulationObject)
-    mres = Instance(SimulationObject)
-    evtra = Instance(SimulationObject)
-    lv_dynamics = Instance(SimulationObject)
-    st_dynamics = Instance(SimulationObject)
-    ro_dynamics = Instance(SimulationObject)
-    so_dynamics = Instance(SimulationObject)
-    npk_crop_dynamics = Instance(SimulationObject)
-    npk_stress = Instance(SimulationObject)
+    pheno: SimulationObject
+    part: SimulationObject
+    assim: SimulationObject
+    mres: SimulationObject
+    evtra: SimulationObject
+    lv_dynamics: SimulationObject
+    st_dynamics: SimulationObject
+    ro_dynamics: SimulationObject
+    so_dynamics: SimulationObject
+    npk_crop_dynamics: SimulationObject
+    npk_stress: SimulationObject
 
     # Parameters, rates and states which are relevant at the main crop
     # simulation level
     class Parameters(ParamTemplate):
-        CVL = Float(-99.0)
-        CVO = Float(-99.0)
-        CVR = Float(-99.0)
-        CVS = Float(-99.0)
+
+        __slots__ = ["CVL", "CVO", "CVR", "CVS"]
+
+        CVL: float
+        CVO: float
+        CVR: float
+        CVS: float
 
     class StateVariables(StatesTemplate):
-        TAGP = Float(-99.0)
-        GASST = Float(-99.0)
-        MREST = Float(-99.0)
-        CTRAT = Float(-99.0)  # Crop total transpiration
-        CEVST = Float(-99.0)
-        HI = Float(-99.0)
-        DOF = Instance(datetime.date)
-        FINISH_TYPE = Unicode("")
+
+        __slots__ = [
+            "TAGP",
+            "GASST",
+            "MREST",
+            "CTRAT",
+            "CEVST",
+            "HI",
+            "DOF",
+            "FINISH_TYPE",
+        ]
+
+        TAGP: float
+        GASST: float
+        MREST: float
+        CTRAT: float  # Crop total transpiration
+        CEVST: float
+        HI: float
+        DOF: datetime.date
+        FINISH_TYPE: str | None
 
     class RateVariables(RatesTemplate):
-        GASS = Float(-99.0)
-        PGASS = Float(-99.0)
-        MRES = Float(-99.0)
-        ASRC = Float(-99.0)
-        DMI = Float(-99.0)
-        ADMI = Float(-99.0)
+
+        __slots__ = [
+            "GASS",
+            "PGASS",
+            "MRES",
+            "ASRC",
+            "DMI",
+            "ADMI",
+        ]
+
+        GASS: float
+        PGASS: float
+        MRES: float
+        ASRC: float
+        DMI: float
+        ADMI: float
 
     def initialize(self, day, kiosk, parvalues):
         """

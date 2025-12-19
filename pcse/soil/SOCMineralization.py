@@ -1,12 +1,5 @@
-from math import sqrt, pi, exp, log, cos
-import numpy as np
-import math
-from ..traitlets import Float, Int, Instance, Enum, Unicode, Bool, List
 from ..decorators import prepare_rates, prepare_states
-from ..util import limit, Afgen, merge_dict
-from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
-from .. import signals
-from .SOC import Ensemble_SOC_Indigo
+from ..base import ParamTemplate, RatesTemplate, SimulationObject
 
 
 class SOCMineralization_Indigo(SimulationObject):
@@ -49,20 +42,29 @@ class SOCMineralization_Indigo(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        CN_ratio_active = Float()  # C:N ratio of particulate organic matter
-        CN_ratio_slow = Float()  # C:N ratio of low molecular weight carbon
-        CN_ratio_passive = Float()  # C:N ratio of microbial biomass
 
-        efficiency_active = Float()  # Mineralization efficiency factor for POM
-        efficiency_slow = Float()  # Mineralization efficiency factor for LMWC
-        efficiency_passive = (
-            Float()
-        )  # Mineralization efficiency factor for microbial biomass
+        __slots__ = [
+            "CN_ratio_active",
+            "CN_ratio_slow",
+            "CN_ratio_passive",
+            "efficiency_active",
+            "efficiency_slow",
+            "efficiency_passive",
+        ]
+
+        CN_ratio_active: float  # C:N ratio of particulate organic matter
+        CN_ratio_slow: float  # C:N ratio of low molecular weight carbon
+        CN_ratio_passive: float  # C:N ratio of microbial biomass
+
+        efficiency_active: float  # Mineralization efficiency factor for POM
+        efficiency_slow: float  # Mineralization efficiency factor for LMWC
+        efficiency_passive: float  # Mineralization efficiency factor for microbial biomass
 
     class RateVariables(RatesTemplate):
-        total_mineralized_N = (
-            Float()
-        )  # Total nitrogen mineralized from all SOC pools (kg N ha^-1 day^-1)
+
+        __slots__ = ["total_mineralized_N"]
+
+        total_mineralized_N: float  # Total nitrogen mineralized from all SOC pools (kg N ha^-1 day^-1)
 
     def initialize(self, day, kiosk, parvalues):
 

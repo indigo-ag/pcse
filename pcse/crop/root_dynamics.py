@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2004-2014 Alterra, Wageningen-UR
 # Allard de Wit (allard.dewit@wur.nl), April 2014
-from copy import deepcopy
-
-from ..traitlets import Float, Int, Instance
 from ..decorators import prepare_rates, prepare_states
-from ..util import limit, merge_dict, AfgenTrait
+from ..util import Afgen
 from ..base import (
     ParamTemplate,
     StatesTemplate,
     RatesTemplate,
     SimulationObject,
-    VariableKiosk,
 )
 
 
@@ -91,14 +87,14 @@ class WOFOST_Root_Dynamics(SimulationObject):
     IMPORTANT NOTICE
     Currently root development is linear and depends only on the fraction of assimilates
     send to the roots (FR) and not on the amount of assimilates itself. This means that
-    roots also grow through the winter when there is no assimilation due to low 
-    temperatures. There has been a discussion to change this behaviour and make root growth 
+    roots also grow through the winter when there is no assimilation due to low
+    temperatures. There has been a discussion to change this behaviour and make root growth
     dependent on the assimilates send to the roots: so root growth stops when there are
     no assimilates available for growth.
-    
-    Finally, we decided not to change the root model and keep the original WOFOST approach 
+
+    Finally, we decided not to change the root model and keep the original WOFOST approach
     because of the following reasons:
-    - A dry top layer in the soil could create a large drought stress that reduces the 
+    - A dry top layer in the soil could create a large drought stress that reduces the
       assimilates to zero. In this situation the roots would not grow if dependent on the
       assimilates, while water is available in the zone just below the root zone. Therefore
       a dependency on the amount of assimilates could create model instability in dry
@@ -107,37 +103,65 @@ class WOFOST_Root_Dynamics(SimulationObject):
       after a certain development stage, putting a dependency on soil moisture levels in the
       unrooted soil compartment. All these solutions were found to introduce arbitrary
       parameters that have no clear explanation. Therefore all proposed solutions were discarded.
-      
+
     We conclude that our current knowledge on root development is insufficient to propose a
-    better and more biophysical approach to root development in WOFOST.  
+    better and more biophysical approach to root development in WOFOST.
     """
 
     class Parameters(ParamTemplate):
-        RDI = Float(-99.0)
-        RRI = Float(-99.0)
-        RDMCR = Float(-99.0)
-        RDMSOL = Float(-99.0)
-        TDWI = Float(-99.0)
-        IAIRDU = Float(-99)
-        RDRRTB = AfgenTrait()
+
+        __slots__ = [
+            "RDI",
+            "RRI",
+            "RDMCR",
+            "RDMSOL",
+            "TDWI",
+            "IAIRDU",
+            "RDRRTB",
+        ]
+
+        RDI: float
+        RRI: float
+        RDMCR: float
+        RDMSOL: float
+        TDWI: float
+        IAIRDU: float
+        RDRRTB: Afgen
 
     class RateVariables(RatesTemplate):
-        RR = Float(-99.0)
-        GRRT = Float(-99.0)
-        DRRT = Float(-99.0)
-        GWRT = Float(-99.0)
+
+        __slots__ = [
+            "RR",
+            "GRRT",
+            "DRRT",
+            "GWRT",
+        ]
+
+        RR: float
+        GRRT: float
+        DRRT: float
+        GWRT: float
 
     class StateVariables(StatesTemplate):
-        RD = Float(-99.0)
-        RDM = Float(-99.0)
-        WRT = Float(-99.0)
-        DWRT = Float(-99.0)
-        TWRT = Float(-99.0)
+
+        __slots__ = [
+            "RD",
+            "RDM",
+            "WRT",
+            "DWRT",
+            "TWRT",
+        ]
+
+        RD: float
+        RDM: float
+        WRT: float
+        DWRT: float
+        TWRT: float
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """
@@ -268,24 +292,32 @@ class Simple_Root_Dynamics(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        """Traits-based class for storing rooting depth parameters"""
+        """Class for storing rooting depth parameters"""
 
-        RDI = Float(-99.0)
-        RRI = Float(-99.0)
-        RDMCR = Float(-99.0)
-        RDMSOL = Float(-99.0)
+        __slots__ = ["RDI", "RRI", "RDMCR", "RDMSOL"]
+
+        RDI: float
+        RRI: float
+        RDMCR: float
+        RDMSOL: float
 
     class RateVariables(RatesTemplate):
-        RR = Float(-99.0)
+
+        __slots__ = ["RR"]
+
+        RR: float
 
     class StateVariables(StatesTemplate):
-        RD = Float(-99.0)
-        RDM = Float(-99.0)
+
+        __slots__ = ["RD", "RDM"]
+
+        RD: float
+        RDM: float
 
     def initialize(self, day, kiosk, parameters):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parameters: ParameterProvider object with key/value pairs
         """
 

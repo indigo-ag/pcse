@@ -1,5 +1,5 @@
 __author__ = "wit015"
-import sys, os
+import os
 import yaml
 from .. import exceptions as exc
 

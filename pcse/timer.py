@@ -6,7 +6,6 @@ import datetime
 
 from .pydispatch import dispatcher
 from .base import AncillaryObject, VariableKiosk
-from .traitlets import HasTraits, Instance, Bool, Int, Enum
 from . import signals
 from .util import is_a_dekad, is_a_month, is_a_week
 
@@ -32,17 +31,32 @@ class Timer(AncillaryObject):
 
     """
 
-    start_date = Instance(datetime.date)
-    end_date = Instance(datetime.date)
-    current_date = Instance(datetime.date)
-    time_step = Instance(datetime.timedelta)
-    interval_type = Enum(["daily", "weekly", "dekadal", "monthly"])
-    output_weekday = Int()
-    interval_days = Int()
-    generate_output = Bool(False)
-    day_counter = Int(0)
-    first_call = Bool(True)
-    _in_crop_cycle = Bool()
+    __slots__ = [
+        "start_date",
+        "end_date",
+        "current_date",
+        "time_step",
+        "interval_type",
+        "output_weekday",
+        "interval_days",
+        "generate_output",
+        "day_counter",
+        "first_call",
+        "_in_crop_cycle",
+    ]
+
+    start_date: datetime.date
+    end_date: datetime.date
+    current_date: datetime.date
+    time_step: datetime.timedelta
+    #: ["daily", "weekly", "dekadal", "monthly"]
+    interval_type: str
+    output_weekday: int
+    interval_days: int
+    generate_output: bool
+    day_counter: int
+    first_call: bool
+    _in_crop_cycle: bool
 
     def initialize(self, kiosk, start_date, end_date, mconf):
         """
@@ -62,7 +76,7 @@ class Timer(AncillaryObject):
         self.start_date = start_date
         self.end_date = end_date
         self.current_date = start_date
-        # self.day_counter = 0
+        self.day_counter = 0
         # Settings for generating output. Note that if no OUTPUT_VARS are listed
         # in that case no OUTPUT signals will be generated.
         self.generate_output = bool(mconf.OUTPUT_VARS)
@@ -70,7 +84,7 @@ class Timer(AncillaryObject):
         self.output_weekday = mconf.OUTPUT_WEEKDAY
         self.interval_days = mconf.OUTPUT_INTERVAL_DAYS
         self.time_step = datetime.timedelta(days=1)
-        # self.first_call = True
+        self.first_call = True
 
     def __call__(self):
 
@@ -98,6 +112,10 @@ class Timer(AncillaryObject):
             elif self.interval_type == "monthly":
                 if is_a_month(self.current_date):
                     output = True
+            else:
+                raise ValueError(
+                    f'self.interval_type should be one of ["daily", "weekly", "dekadal", "monthly"] but got {self.interval_type}'
+                )
 
         # Send output signal if True
         if output:

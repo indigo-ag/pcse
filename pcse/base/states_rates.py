@@ -2,17 +2,20 @@
 # Copyright (c) 2004-2018 Alterra, Wageningen-UR
 # Allard de Wit (allard.dewit@wur.nl), April 2014
 import logging
-from datetime import date
 
-from ..traitlets import HasTraits, List, Float, Int, Instance, Dict, Bool, All
-from ..pydispatch import dispatcher
 from ..util import Afgen
 from .. import exceptions as exc
-from ..settings import settings
 from .variablekiosk import VariableKiosk
 
 
-class ParamTemplate(HasTraits):
+def _is_private(name: str) -> bool:
+    # Note that we just check the first character for underscore
+    # since we know these are strings with length > 0 and it's much
+    # faster than `startswith`
+    return name[0] == "_"
+
+
+class ParamTemplate:
     """Template for storing parameter values.
 
     This is meant to be subclassed by the actual class where the parameters
@@ -22,13 +25,12 @@ class ParamTemplate(HasTraits):
 
         >>> import pcse
         >>> from pcse.base import ParamTemplate
-        >>> from pcse.traitlets import Float
         >>>
         >>>
         >>> class Parameters(ParamTemplate):
-        ...     A = Float()
-        ...     B = Float()
-        ...     C = Float()
+        ...     A: float
+        ...     B: float
+        ...     C: float
         ...
         >>> parvalues = {"A" :1., "B" :-99, "C":2.45}
         >>> params = Parameters(parvalues)
@@ -47,65 +49,63 @@ class ParamTemplate(HasTraits):
         pcse.exceptions.ParameterError: Value for parameter C missing.
     """
 
+    __slots__ = []
+
     def __init__(self, parvalues):
-
-        HasTraits.__init__(self)
-
-        for parname in self.trait_names():
-            # If the attribute of the class starts with "trait" than
-            # this is a special attribute and not a WOFOST parameter
-            if parname.startswith("trait"):
-                continue
-            # else check if the parname is available in the dictionary
-            # of parvalues
+        for parname in self.__slots__:
+            # check if the parname is available in the dictionary of parvalues
             if parname not in parvalues:
                 msg = "Value for parameter %s missing." % parname
                 raise exc.ParameterError(msg)
+            try:
+                type_ = self.__annotations__[parname]
+            except KeyError as err:
+                raise RuntimeError(
+                    f"Could not determine type for {parname}. All variables must have a type annotation"
+                ) from err
+
             value = parvalues[parname]
-            if isinstance(getattr(self, parname), (Afgen)):
+            if type_ == Afgen:
                 # AFGEN table parameter
-                setattr(self, parname, Afgen(value))
+                setattr(self, parname, Afgen.create(value))
             else:
                 # Single value parameter
                 setattr(self, parname, value)
-
-    def __setattr__(self, attr, value):
-        if attr.startswith("_"):
-            HasTraits.__setattr__(self, attr, value)
-        elif hasattr(self, attr):
-            HasTraits.__setattr__(self, attr, value)
-        else:
-            msg = "Assignment to non-existing attribute '%s' prevented." % attr
-            raise AttributeError(msg)
 
 
 def check_publish(publish):
     """Convert the list of published variables to a set with unique elements."""
 
+    if isinstance(publish, (list, tuple)):
+        return set(publish)
+    if isinstance(publish, str):
+        return {publish}
     if publish is None:
-        publish = []
-    elif isinstance(publish, str):
-        publish = [publish]
-    elif isinstance(publish, (list, tuple)):
-        pass
-    else:
-        msg = "The publish keyword should specify a string or a list of strings"
-        raise RuntimeError(msg)
-    return set(publish)
+        return set()
+
+    msg = "The publish keyword should specify a string or a list of strings"
+    raise RuntimeError(msg)
 
 
-class StatesRatesCommon(HasTraits):
-    _kiosk = Instance(VariableKiosk)
-    _valid_vars = Instance(set)
-    _locked = Bool(False)
+class StatesRatesCommon:
+    __slots__ = [
+        "_kiosk",
+        "_valid_vars",
+        "_locked",
+        "_published_attrs",
+        "_publish_enabled",
+    ]
+
+    _kiosk: VariableKiosk
+    _valid_vars: set[str]
+    _locked: bool
+    _published_attrs: set[str]
+    _publish_enabled: bool
 
     def __init__(self, kiosk=None, publish=None):
         """Set up the common stuff for the states and rates template
         including variables that have to be published in the kiosk
         """
-
-        HasTraits.__init__(self)
-
         # Make sure that the variable kiosk is provided
         if not isinstance(kiosk, VariableKiosk):
             msg = (
@@ -113,7 +113,11 @@ class StatesRatesCommon(HasTraits):
                 + "or state variables."
             )
             raise RuntimeError(msg)
+
         self._kiosk = kiosk
+        self._locked = False
+        self._published_attrs = set()
+        self._publish_enabled = True
 
         # Check publish variable for correct usage
         publish = check_publish(publish)
@@ -126,12 +130,9 @@ class StatesRatesCommon(HasTraits):
 
     def _find_valid_variables(self):
         """Returns a set with the valid state/rate variables names. Valid rate
-        variables have names not starting with 'trait' or '_'.
+        variables have names not starting with '_'.
         """
-
-        valid = lambda s: not (s.startswith("_") or s.startswith("trait"))
-        r = [name for name in self.trait_names() if valid(name)]
-        return set(r)
+        return {a for a in self.__slots__ if not _is_private(a)}
 
     def _register_with_kiosk(self, publish):
         """Register the variable with the variable kiosk.
@@ -154,7 +155,7 @@ class StatesRatesCommon(HasTraits):
                 self._kiosk.register_variable(
                     id(self), attr, type=self._vartype, publish=True
                 )
-                self.observe(handler=self._update_kiosk, names=attr, type=All)
+                self._published_attrs.add(attr)
             else:
                 self._kiosk.register_variable(
                     id(self), attr, type=self._vartype, publish=False
@@ -167,27 +168,14 @@ class StatesRatesCommon(HasTraits):
             ) % publish
             raise exc.PCSEError(msg)
 
-    # def __setattr__(self, attr, value):
-    #     # Attributes starting with "_" can be assigned or updated regardless
-    #     # of whether the object is locked.
-    #     #
-    #     # Note that the check on startswith("_") *MUST* be the first otherwise
-    #     # the assignment of some trait internals will fail
-    #     if attr.startswith("_"):
-    #         HasTraits.__setattr__(self, attr, value)
-    #     elif attr in self._valid_vars:
-    #         if not self._locked:
-    #             HasTraits.__setattr__(self, attr, value)
-    #         else:
-    #             msg = "Assignment to locked attribute '%s' prevented." % attr
-    #             raise AttributeError(msg)
-    #     else:
-    #         msg = "Assignment to non-existing attribute '%s' prevented." % attr
-    #         raise AttributeError(msg)
-
-    def _update_kiosk(self, change):
-        """Update the variable_kiosk through trait notification."""
-        self._kiosk.set_variable(id(self), change["name"], change["new"])
+    def __setattr__(self, name, value):
+        if (
+            not _is_private(name)
+            and self._publish_enabled
+            and name in self._published_attrs
+        ):
+            self._kiosk.set_variable(id(self), name, value)
+        super().__setattr__(name, value)
 
     def unlock(self):
         "Unlocks the attributes of this class."
@@ -219,7 +207,7 @@ class StatesTemplate(StatesRatesCommon):
     published.
 
     :param kiosk: Instance of the VariableKiosk class. All state variables
-        will be registered in the kiosk in order to enfore that variable names
+        will be registered in the kiosk in order to enforce that variable names
         are unique across the model. Moreover, the value of variables that
         are published will be available through the VariableKiosk.
     :param publish: Lists the variables whose values need to be published
@@ -233,14 +221,13 @@ class StatesTemplate(StatesRatesCommon):
 
         >>> import pcse
         >>> from pcse.base import VariableKiosk, StatesTemplate
-        >>> from pcse.traitlets import Float, Integer, Instance
         >>> from datetime import date
         >>>
         >>> k = VariableKiosk()
         >>> class StateVariables(StatesTemplate):
-        ...     StateA = Float()
-        ...     StateB = Integer()
-        ...     StateC = Instance(date)
+        ...     StateA: float
+        ...     StateB: int
+        ...     StateC: date
         ...
         >>> s1 = StateVariables(k, StateA=0., StateB=78, StateC=date(2003,7,3),
         ...                     publish="StateC")
@@ -264,12 +251,12 @@ class StatesTemplate(StatesRatesCommon):
 
     """
 
-    _kiosk = Instance(VariableKiosk)
-    _locked = Bool(False)
-    _vartype = "S"
+    __slots__ = ["_vartype"]
+
+    _vartype: str
 
     def __init__(self, kiosk=None, publish=None, **kwargs):
-
+        self._vartype = "S"
         StatesRatesCommon.__init__(self, kiosk, publish)
 
         # set initial state value
@@ -286,7 +273,7 @@ class StatesTemplate(StatesRatesCommon):
             msg = (
                 "Initial value given for unknown state variable(s): " + "%s"
             ) % kwargs.keys()
-            logging.warn(msg)
+            logging.warning(msg)
 
         # Lock the object to prevent further changes at this stage.
         self._locked = True
@@ -324,7 +311,7 @@ class StatesWithImplicitRatesTemplate(StatesTemplate):
             # new attribute: allow whe not yet initialized:
             object.__setattr__(self, name, value)
         else:
-            # new attribute: disallow according ancestorial ruls:
+            # new attribute: disallow according ancestorial rules:
             super(StatesWithImplicitRatesTemplate, self).__setattr__(name, value)
 
     def __getattr__(self, name):
@@ -358,7 +345,7 @@ class StatesWithImplicitRatesTemplate(StatesTemplate):
             [
                 a
                 for a in cls.__dict__
-                if isinstance(getattr(cls, a), Float) and not a.startswith("_")
+                if not _is_private(a) and isinstance(getattr(cls, a), float)
             ]
         )
 
@@ -367,7 +354,7 @@ class StatesWithImplicitRatesTemplate(StatesTemplate):
         return dict(
             (a, 0.0)
             for a in cls.__dict__
-            if isinstance(getattr(cls, a), Float) and not a.startswith("_")
+            if not not _is_private(a) and isinstance(getattr(cls, a), float)
         )
 
 
@@ -376,7 +363,7 @@ class RatesTemplate(StatesRatesCommon):
     assignments to variables that are published.
 
     :param kiosk: Instance of the VariableKiosk class. All rate variables
-        will be registered in the kiosk in order to enfore that variable names
+        will be registered in the kiosk in order to enforce that variable names
         are unique across the model. Moreover, the value of variables that
         are published will be available through the VariableKiosk.
     :param publish: Lists the variables whose values need to be published
@@ -389,51 +376,64 @@ class RatesTemplate(StatesRatesCommon):
     variables).
     """
 
-    _rate_vars_zero = Instance(dict)
-    _vartype = "R"
+    __slots__ = ["_vartype", "_rate_vars_zero"]
+
+    _rate_vars_zero: dict
 
     def __init__(self, kiosk=None, publish=None):
         """Set up the RatesTemplate and set monitoring on variables that
         have to be published.
         """
-
+        self._vartype = "R"
         StatesRatesCommon.__init__(self, kiosk, publish)
 
         # Determine the zero value for all rate variable if possible
         self._rate_vars_zero = self._find_rate_zero_values()
 
+        # We want to disable publishing while we zero out the parameters
+        # initially. This matches behavior in mainline PCSE where the traits
+        # were updated via `self._trait_values.update` which bypassed the publish
+        # callback
+        self._publish_enabled = False
         # Initialize all rate variables to zero or False
         self.zerofy()
+        self._publish_enabled = True
 
         # Lock the object to prevent further changes at this stage.
         self._locked = True
 
     def _find_rate_zero_values(self):
         """Returns a dict with the names with the valid rate variables names as keys and
-        the values are the zero values used by the zerofy() method. This means 0 for Int,
-        0.0 for Float en False for Bool.
+        the values are the zero values used by the zerofy() method. This means 0 for int,
+        0.0 for float and False for bool.
         """
 
-        # Define the zero value for Float, Int and Bool
-        zero_value = {Bool: False, Int: 0, Float: 0.0}
-
         d = {}
-        for name, value in self.traits().items():
-            if name not in self._valid_vars:
-                continue
+        for attr in self._valid_vars:
             try:
-                d[name] = zero_value[value.__class__]
-            except KeyError:
+                type_ = self.__annotations__[attr]
+            except KeyError as err:
+                raise RuntimeError(
+                    f"Could not determine type for {attr}. All variables must have a type annotation"
+                ) from err
+
+            if type_ == int:
+                d[attr] = 0
+            elif type_ == float:
+                d[attr] = 0.0
+            elif type_ == bool:
+                d[attr] = False
+            else:
                 msg = (
-                    "Rate variable '%s' not of type Float, Bool or Int. "
-                    + "Its zero value cannot be determined and it will "
-                    + "not be treated by zerofy()."
-                ) % name
+                    f"Rate variable '{attr}' is type '{type_.__name__}' not float, bool or int. "
+                    "Its zero value cannot be determined and it will not be treated by zerofy()."
+                )
                 self.logger.warning(msg)
+
         return d
 
     def zerofy(self):
-        """Sets the values of all rate values to zero (Int, Float)
-        or False (Boolean).
-        """
-        self._trait_values.update(self._rate_vars_zero)
+        """Sets the values of all rate values to zero (int, float) or False (bool)."""
+
+        for attr, value in self._rate_vars_zero.items():
+            setattr(self, attr, value)

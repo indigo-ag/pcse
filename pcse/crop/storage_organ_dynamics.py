@@ -2,15 +2,13 @@
 # Copyright (c) 2004-2014 Alterra, Wageningen-UR
 # Allard de Wit (allard.dewit@wur.nl), April 2014
 
-from ..traitlets import Float, Int, Instance
+
 from ..decorators import prepare_rates, prepare_states
-from ..util import limit
 from ..base import (
     ParamTemplate,
     StatesTemplate,
     RatesTemplate,
     SimulationObject,
-    VariableKiosk,
 )
 
 
@@ -75,24 +73,33 @@ class WOFOST_Storage_Organ_Dynamics(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        SPA = Float(-99.0)
-        TDWI = Float(-99.0)
+
+        __slots__ = ["SPA", "TDWI"]
+
+        SPA: float
+        TDWI: float
 
     class StateVariables(StatesTemplate):
-        WSO = Float(-99.0)  # Weight living storage organs
-        DWSO = Float(-99.0)  # Weight dead storage organs
-        TWSO = Float(-99.0)  # Total weight storage organs
-        PAI = Float(-99.0)  # Pod Area Index
+
+        __slots__ = ["WSO", "DWSO", "TWSO", "PAI"]
+
+        WSO: float  # Weight living storage organs
+        DWSO: float  # Weight dead storage organs
+        TWSO: float  # Total weight storage organs
+        PAI: float  # Pod Area Index
 
     class RateVariables(RatesTemplate):
-        GRSO = Float(-99.0)
-        DRSO = Float(-99.0)
-        GWSO = Float(-99.0)
+
+        __slots__ = ["GRSO", "DRSO", "GWSO"]
+
+        GRSO: float
+        DRSO: float
+        GWSO: float
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """

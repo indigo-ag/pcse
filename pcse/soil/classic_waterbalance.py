@@ -6,15 +6,13 @@ of potential production (`WaterbalancePP`) and water-limited production
 (`WaterbalanceFD`) under freely draining conditions.
 """
 from math import sqrt
-import numpy as np
-from ..traitlets import Float, Int, Instance, Enum, Unicode, Bool, List
+
 from ..decorators import prepare_rates, prepare_states
-from ..util import limit, Afgen, merge_dict
+from ..util import limit, Afgen
 from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 from .. import signals
 from .. import exceptions as exc
 from .snowmaus import SnowMAUS
-from array import array
 
 
 class WaterbalancePP(SimulationObject):
@@ -24,27 +22,43 @@ class WaterbalancePP(SimulationObject):
     and soil evaporation rates through the course of the simulation
     """
 
-    # Counter for Days-Dince-Last-Rain
-    DSLR = Float(1)
+    __slots__ = ["DSLR", "RAINold"]
+
+    # Counter for Days-Since-Last-Rain
+    DSLR: float
     # rainfall rate of previous day
-    RAINold = Float(0)
+    RAINold: float
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.DSLR = 1.0
+        self.RAINold = 0.0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        SMFCF = Float(-99.0)
+
+        __slots__ = ["SMFCF"]
+
+        SMFCF: float
 
     class StateVariables(StatesTemplate):
-        SM = Float(-99.0)
-        WTRAT = Float(-99.0)
-        EVST = Float(-99.0)
+
+        __slots__ = ["SM", "WTRAT", "EVST"]
+
+        SM: float
+        WTRAT: float
+        EVST: float
 
     class RateVariables(RatesTemplate):
-        EVS = Float(-99.0)
-        WTRA = Float(-99.0)
+
+        __slots__ = ["EVS", "WTRA"]
+
+        EVS: float
+        WTRA: float
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: ParameterProvider object containing all parameters
 
         This waterbalance keeps the soil moisture always at field capacity. Therefore
@@ -54,7 +68,7 @@ class WaterbalancePP(SimulationObject):
         self.params = self.Parameters(parvalues)
         self.rates = self.RateVariables(kiosk, publish="EVS")
         self.states = self.StateVariables(
-            kiosk, SM=self.params.SMFCF, publish="SM", EVST=0, WTRAT=0
+            kiosk, SM=self.params.SMFCF, publish="SM", EVST=0.0, WTRAT=0.0
         )
 
     @prepare_rates
@@ -242,87 +256,169 @@ class WaterbalanceFD(SimulationObject):
     end of the simulation cycle (e.g water has "leaked" away).
     """
 
+    __slots__ = [
+        "RDold",
+        "RDM",
+        "DSLR",
+        "RINold",
+        "NINFTB",
+        "in_crop_cycle",
+        "rooted_layer_needs_reset",
+        "_RIRR",
+        "DEFAULT_RD",
+        "_increments_W",
+    ]
+
     # previous and maximum rooting depth value
-    RDold = Float(-99.0)
-    RDM = Float(-99.0)
+    RDold: float
+    RDM: float
     # Counter for Days-Dince-Last-Rain
-    DSLR = Float(-99.0)
+    DSLR: float
     # Infiltration rate of previous day
-    RINold = Float(-99)
+    RINold: float
     # Fraction of non-infiltrating rainfall as function of storm size
-    NINFTB = Instance(Afgen)
+    NINFTB: Afgen
     # Flag indicating crop present or not
-    in_crop_cycle = Bool(False)
+    in_crop_cycle: bool
     # Flag indicating that a crop was started or finished and therefore the depth
     # of the root zone may have changed, required a redistribution of water
     # between the root zone and the lower zone
-    rooted_layer_needs_reset = Bool(False)
+    rooted_layer_needs_reset: bool
     # placeholder for irrigation
-    _RIRR = Float(0.0)
+    _RIRR: float
     # default depth of upper layer (root zone depth)
-    DEFAULT_RD = Float(10.0)
+    DEFAULT_RD: float
     # Increments on WLOW due to state updates
-    _increments_W = List()
+    _increments_W: list
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.RDold = -99.0
+        self.RDM = -99.0
+        self.DSLR = -99.0
+        self.RINold = -99.0
+        self.in_crop_cycle = False
+        self.rooted_layer_needs_reset = False
+        self._RIRR = 0.0
+        self.DEFAULT_RD = 10.0
+        self._increments_W = []
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
+
+        __slots__ = [
+            "SMFCF",
+            "SM0",
+            "SMW",
+            "CRAIRC",
+            "SOPE",
+            "KSUB",
+            "RDMSOL",
+            "IFUNRN",
+            "SSMAX",
+            "SSI",
+            "WAV",
+            "NOTINF",
+        ]
+
         # Soil parameters
-        SMFCF = Float(-99.0)
-        SM0 = Float(-99.0)
-        SMW = Float(-99.0)
-        CRAIRC = Float(-99.0)
-        SOPE = Float(-99.0)
-        KSUB = Float(-99.0)
-        RDMSOL = Float(-99.0)
+        SMFCF: float
+        SM0: float
+        SMW: float
+        CRAIRC: float
+        SOPE: float
+        KSUB: float
+        RDMSOL: float
         # Site parameters
-        IFUNRN = Float(-99.0)
-        SSMAX = Float(-99.0)
-        SSI = Float(-99.0)
-        WAV = Float(-99.0)
-        NOTINF = Float(-99.0)
+        IFUNRN: float
+        SSMAX: float
+        SSI: float
+        WAV: float
+        NOTINF: float
 
     class StateVariables(StatesTemplate):
-        SM = Float(-99.0)
-        SS = Float(-99.0)
-        SSI = Float(-99.0)
-        W = Float(-99.0)
-        WI = Float(-99.0)
-        WLOW = Float(-99.0)
-        WLOWI = Float(-99.0)
-        WWLOW = Float(-99.0)
+
+        __slots__ = [
+            "SM",
+            "SS",
+            "SSI",
+            "W",
+            "WI",
+            "WLOW",
+            "WLOWI",
+            "WWLOW",
+            "WTRAT",
+            "EVST",
+            "EVWT",
+            "TSR",
+            "RAINT",
+            "WDRT",
+            "TOTINF",
+            "TOTIRR",
+            "PERCT",
+            "LOSST",
+            "WBALRT",
+            "WBALTT",
+            "DSOS",
+        ]
+
+        SM: float
+        SS: float
+        SSI: float
+        W: float
+        WI: float
+        WLOW: float
+        WLOWI: float
+        WWLOW: float
         # Summation variables
-        WTRAT = Float(-99.0)
-        EVST = Float(-99.0)
-        EVWT = Float(-99.0)
-        TSR = Float(-99.0)
-        RAINT = Float(-99.0)
-        WDRT = Float(-99.0)
-        TOTINF = Float(-99.0)
-        TOTIRR = Float(-99.0)
-        PERCT = Float(-99.0)
-        LOSST = Float(-99.0)
+        WTRAT: float
+        EVST: float
+        EVWT: float
+        TSR: float
+        RAINT: float
+        WDRT: float
+        TOTINF: float
+        TOTIRR: float
+        PERCT: float
+        LOSST: float
         # Checksums for rootzone (RT) and total system (TT)
-        WBALRT = Float(-99.0)
-        WBALTT = Float(-99.0)
-        DSOS = Int(-99)
+        WBALRT: float
+        WBALTT: float
+        DSOS: int
 
     class RateVariables(RatesTemplate):
-        EVS = Float(-99.0)
-        EVW = Float(-99.0)
-        WTRA = Float(-99.0)
-        RIN = Float(-99.0)
-        RIRR = Float(-99.0)
-        PERC = Float(-99.0)
-        LOSS = Float(-99.0)
-        DW = Float(-99.0)
-        DWLOW = Float(-99.0)
-        DTSR = Float(-99.0)
-        DSS = Float(-99.0)
-        DRAINT = Float(-99.0)
+
+        __slots__ = [
+            "EVS",
+            "EVW",
+            "WTRA",
+            "RIN",
+            "RIRR",
+            "PERC",
+            "LOSS",
+            "DW",
+            "DWLOW",
+            "DTSR",
+            "DSS",
+            "DRAINT",
+        ]
+
+        EVS: float
+        EVW: float
+        WTRA: float
+        RIN: float
+        RIRR: float
+        PERC: float
+        LOSS: float
+        DW: float
+        DWLOW: float
+        DTSR: float
+        DSS: float
+        DRAINT: float
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: ParameterProvider containing all parameters
         """
 
@@ -331,7 +427,7 @@ class WaterbalanceFD(SimulationObject):
 
         if SMLIM != parvalues["SMLIM"]:
             msg = "SMLIM not in valid range, changed from %f to %f."
-            self.logger.warn(msg % (parvalues["SMLIM"], SMLIM))
+            self.logger.warning(msg % (parvalues["SMLIM"], SMLIM))
 
         # Assign parameter values
         self.params = self.Parameters(parvalues)
@@ -727,16 +823,31 @@ class WaterbalanceFDSnow(SimulationObject):
     also maybe interception by the canopy which is currently lacking.
     """
 
-    waterbalance = Instance(SimulationObject)
-    snowcover = Instance(SimulationObject)
+    __slots__ = [
+        "waterbalance",
+        "snowcover",
+        "use_observed_snow_depth",
+        "_SNOWDEPTH",
+    ]
+
+    waterbalance: SimulationObject
+    snowcover: SimulationObject
 
     # use observed snow depth
-    use_observed_snow_depth = Bool(False)
+    use_observed_snow_depth: bool
     # Helper variable for observed snow depth
-    _SNOWDEPTH = Float()
+    _SNOWDEPTH: float
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.use_observed_snow_depth = False
+        self._SNOWDEPTH = 0.0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class StateVariables(StatesTemplate):
-        SNOWDEPTH = Float()
+
+        __slots__ = ["SNOWDEPTH"]
+
+        SNOWDEPTH: float
 
     def initialize(self, day, kiosk, parvalues):
         self.waterbalance = WaterbalanceFD(day, kiosk, parvalues)
@@ -910,92 +1021,185 @@ class IndigoWaterbalanceFD(SimulationObject):
     end of the simulation cycle (e.g water has "leaked" away).
     """
 
+    __slots__ = [
+        "RDold",
+        "RDM",
+        "DSLR",
+        "RINold",
+        "NINFTB",
+        "in_crop_cycle",
+        "rooted_layer_needs_reset",
+        "_RIRR",
+        "DEFAULT_RD",
+        "_increments_W",
+        "AVGDUL",
+        "AVGLL",
+        "AVGBD",
+        "AVGPROS",
+    ]
+
     # previous and maximum rooting depth value
-    RDold = Float(-99.0)
-    RDM = Float(-99.0)
+    RDold: float
+    RDM: float
     # Counter for Days-Dince-Last-Rain
-    DSLR = Float(-99.0)
+    DSLR: float
     # Infiltration rate of previous day
-    RINold = Float(-99)
+    RINold: float
     # Fraction of non-infiltrating rainfall as function of storm size
-    NINFTB = Instance(Afgen)
+    NINFTB: Afgen
     # Flag indicating crop present or not
-    in_crop_cycle = Bool(False)
+    in_crop_cycle: bool
     # Flag indicating that a crop was started or finished and therefore the depth
     # of the root zone may have changed, required a redistribution of water
     # between the root zone and the lower zone
-    rooted_layer_needs_reset = Bool(False)
+    rooted_layer_needs_reset: bool
     # placeholder for irrigation
-    _RIRR = Float(0.0)
+    _RIRR: float
     # default depth of upper layer (root zone depth)
-    DEFAULT_RD = Float(10.0)
+    DEFAULT_RD: float
     # Increments on WLOW due to state updates
-    _increments_W = List()
+    _increments_W: list
 
-    AVGDUL = Float(-99.0)
-    AVGLL = Float(-99.0)
-    AVGBD = Float(-99.0)
-    AVGPROS = Float(-99.0)
+    AVGDUL: float
+    AVGLL: float
+    AVGBD: float
+    AVGPROS: float
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.RDold = -99.0
+        self.RDM = -99.0
+        self.DSLR = -99.0
+        self.RINold = -99.0
+        self.in_crop_cycle = False
+        self.rooted_layer_needs_reset = False
+        self._RIRR = 0.0
+        self.DEFAULT_RD = 10.0
+        self._increments_W = []
+        self.AVGDUL = -99.0
+        self.AVGLL = -99.0
+        self.AVGBD = -99.0
+        self.AVGPROS = -99.0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
+
+        __slots__ = [
+            "NLAYR",
+            "CRAIRC",
+            "SOPE",
+            "KSUB",
+            "RDMSOL",
+            "IFUNRN",
+            "SSMAX",
+            "SSI",
+            "WAV",
+            "NOTINF",
+            "BD",
+            "DS",
+            "LL",
+            "DUL",
+            "DLAYR",
+        ]
+
+        NLAYR: int  # Number of soil layers
+
         # Soil parameters
-
-        CRAIRC = Float(-99.0)
-        SOPE = Float(-99.0)
-        KSUB = Float(-99.0)
-        RDMSOL = Float(-99.0)
+        CRAIRC: float
+        SOPE: float
+        KSUB: float
+        RDMSOL: float
         # Site parameters
-        IFUNRN = Float(-99.0)
-        SSMAX = Float(-99.0)
-        SSI = Float(-99.0)
-        WAV = Float(-99.0)
-        NOTINF = Float(-99.0)
+        IFUNRN: float
+        SSMAX: float
+        SSI: float
+        WAV: float
+        NOTINF: float
 
-        NLAYR = Int()  # Number of soil layers
-        BD = List()  # Bulk density (g/cm3)
-        DS = List()  # Depth of soil layers (cm)
-        LL = List()  # Lower limit of soil water content (cm3/cm3)
-        DUL = List()  # Lower limit of soil water content (cm3/cm3)
-        DLAYR = List()  # Thickness of soil layers (cm)
+        BD: list  # Bulk density (g/cm3)
+        DS: list  # Depth of soil layers (cm)
+        LL: list  # Lower limit of soil water content (cm3/cm3)
+        DUL: list  # Lower limit of soil water content (cm3/cm3)
+        DLAYR: list  # Thickness of soil layers (cm)
 
     class StateVariables(StatesTemplate):
-        SM = Float(-99.0)
-        SS = Float(-99.0)
-        SSI = Float(-99.0)
-        W = Float(-99.0)
-        WI = Float(-99.0)
-        WLOW = Float(-99.0)
-        WLOWI = Float(-99.0)
-        WWLOW = Float(-99.0)
+
+        __slots__ = [
+            "SM",
+            "SS",
+            "SSI",
+            "W",
+            "WI",
+            "WLOW",
+            "WLOWI",
+            "WWLOW",
+            "WTRAT",
+            "EVST",
+            "EVWT",
+            "TSR",
+            "RAINT",
+            "WDRT",
+            "TOTINF",
+            "TOTIRR",
+            "PERCT",
+            "LOSST",
+            "WBALRT",
+            "WBALTT",
+            "DSOS",
+        ]
+
+        SM: float
+        SS: float
+        SSI: float
+        W: float
+        WI: float
+        WLOW: float
+        WLOWI: float
+        WWLOW: float
         # Summation variables
-        WTRAT = Float(-99.0)
-        EVST = Float(-99.0)
-        EVWT = Float(-99.0)
-        TSR = Float(-99.0)
-        RAINT = Float(-99.0)
-        WDRT = Float(-99.0)
-        TOTINF = Float(-99.0)
-        TOTIRR = Float(-99.0)
-        PERCT = Float(-99.0)
-        LOSST = Float(-99.0)
+        WTRAT: float
+        EVST: float
+        EVWT: float
+        TSR: float
+        RAINT: float
+        WDRT: float
+        TOTINF: float
+        TOTIRR: float
+        PERCT: float
+        LOSST: float
         # Checksums for rootzone (RT) and total system (TT)
-        WBALRT = Float(-99.0)
-        WBALTT = Float(-99.0)
-        DSOS = Int(-99)
+        WBALRT: float
+        WBALTT: float
+        DSOS: int
 
     class RateVariables(RatesTemplate):
-        EVS = Float(-99.0)
-        EVW = Float(-99.0)
-        WTRA = Float(-99.0)
-        RIN = Float(-99.0)
-        RIRR = Float(-99.0)
-        PERC = Float(-99.0)
-        LOSS = Float(-99.0)
-        DW = Float(-99.0)
-        DWLOW = Float(-99.0)
-        DTSR = Float(-99.0)
-        DSS = Float(-99.0)
-        DRAINT = Float(-99.0)
+
+        __slots__ = [
+            "EVS",
+            "EVW",
+            "WTRA",
+            "RIN",
+            "RIRR",
+            "PERC",
+            "LOSS",
+            "DW",
+            "DWLOW",
+            "DTSR",
+            "DSS",
+            "DRAINT",
+        ]
+
+        EVS: float
+        EVW: float
+        WTRA: float
+        RIN: float
+        RIRR: float
+        PERC: float
+        LOSS: float
+        DW: float
+        DWLOW: float
+        DTSR: float
+        DSS: float
+        DRAINT: float
 
     def take_avg(self, values, depths):
         """Calculate average value of soil properties"""
@@ -1008,7 +1212,7 @@ class IndigoWaterbalanceFD(SimulationObject):
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: ParameterProvider containing all parameters
         """
 
@@ -1032,7 +1236,7 @@ class IndigoWaterbalanceFD(SimulationObject):
 
         if SMLIM != parvalues["SMLIM"]:
             msg = "SMLIM not in valid range, changed from %f to %f."
-            self.logger.warn(msg % (parvalues["SMLIM"], SMLIM))
+            self.logger.warning(msg % (parvalues["SMLIM"], SMLIM))
 
         # set default RD to 10 cm, also derive maximum depth and old rooting depth
         RD = self.DEFAULT_RD

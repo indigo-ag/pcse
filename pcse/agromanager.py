@@ -21,11 +21,9 @@ from collections import Counter
 from .base import (
     DispatcherObject,
     VariableKiosk,
-    SimulationObject,
     ParameterProvider,
     AncillaryObject,
 )
-from .traitlets import HasTraits, Float, Int, Instance, Enum, Bool, List, Dict, Unicode
 from . import exceptions as exc
 from .util import ConfigurationLoader
 from . import signals
@@ -64,7 +62,7 @@ def take_first(iterator):
         return item
 
 
-class CropCalendar(HasTraits, DispatcherObject):
+class CropCalendar(DispatcherObject):
     """A crop calendar for managing the crop cycle.
 
     A `CropCalendar` object is responsible for storing, checking, starting and ending
@@ -89,24 +87,42 @@ class CropCalendar(HasTraits, DispatcherObject):
     :return: A CropCalendar Instance
     """
 
+    __slots__ = [
+        "crop_name",
+        "variety_name",
+        "crop_start_date",
+        "crop_start_type",
+        "crop_end_date",
+        "crop_end_type",
+        "max_duration",
+        "kiosk",
+        "parameterprovider",
+        "mconf",
+        "logger",
+        "duration",
+        "in_crop_cycle",
+    ]
+
     # Characteristics of the crop cycle
-    crop_name = Unicode()
-    variety_name = Unicode()
-    crop_start_date = Instance(date)
-    crop_start_type = Enum(["sowing", "emergence"])
-    crop_end_date = Instance(date)
-    crop_end_type = Enum(["maturity", "harvest", "earliest"])
-    max_duration = Int()
+    crop_name: str | None
+    variety_name: str | None
+    crop_start_date: date | None
+    #: ["sowing", "emergence"]
+    crop_start_type: str | None
+    crop_end_date: date | None
+    #: ["maturity", "harvest", "earliest"]
+    crop_end_type: str | None
+    max_duration: int | None
 
     # system parameters
-    kiosk = Instance(VariableKiosk)
-    parameterprovider = Instance(ParameterProvider)
-    mconf = Instance(ConfigurationLoader)
-    logger = Instance(logging.Logger)
+    kiosk: VariableKiosk
+    parameterprovider: ParameterProvider
+    mconf: ConfigurationLoader
+    logger: logging.Logger
 
     # Counter for duration of the crop cycle
-    duration = Int(0)
-    in_crop_cycle = Bool(False)
+    duration: int
+    in_crop_cycle: bool
 
     def __init__(
         self,
@@ -132,8 +148,25 @@ class CropCalendar(HasTraits, DispatcherObject):
         self.crop_end_date = crop_end_date
         self.crop_end_type = crop_end_type
         self.max_duration = max_duration
+        self.duration = 0
+        self.in_crop_cycle = False
 
         self._connect_signal(self._on_CROP_FINISH, signal=signals.crop_finish)
+
+    def __setattr__(self, name, value):
+        # These attributes used the Enum traitlet to limit the possible values
+        # We mimic that behavior here
+        attr_expected_values = {
+            "crop_start_type": ["sowing", "emergence"],
+            "crop_end_type": ["maturity", "harvest", "earliest"],
+        }
+
+        if name in attr_expected_values and value is not None:
+            expected_values = attr_expected_values[name]
+            if value not in expected_values:
+                raise ValueError(f"{name} must be one of {expected_values} if provided")
+
+        return super().__setattr__(name, value)
 
     def validate(self, campaign_start_date, next_campaign_start_date):
         """Validate the crop calendar internally and against the interval for
@@ -157,7 +190,7 @@ class CropCalendar(HasTraits, DispatcherObject):
         )
         if r is not True:
             msg = (
-                "Start date (%s) for crop '%s' vareity '%s' not within campaign window (%s - %s)."
+                "Start date (%s) for crop '%s' variety '%s' not within campaign window (%s - %s)."
                 % (
                     self.crop_start_date,
                     self.crop_name,
@@ -245,7 +278,7 @@ class CropCalendar(HasTraits, DispatcherObject):
         return self.crop_start_date
 
 
-class TimedEventsDispatcher(HasTraits, DispatcherObject):
+class TimedEventsDispatcher(DispatcherObject):
     """Takes care handling events that are connected to a date.
 
     Events are handled by dispatching a signal (taken from the `signals` module)
@@ -278,13 +311,23 @@ class TimedEventsDispatcher(HasTraits, DispatcherObject):
     event_signal.
     """
 
-    event_signal = None
-    events_table = List()
-    days_with_events = Instance(Counter)
-    kiosk = Instance(VariableKiosk)
-    logger = Instance(logging.Logger)
-    name = Unicode()
-    comment = Unicode()
+    __slots__ = [
+        "event_signal",
+        "events_table",
+        "days_with_events",
+        "kiosk",
+        "logger",
+        "name",
+        "comment",
+    ]
+
+    event_signal: str
+    events_table: list
+    days_with_events: Counter
+    kiosk: VariableKiosk
+    logger: logging.Logger
+    name: str
+    comment: str
 
     def __init__(self, kiosk, event_signal, name, comment, events_table):
         """Initialising a TimedEventDispatcher
@@ -369,7 +412,7 @@ class TimedEventsDispatcher(HasTraits, DispatcherObject):
         return max(self.days_with_events)
 
 
-class StateEventsDispatcher(HasTraits, DispatcherObject):
+class StateEventsDispatcher(DispatcherObject):
     """Takes care handling events that are connected to a model state variable.
 
     Events are handled by dispatching a signal (taken from the `signals` module)
@@ -429,15 +472,28 @@ class StateEventsDispatcher(HasTraits, DispatcherObject):
     but from the other direction.
     """
 
-    event_signal = None
-    event_state = Unicode()
-    zero_condition = Enum(["rising", "falling", "either"])
-    events_table = List()
-    kiosk = Instance(VariableKiosk)
-    logger = Instance(logging.Logger)
-    name = Unicode()
-    comment = Unicode()
-    previous_signs = List()
+    __slots__ = [
+        "event_signal",
+        "event_state",
+        "zero_condition",
+        "events_table",
+        "kiosk",
+        "logger",
+        "name",
+        "comment",
+        "previous_signs",
+    ]
+
+    event_signal: str
+    event_state: str
+    #: ["rising", "falling", "either"]
+    zero_condition: str
+    events_table: list
+    kiosk: VariableKiosk
+    logger: logging.Logger
+    name: str
+    comment: str
+    previous_signs: list
 
     def __init__(
         self,
@@ -480,6 +536,10 @@ class StateEventsDispatcher(HasTraits, DispatcherObject):
             self._evaluate_state = self._zero_condition_rising
         elif self.zero_condition == "either":
             self._evaluate_state = self._zero_condition_either
+        else:
+            raise ValueError(
+                f'zero_condition must be one of ["rising", "falling", "either"]'
+            )
 
         # assign Nones to self.zero_condition_signs to signal
         # that the sign have not yet been evaluated
@@ -676,20 +736,42 @@ class AgroManager(AncillaryObject):
 
     """
 
+    __slots__ = [
+        "campaign_start_dates",
+        "_start_date",
+        "_end_date",
+        "crop_calendars",
+        "timed_event_dispatchers",
+        "state_event_dispatchers",
+        "_tmp_date",
+        "_icampaign",
+    ]
+
     # campaign start dates
-    campaign_start_dates = List()
+    campaign_start_dates: list
 
     # Overall engine start date and end date
-    _start_date = Instance(date)
-    _end_date = Instance(date)
+    _start_date: date | None
+    _end_date: date | None
 
     # campaign definitions
-    crop_calendars = List()
-    timed_event_dispatchers = List()
-    state_event_dispatchers = List()
+    crop_calendars: list
+    timed_event_dispatchers: list
+    state_event_dispatchers: list
 
-    _tmp_date = None  # Helper variable
-    _icampaign = 0  # count the campaigns
+    _tmp_date: date | None  # Helper variable
+    _icampaign: int  # count the campaigns
+
+    def __init__(self, kiosk, *args, **kwargs):
+        self.campaign_start_dates = []
+        self._start_date = None
+        self._end_date = None
+        self.crop_calendars = []
+        self.timed_event_dispatchers = []
+        self.state_event_dispatchers = []
+        self._tmp_date = None
+        self._icampaign = 0
+        super().__init__(kiosk, *args, **kwargs)
 
     def initialize(self, kiosk, agromanagement):
         """Initialize the AgroManager.

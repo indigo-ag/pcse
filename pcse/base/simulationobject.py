@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2004-2018 Alterra, Wageningen-UR
 # Allard de Wit (allard.dewit@wur.nl), April 2014
-import types
 import logging
 from datetime import date
 
 from .dispatcher import DispatcherObject
-from ..traitlets import HasTraits, List, Float, Int, Instance, Dict, Bool, All
+
 from .. import exceptions as exc
 from .variablekiosk import VariableKiosk
 from .states_rates import StatesTemplate, RatesTemplate, ParamTemplate
 
 
-class SimulationObject(HasTraits, DispatcherObject):
+class SimulationObject(DispatcherObject):
     """Base class for PCSE simulation objects.
 
     :param day: start date of the simulation
@@ -20,20 +19,34 @@ class SimulationObject(HasTraits, DispatcherObject):
 
     The day and kiosk are mandatory variables and must be passed when
     instantiating a SimulationObject.
-
     """
 
+    __slots__ = [
+        "states",
+        "rates",
+        "params",
+        "kiosk",
+        "_for_finalize",
+        "_sub_sim_attrs",
+    ]
+
     # Placeholders for logger, params, states, rates and variable kiosk
-    states = Instance(StatesTemplate)
-    rates = Instance(RatesTemplate)
-    params = Instance(ParamTemplate)
-    kiosk = Instance(VariableKiosk)
+    states: StatesTemplate | None
+    rates: RatesTemplate | None
+    params: ParamTemplate | None
+    kiosk: VariableKiosk
 
     # Placeholder for variables that are to be set during finalizing.
-    _for_finalize = Dict()
+    _for_finalize: dict
+
+    _sub_sim_attrs: dict
 
     def __init__(self, day, kiosk, *args, **kwargs):
-        HasTraits.__init__(self, *args, **kwargs)
+        self._for_finalize = {}
+        self._sub_sim_attrs = {}
+        self.states = None
+        self.rates = None
+        self.params = None
 
         # Check that day variable is specified
         if not isinstance(day, date):
@@ -75,28 +88,20 @@ class SimulationObject(HasTraits, DispatcherObject):
         raise NotImplementedError(msg)
 
     def __setattr__(self, attr, value):
-        # __setattr__ has been modified  to enforce that class attributes
-        # must be defined before they can be assigned. There are a few
-        # exceptions:
-        # 1 if an attribute name starts with '_'  it will be assigned directly.
-        # 2 if the attribute value is a  function (e.g. types.FunctionType) it
-        #   will be assigned directly. This is needed because the
-        #   'prepare_states' and 'prepare_rates' decorators assign the wrapped
-        #   functions 'calc_rates', 'integrate' and optionally 'finalize' to
-        #   the Simulation Object. This will collide with __setattr__ because
-        #   these class methods are not defined attributes.
-        #
-        # Finally, if the value assigned to an attribute is a SimulationObject
-        #   or if the existing attribute value is a SimulationObject than
-        #   rebuild the list of sub-SimulationObjects.
+        # Need to safely grab this because we may not have fully
+        # initialized our class before setting some variables
+        sub_sim_attrs = getattr(self, "_sub_sim_attrs", None)
 
-        if attr.startswith("_") or type(value) is types.FunctionType:
-            HasTraits.__setattr__(self, attr, value)
-        elif hasattr(self, attr):
-            HasTraits.__setattr__(self, attr, value)
-        else:
-            msg = "Assignment to non-existing attribute '%s' prevented." % attr
-            raise AttributeError(msg)
+        if isinstance(value, SimulationObject):
+            if sub_sim_attrs is None:
+                raise AttributeError(
+                    "Class is not yet initialized before receiving a SimulationObject"
+                )
+            self._sub_sim_attrs[attr] = value
+        elif sub_sim_attrs is not None and attr in sub_sim_attrs:
+            del self._sub_sim_attrs[attr]
+
+        super().__setattr__(attr, value)
 
     def get_variable(self, varname):
         """Return the value of the specified state or rate variable.
@@ -187,13 +192,7 @@ class SimulationObject(HasTraits, DispatcherObject):
     @property
     def subSimObjects(self):
         """Return SimulationObjects embedded within self."""
-
-        subSimObjects = []
-        defined_traits = self.__dict__["_trait_values"]
-        for attr in defined_traits.values():
-            if isinstance(attr, SimulationObject):
-                subSimObjects.append(attr)
-        return subSimObjects
+        return list(self._sub_sim_attrs.values())
 
     def finalize(self, day):
         """Run the _finalize call on subsimulation objects"""
@@ -205,9 +204,8 @@ class SimulationObject(HasTraits, DispatcherObject):
                 setattr(self.states, k, v)
             self.states.lock()
         # Walk over possible sub-simulation objects.
-        if self.subSimObjects is not None:
-            for simobj in self.subSimObjects:
-                simobj.finalize(day)
+        for simobj in self.subSimObjects:
+            simobj.finalize(day)
 
     def touch(self):
         """'Touch' all state variables of this and any sub-SimulationObjects.
@@ -215,7 +213,7 @@ class SimulationObject(HasTraits, DispatcherObject):
         The name comes from the UNIX `touch` command which does nothing on the
         contents of a file but only updates the file metadata (time, etc).
         Similarly, the `touch` method re-assigns the state of each state
-        variable causing any triggers (e.g. `on_trait_change()`) to go off.
+        variable causing any triggers to go off.
         This will guarantee that these state values remain available in the
         VariableKiosk.
         """
@@ -223,9 +221,8 @@ class SimulationObject(HasTraits, DispatcherObject):
         if self.states is not None:
             self.states.touch()
         # Walk over possible sub-simulation objects.
-        if self.subSimObjects is not None:
-            for simobj in self.subSimObjects:
-                simobj.touch()
+        for simobj in self.subSimObjects:
+            simobj.touch()
 
     def zerofy(self):
         """Zerofy the value of all rate variables of this and any sub-SimulationObjects."""
@@ -234,12 +231,11 @@ class SimulationObject(HasTraits, DispatcherObject):
             self.rates.zerofy()
 
         # Walk over possible sub-simulation objects.
-        if self.subSimObjects is not None:
-            for simobj in self.subSimObjects:
-                simobj.zerofy()
+        for simobj in self.subSimObjects:
+            simobj.zerofy()
 
 
-class AncillaryObject(HasTraits, DispatcherObject):
+class AncillaryObject(DispatcherObject):
     """Base class for PCSE ancillary objects.
 
     Ancillary objects do not carry out simulation, but often are useful for
@@ -249,13 +245,13 @@ class AncillaryObject(HasTraits, DispatcherObject):
     to send/receive signals.
     """
 
+    __slots__ = ["kiosk", "params"]
+
     # Placeholders for logger, variable kiosk and parameters
-    kiosk = Instance(VariableKiosk)
-    params = Instance(ParamTemplate)
+    kiosk: VariableKiosk
+    params: ParamTemplate
 
     def __init__(self, kiosk, *args, **kwargs):
-        HasTraits.__init__(self, *args, **kwargs)
-
         # Check that kiosk variable is specified and assign to self
         if not isinstance(kiosk, VariableKiosk):
             this = "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
@@ -273,12 +269,3 @@ class AncillaryObject(HasTraits, DispatcherObject):
     def logger(self):
         loggername = "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
         return logging.getLogger(loggername)
-
-    def __setattr__(self, attr, value):
-        if attr.startswith("_"):
-            HasTraits.__setattr__(self, attr, value)
-        elif hasattr(self, attr):
-            HasTraits.__setattr__(self, attr, value)
-        else:
-            msg = "Assignment to non-existing attribute '%s' prevented." % attr
-            raise AttributeError(msg)

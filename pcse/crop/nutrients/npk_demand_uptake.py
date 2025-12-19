@@ -4,10 +4,9 @@
 # Approach based on LINTUL N/P/K made by Joost Wolf
 from collections import namedtuple
 
-from ...base import StatesTemplate, ParamTemplate, SimulationObject, RatesTemplate
+from ...base import ParamTemplate, SimulationObject, RatesTemplate
 from ...decorators import prepare_rates, prepare_states
-from ...traitlets import HasTraits, Float, Int, Instance
-from ...util import AfgenTrait
+from ...util import Afgen
 
 MaxNutrientConcentrations = namedtuple(
     "MaxNutrientConcentrations",
@@ -187,96 +186,128 @@ class NPK_Demand_Uptake(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        NMAXLV_TB = AfgenTrait()  # maximum N concentration in leaves as function of dvs
-        PMAXLV_TB = AfgenTrait()  # maximum P concentration in leaves as function of dvs
-        KMAXLV_TB = AfgenTrait()  # maximum P concentration in leaves as function of dvs
 
-        NMAXRT_FR = Float(
-            -99.0
-        )  # maximum N concentration in roots as fraction of maximum N concentration in leaves
-        PMAXRT_FR = Float(
-            -99.0
-        )  # maximum P concentration in roots as fraction of maximum P concentration in leaves
-        KMAXRT_FR = Float(
-            -99.0
-        )  # maximum K concentration in roots as fraction of maximum K concentration in leaves
+        __slots__ = [
+            "NMAXLV_TB",
+            "PMAXLV_TB",
+            "KMAXLV_TB",
+            "NMAXRT_FR",
+            "PMAXRT_FR",
+            "KMAXRT_FR",
+            "NMAXST_FR",
+            "PMAXST_FR",
+            "KMAXST_FR",
+            "NMAXSO",
+            "PMAXSO",
+            "KMAXSO",
+            "TCNT",
+            "TCPT",
+            "TCKT",
+            "NFIX_FR",
+            "RNUPTAKEMAX",
+            "RPUPTAKEMAX",
+            "RKUPTAKEMAX",
+        ]
 
-        NMAXST_FR = Float(
-            -99.0
-        )  # maximum N concentration in stems as fraction of maximum N concentration in leaves
-        PMAXST_FR = Float(
-            -99.0
-        )  # maximum P concentration in stems as fraction of maximum P concentration in leaves
-        KMAXST_FR = Float(
-            -99.0
-        )  # maximum K concentration in stems as fraction of maximum K concentration in leaves
+        NMAXLV_TB: Afgen  # maximum N concentration in leaves as function of dvs
+        PMAXLV_TB: Afgen  # maximum P concentration in leaves as function of dvs
+        KMAXLV_TB: Afgen  # maximum P concentration in leaves as function of dvs
 
-        NMAXSO = Float(
-            -99.0
-        )  # maximum P concentration in storage organs [kg N kg-1 dry biomass]
-        PMAXSO = Float(
-            -99.0
-        )  # maximum P concentration in storage organs [kg P kg-1 dry biomass]
-        KMAXSO = Float(
-            -99.0
-        )  # maximum K concentration in storage organs [kg K kg-1 dry biomass]
+        NMAXRT_FR: float  # maximum N concentration in roots as fraction of maximum N concentration in leaves
+        PMAXRT_FR: float  # maximum P concentration in roots as fraction of maximum P concentration in leaves
+        KMAXRT_FR: float  # maximum K concentration in roots as fraction of maximum K concentration in leaves
 
-        TCNT = Float(
-            -99.0
-        )  # time coefficient for N translocation to storage organs [days]
-        TCPT = Float(
-            -99.0
-        )  # time coefficient for P translocation to storage organs [days]
-        TCKT = Float(
-            -99.0
-        )  # time coefficient for K translocation to storage organs [days]
+        NMAXST_FR: float  # maximum N concentration in stems as fraction of maximum N concentration in leaves
+        PMAXST_FR: float  # maximum P concentration in stems as fraction of maximum P concentration in leaves
+        KMAXST_FR: float  # maximum K concentration in stems as fraction of maximum K concentration in leaves
 
-        NFIX_FR = Float(
-            -99.0
-        )  # fraction of crop nitrogen uptake by biological fixation
-        RNUPTAKEMAX = Float()  # Maximum N uptake rate
-        RPUPTAKEMAX = Float()  # Maximum P uptake rate
-        RKUPTAKEMAX = Float()  # Maximum K uptake rate
+        NMAXSO: float  # maximum P concentration in storage organs [kg N kg-1 dry biomass]
+        PMAXSO: float  # maximum P concentration in storage organs [kg P kg-1 dry biomass]
+        KMAXSO: float  # maximum K concentration in storage organs [kg K kg-1 dry biomass]
+
+        TCNT: float  # time coefficient for N translocation to storage organs [days]
+        TCPT: float  # time coefficient for P translocation to storage organs [days]
+        TCKT: float  # time coefficient for K translocation to storage organs [days]
+
+        NFIX_FR: float  # fraction of crop nitrogen uptake by biological fixation
+        RNUPTAKEMAX: float  # Maximum N uptake rate
+        RPUPTAKEMAX: float  # Maximum P uptake rate
+        RKUPTAKEMAX: float  # Maximum K uptake rate
 
     class RateVariables(RatesTemplate):
-        RNuptakeLV = Float(-99.0)  # N uptake rates in organs [kg ha-1 d -1]
-        RNuptakeST = Float(-99.0)
-        RNuptakeRT = Float(-99.0)
-        RNuptakeSO = Float(-99.0)
 
-        RPuptakeLV = Float(-99.0)  # P uptake rates in organs [kg ha-1 d -1]
-        RPuptakeST = Float(-99.0)
-        RPuptakeRT = Float(-99.0)
-        RPuptakeSO = Float(-99.0)
+        __slots__ = [
+            "RNuptakeLV",
+            "RNuptakeST",
+            "RNuptakeRT",
+            "RNuptakeSO",
+            "RPuptakeLV",
+            "RPuptakeST",
+            "RPuptakeRT",
+            "RPuptakeSO",
+            "RKuptakeLV",
+            "RKuptakeST",
+            "RKuptakeRT",
+            "RKuptakeSO",
+            "RNuptake",
+            "RPuptake",
+            "RKuptake",
+            "RNfixation",
+            "NdemandLV",
+            "NdemandST",
+            "NdemandRT",
+            "NdemandSO",
+            "PdemandLV",
+            "PdemandST",
+            "PdemandRT",
+            "PdemandSO",
+            "KdemandLV",
+            "KdemandST",
+            "KdemandRT",
+            "KdemandSO",
+            "Ndemand",
+            "Pdemand",
+            "Kdemand",
+        ]
 
-        RKuptakeLV = Float(-99.0)  # K uptake rates in organs [kg ha-1 d -1]
-        RKuptakeST = Float(-99.0)
-        RKuptakeRT = Float(-99.0)
-        RKuptakeSO = Float(-99.0)
+        RNuptakeLV: float  # N uptake rates in organs [kg ha-1 d -1]
+        RNuptakeST: float
+        RNuptakeRT: float
+        RNuptakeSO: float
 
-        RNuptake = Float(-99.0)  # Total N uptake rates [kg ha-1 d -1]
-        RPuptake = Float(-99.0)  # For P
-        RKuptake = Float(-99.0)  # For K
-        RNfixation = Float(-99.0)  # Total N fixated
+        RPuptakeLV: float  # P uptake rates in organs [kg ha-1 d -1]
+        RPuptakeST: float
+        RPuptakeRT: float
+        RPuptakeSO: float
 
-        NdemandLV = Float(-99.0)  # N demand in organs [kg ha-1]
-        NdemandST = Float(-99.0)
-        NdemandRT = Float(-99.0)
-        NdemandSO = Float(-99.0)
+        RKuptakeLV: float  # K uptake rates in organs [kg ha-1 d -1]
+        RKuptakeST: float
+        RKuptakeRT: float
+        RKuptakeSO: float
 
-        PdemandLV = Float(-99.0)  # P demand in organs [kg ha-1]
-        PdemandST = Float(-99.0)
-        PdemandRT = Float(-99.0)
-        PdemandSO = Float(-99.0)
+        RNuptake: float  # Total N uptake rates [kg ha-1 d -1]
+        RPuptake: float  # For P
+        RKuptake: float  # For K
+        RNfixation: float  # Total N fixated
 
-        KdemandLV = Float(-99.0)  # K demand in organs [kg ha-1]
-        KdemandST = Float(-99.0)
-        KdemandRT = Float(-99.0)
-        KdemandSO = Float(-99.0)
+        NdemandLV: float  # N demand in organs [kg ha-1]
+        NdemandST: float
+        NdemandRT: float
+        NdemandSO: float
 
-        Ndemand = Float()  # Total N/P/K demand of the crop
-        Pdemand = Float()
-        Kdemand = Float()
+        PdemandLV: float  # P demand in organs [kg ha-1]
+        PdemandST: float
+        PdemandRT: float
+        PdemandSO: float
+
+        KdemandLV: float  # K demand in organs [kg ha-1]
+        KdemandST: float
+        KdemandRT: float
+        KdemandSO: float
+
+        Ndemand: float  # Total N/P/K demand of the crop
+        Pdemand: float
+        Kdemand: float
 
     def initialize(self, day, kiosk, parvalues):
         """

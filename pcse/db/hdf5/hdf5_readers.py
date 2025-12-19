@@ -9,7 +9,7 @@ Data providers are compatible with a CGMS12 database schema but assume
 that tables are stored in a pandas HDFstore. See also:
 https://pandas.pydata.org/pandas-docs/stable/io.html#io-hdf5
 """
-import os, sys
+import os
 import datetime as dt
 
 import pandas as pd

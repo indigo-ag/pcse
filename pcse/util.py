@@ -3,7 +3,8 @@
 # Allard de Wit (allard.dewit@wur.nl), October 2016
 """Miscellaneous utilities for PCSE
 """
-import os, sys
+from __future__ import annotations
+import os
 from pathlib import Path
 import datetime
 import copy
@@ -12,13 +13,7 @@ from collections import namedtuple
 from bisect import bisect_left
 import textwrap
 
-if sys.version_info > (3, 8):
-    from collections.abc import Iterable
-else:
-    from collections import Iterable
-
 from . import exceptions as exc
-from .traitlets import TraitType
 
 Celsius2Kelvin = lambda x: x + 273.16
 hPa2kPa = lambda x: x / 10.0
@@ -684,19 +679,16 @@ class Afgen(object):
 
         return v
 
-
-class AfgenTrait(TraitType):
-    """An AFGEN table trait"""
-
-    default_value = Afgen([0, 0, 1, 1])
-    into_text = "An AFGEN table of XY pairs"
-
-    def validate(self, obj, value):
-        if isinstance(value, Afgen):
-            return value
-        elif isinstance(value, Iterable):
-            return Afgen(value)
-        self.error(obj, value)
+    @classmethod
+    def create(cls, *args) -> Afgen:
+        """An AFGEN table of XY pairs"""
+        if len(args) > 1:
+            raise ValueError("Expected 0 or 1 input")
+        if not args:
+            return Afgen([0, 0, 1, 1])
+        if isinstance(args[0], Afgen):
+            return args[0]
+        return Afgen(args[0])
 
 
 def merge_dict(d1, d2, overwrite=False):

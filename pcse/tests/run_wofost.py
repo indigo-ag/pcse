@@ -2,7 +2,6 @@
 # Copyright (c) 2004-2014 Alterra, Wageningen-UR
 # Allard de Wit (allard.dewit@wur.nl), April 2014
 
-import datetime as dt
 from sqlalchemy import create_engine, MetaData, Table
 import sqlalchemy as sa
 

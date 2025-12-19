@@ -6,10 +6,9 @@ from collections import namedtuple
 
 import pcse
 from pcse import exceptions as exc
-from pcse.traitlets import Float, Int, Instance, Bool
 from pcse.decorators import prepare_rates, prepare_states
 from pcse.base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
-from pcse.util import AfgenTrait, limit
+from pcse.util import Afgen, limit
 
 MaxNutrientConcentrations = namedtuple(
     "MaxNutrientConcentrations",
@@ -51,7 +50,7 @@ class N_Demand_Uptake(SimulationObject):
 
     RNuptake       Total rate of N uptake                            Y   |kg N ha-1 d-1|
     NdemandLV      Ndemand of leaves based on current growth rate    N   |kg N ha-1|
-                   and deficienties from previous time steps
+                   and deficiencies from previous time steps
     NdemandRT      N demand of roots, idem as leaves                 N   |kg N ha-1|
 
     Ndemand        Total N demand (leaves + roots)                   N   |kg N ha-1|
@@ -73,20 +72,35 @@ class N_Demand_Uptake(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        NMAXLV_TB = AfgenTrait()  # maximum N concentration in leaves as function of dvs
-        NMAXRT_FR = Float(
-            -99.0
-        )  # maximum N concentration in roots as fraction of maximum N concentration in leaves
-        NUPTAKE_MAX = Float(-99)
+
+        __slots__ = [
+            "NMAXLV_TB",
+            "NMAXRT_FR",
+            "NUPTAKE_MAX",
+        ]
+
+        NMAXLV_TB: Afgen  # maximum N concentration in leaves as function of dvs
+        NMAXRT_FR: float  # maximum N concentration in roots as fraction of maximum N concentration in leaves
+        NUPTAKE_MAX: float
 
     class RateVariables(RatesTemplate):
-        RNuptakeLV = Float(-99.0)  # N uptake rate [kg ha-1 d -1]
-        RNuptakeRT = Float(-99.0)
-        RNuptake = Float(-99.0)  # Total N uptake rate [kg ha-1 d -1]
 
-        NdemandLV = Float(-99.0)
-        NdemandRT = Float(-99.0)
-        Ndemand = Float(-99.0)
+        __slots__ = [
+            "RNuptakeLV",
+            "RNuptakeRT",
+            "RNuptake",
+            "NdemandLV",
+            "NdemandRT",
+            "Ndemand",
+        ]
+
+        RNuptakeLV: float  # N uptake rate [kg ha-1 d -1]
+        RNuptakeRT: float
+        RNuptake: float  # Total N uptake rate [kg ha-1 d -1]
+
+        NdemandLV: float
+        NdemandRT: float
+        Ndemand: float
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -245,16 +259,28 @@ class N_Stress(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        NMAXLV_TB = AfgenTrait()  # maximum N concentration in leaves as function of dvs
-        NCRIT_FR = Float(
-            -99.0
-        )  # optimal N concentration as fraction of maximum N concentration
-        NRESIDLV = Float(-99.0)  # residual N fraction in leaves [kg N kg-1 dry biomass]
-        NLUE = Float()
+
+        __slots__ = [
+            "NMAXLV_TB",
+            "NCRIT_FR",
+            "NRESIDLV",
+            "NLUE",
+        ]
+
+        NMAXLV_TB: Afgen  # maximum N concentration in leaves as function of dvs
+        NCRIT_FR: float  # optimal N concentration as fraction of maximum N concentration
+        NRESIDLV: float  # residual N fraction in leaves [kg N kg-1 dry biomass]
+        NLUE: float
 
     class RateVariables(RatesTemplate):
-        NNI = Float()
-        RFNUTR = Float()
+
+        __slots__ = [
+            "NNI",
+            "RFNUTR",
+        ]
+
+        NNI: float
+        RFNUTR: float
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -362,32 +388,73 @@ class N_Crop_Dynamics(SimulationObject):
     =======  =================================== ====================  ============
     """
 
-    WeightLV_remaining = Float()
-    _flag_MOWING = Bool(False)
+    __slots__ = [
+        "WeightLV_remaining",
+        "_flag_MOWING",
+        "demand_uptake",
+        "NamountLVI",
+        "NamountRTI",
+    ]
 
-    demand_uptake = Instance(SimulationObject)
-    NamountLVI = Float(-99.0)  # initial soil N amount in leaves
-    NamountRTI = Float(-99.0)  # initial soil N amount in roots
+    WeightLV_remaining: float
+    _flag_MOWING: bool
+
+    demand_uptake: SimulationObject
+    NamountLVI: float  # initial soil N amount in leaves
+    NamountRTI: float  # initial soil N amount in roots
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.WeightLV_remaining = 0.0
+        self._flag_MOWING = False
+        self.NamountLVI = -99.0
+        self.NamountRTI = -99.0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        NMAXLV_TB = AfgenTrait()
-        NMAXRT_FR = Float(-99.0)
-        NRESIDLV = Float(-99.0)  # residual N fraction in leaves [kg N kg-1 dry biomass]
-        NRESIDRT = Float(-99.0)  # residual N fraction in roots [kg N kg-1 dry biomass]
+
+        __slots__ = [
+            "NMAXLV_TB",
+            "NMAXRT_FR",
+            "NRESIDLV",
+            "NRESIDRT",
+        ]
+
+        NMAXLV_TB: Afgen
+        NMAXRT_FR: float
+        NRESIDLV: float  # residual N fraction in leaves [kg N kg-1 dry biomass]
+        NRESIDRT: float  # residual N fraction in roots [kg N kg-1 dry biomass]
 
     class StateVariables(StatesTemplate):
-        NamountLV = Float(-99.0)  # N amount in leaves [kg N ha-1]
-        NamountRT = Float(-99.0)  # N amount in roots [kg N ]
-        Nuptake_T = Float(-99.0)  # total absorbed N amount [kg N ]
-        Nlosses_T = Float(-99.0)
+
+        __slots__ = [
+            "NamountLV",
+            "NamountRT",
+            "Nuptake_T",
+            "Nlosses_T",
+        ]
+
+        NamountLV: float  # N amount in leaves [kg N ha-1]
+        NamountRT: float  # N amount in roots [kg N ]
+        Nuptake_T: float  # total absorbed N amount [kg N ]
+        Nlosses_T: float
 
     class RateVariables(RatesTemplate):
-        RNamountLV = Float(-99.0)  # Net rates of NPK in different plant organs
-        RNamountRT = Float(-99.0)
-        RNdeathLV = Float(-99.0)  # N loss rate leaves [kg ha-1 d-1]
-        RNharvestLV = Float()  # N loss due to harvesting [kg ha-1 d-1]
-        RNdeathRT = Float(-99.0)  # N loss rate roots  [kg ha-1 d-1]
-        RNloss = Float(-99.0)
+
+        __slots__ = [
+            "RNamountLV",
+            "RNamountRT",
+            "RNdeathLV",
+            "RNharvestLV",
+            "RNdeathRT",
+            "RNloss",
+        ]
+
+        RNamountLV: float  # Net rates of NPK in different plant organs
+        RNamountRT: float
+        RNdeathLV: float  # N loss rate leaves [kg ha-1 d-1]
+        RNharvestLV: float  # N loss due to harvesting [kg ha-1 d-1]
+        RNdeathRT: float  # N loss rate roots  [kg ha-1 d-1]
+        RNloss: float
 
     def initialize(self, day, kiosk, parvalues):
         """

@@ -11,8 +11,7 @@ Python Crop Simulation Environment.
 from math import exp, log
 
 from pcse.base import SimulationObject, ParamTemplate, StatesTemplate, RatesTemplate
-from pcse.traitlets import Float, List, Bool, Instance, Integer
-from pcse.util import AfgenTrait, limit
+from pcse.util import Afgen, limit
 from pcse.decorators import prepare_states, prepare_rates
 from pcse.crop.evapotranspiration import Evapotranspiration
 from pcse.crop.root_dynamics import Simple_Root_Dynamics
@@ -83,16 +82,32 @@ class SourceLimitedGrowth(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        KDIFTB = AfgenTrait()
-        LUEreductionSoilTempTB = AfgenTrait()
-        LUEreductionRadiationTB = AfgenTrait()
-        CO2A = Float()
-        LUEmax = Float()
+
+        __slots__ = [
+            "KDIFTB",
+            "LUEreductionSoilTempTB",
+            "LUEreductionRadiationTB",
+            "CO2A",
+            "LUEmax",
+        ]
+
+        KDIFTB: Afgen
+        LUEreductionSoilTempTB: Afgen
+        LUEreductionRadiationTB: Afgen
+        CO2A: float
+        LUEmax: float
 
     class RateVariables(RatesTemplate):
-        RF_Temperature = Float()
-        RF_RadiationLevel = Float()
-        LUEact = Float()
+
+        __slots__ = [
+            "RF_Temperature",
+            "RF_RadiationLevel",
+            "LUEact",
+        ]
+
+        RF_Temperature: float
+        RF_RadiationLevel: float
+        LUEact: float
 
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)
@@ -152,7 +167,7 @@ class SinkLimitedGrowth(SimulationObject):
     =======================  =============================================  ==============
     TempBase                  Base temperature for leaf development and
                               grass phenology                                  C
-    LAICrit                   Cricical leaf area beyond which leaf death
+    LAICrit                   Critical leaf area beyond which leaf death
                               due to self-shading occurs                       -
     SiteFillingMax            Maximum site filling for new buds             tiller/leaf-1
     SLA                       Specific leaf area                             ha/kg
@@ -211,20 +226,40 @@ class SinkLimitedGrowth(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        TempBase = Float()
-        LAIcrit = Float()
-        SiteFillingMax = Float()
-        SLA = Float()
-        TillerFormRateA0 = Float()
-        TillerFormRateB0 = Float()
-        TillerFormRateA8 = Float()
-        TillerFormRateB8 = Float()
-        TSUMmax = Float()
+
+        __slots__ = [
+            "TempBase",
+            "LAIcrit",
+            "SiteFillingMax",
+            "SLA",
+            "TillerFormRateA0",
+            "TillerFormRateB0",
+            "TillerFormRateA8",
+            "TillerFormRateB8",
+            "TSUMmax",
+        ]
+
+        TempBase: float
+        LAIcrit: float
+        SiteFillingMax: float
+        SLA: float
+        TillerFormRateA0: float
+        TillerFormRateB0: float
+        TillerFormRateA8: float
+        TillerFormRateB8: float
+        TSUMmax: float
 
     class RateVariables(RatesTemplate):
-        dTillerNumber = Float()
-        dLeafLengthPot = Float()
-        LAIGrowthSink = Float()
+
+        __slots__ = [
+            "dTillerNumber",
+            "dLeafLengthPot",
+            "LAIGrowthSink",
+        ]
+
+        dTillerNumber: float
+        dLeafLengthPot: float
+        LAIGrowthSink: float
 
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)
@@ -254,11 +289,11 @@ class SinkLimitedGrowth(SimulationObject):
 
         # Rate of sink limited leaf growth, unit of TillerNumber is tillers m-2
         # 1.0E-8 is conversion from cm-2 to ha-1, ha leaf ha ground-1 d-1
-        r.LAIgrowthSink = (k.TillerNumber * 1.0e4 * (r.dLeafLengthPot * 0.3)) * 1.0e-8
+        r.LAIGrowthSink = (k.TillerNumber * 1.0e4 * (r.dLeafLengthPot * 0.3)) * 1.0e-8
         # Conversion of leaf growth rate to total sink limited carbon demand using SLA
         # in kg leaf ha-1 d-1
         GrowthSink = (
-            r.LAIgrowthSink * (1.0 / p.SLA) * (1.0 / k.LVfraction)
+            r.LAIGrowthSink * (1.0 / p.SLA) * (1.0 / k.LVfraction)
             if k.dWeightHARV <= 0.0
             else 0.0
         )
@@ -341,13 +376,22 @@ class SoilTemperature(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        TemperatureSoilinit = Float()
+
+        __slots__ = ["TemperatureSoilinit"]
+
+        TemperatureSoilinit: float
 
     class StateVariables(StatesTemplate):
-        TemperatureSoil = Float()
+
+        __slots__ = ["TemperatureSoil"]
+
+        TemperatureSoil: float
 
     class RateVariables(RatesTemplate):
-        dTemperatureSoil = Float()
+
+        __slots__ = ["dTemperatureSoil"]
+
+        dTemperatureSoil: float
 
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)
@@ -477,59 +521,125 @@ class LINGRA(SimulationObject):
     ===============  =================================== ====================================
     """
 
-    WeightLV_remaining = Float()
-    _flag_MOWING = Bool(False)
+    __slots__ = [
+        "WeightLV_remaining",
+        "_flag_MOWING",
+        "source_limited_growth",
+        "sink_limited_growth",
+        "soil_temperature",
+        "evapotranspiration",
+        "root_dynamics",
+    ]
 
-    source_limited_growth = Instance(SimulationObject)
-    sink_limited_growth = Instance(SimulationObject)
-    soil_temperature = Instance(SimulationObject)
-    evapotranspiration = Instance(SimulationObject)
-    root_dynamics = Instance(SimulationObject)
+    WeightLV_remaining: float
+    _flag_MOWING: bool
+
+    source_limited_growth: SimulationObject
+    sink_limited_growth: SimulationObject
+    soil_temperature: SimulationObject
+    evapotranspiration: SimulationObject
+    root_dynamics: SimulationObject
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.WeightLV_remaining = 0.0
+        self._flag_MOWING = False
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        LAIinit = Float()
-        TillerNumberinit = Float()
-        WeightREinit = Float()
-        WeightRTinit = Float()
-        LAIcrit = Float()
-        RDRbase = Float()
-        SLA = Float()
-        TempBase = Float()
-        PartitioningRootsTB = AfgenTrait()
-        TSUMmax = Float()
-        RDRshading = Float()
-        RDRdrought = Float()
+
+        __slots__ = [
+            "LAIinit",
+            "TillerNumberinit",
+            "WeightREinit",
+            "WeightRTinit",
+            "LAIcrit",
+            "RDRbase",
+            "SLA",
+            "TempBase",
+            "PartitioningRootsTB",
+            "TSUMmax",
+            "RDRshading",
+            "RDRdrought",
+        ]
+
+        LAIinit: float
+        TillerNumberinit: float
+        WeightREinit: float
+        WeightRTinit: float
+        LAIcrit: float
+        RDRbase: float
+        SLA: float
+        TempBase: float
+        PartitioningRootsTB: Afgen
+        TSUMmax: float
+        RDRshading: float
+        RDRdrought: float
 
     class RateVariables(RatesTemplate):
-        dTSUM = Float()
-        dLAI = Float()
-        dDaysAfterHarvest = Integer()
-        dCuttingNumber = Integer()
-        dWeightLV = Float()
-        dWeightRE = Float()
-        dLeafLengthAct = Float()
-        LVdeath = Float()
-        LVgrowth = Float()
-        dWeightHARV = Float()
-        dWeightRT = Float()
-        LVfraction = Float()
-        RTfraction = Float()
+
+        __slots__ = [
+            "dTSUM",
+            "dLAI",
+            "dDaysAfterHarvest",
+            "dCuttingNumber",
+            "dWeightLV",
+            "dWeightRE",
+            "dLeafLengthAct",
+            "LVdeath",
+            "LVgrowth",
+            "dWeightHARV",
+            "dWeightRT",
+            "LVfraction",
+            "RTfraction",
+        ]
+
+        dTSUM: float
+        dLAI: float
+        dDaysAfterHarvest: int
+        dCuttingNumber: int
+        dWeightLV: float
+        dWeightRE: float
+        dLeafLengthAct: float
+        LVdeath: float
+        LVgrowth: float
+        dWeightHARV: float
+        dWeightRT: float
+        LVfraction: float
+        RTfraction: float
 
     class StateVariables(StatesTemplate):
-        TSUM = Float()
-        LAI = Float()
-        DaysAfterHarvest = Integer()
-        CuttingNumber = Integer()
-        TillerNumber = Float()
-        WeightLVgreen = Float()
-        WeightLVdead = Float()
-        WeightHARV = Float()
-        WeightRE = Float()
-        WeightRT = Float()
-        LeafLength = Float()
-        WeightABG = Float()
-        SLAINT = Float()
-        DVS = Float()
+
+        __slots__ = [
+            "TSUM",
+            "LAI",
+            "DaysAfterHarvest",
+            "CuttingNumber",
+            "TillerNumber",
+            "WeightLVgreen",
+            "WeightLVdead",
+            "WeightHARV",
+            "WeightRE",
+            "WeightRT",
+            "LeafLength",
+            "WeightABG",
+            "SLAINT",
+            "DVS",
+        ]
+
+        TSUM: float
+        LAI: float
+        DaysAfterHarvest: int
+        CuttingNumber: int
+        TillerNumber: float
+        WeightLVgreen: float
+        WeightLVdead: float
+        WeightHARV: float
+        WeightRE: float
+        WeightRT: float
+        LeafLength: float
+        WeightABG: float
+        SLAINT: float
+        DVS: float
 
     def initialize(self, day, kiosk, parvalues):
 

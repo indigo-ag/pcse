@@ -15,17 +15,11 @@ below. PCSE has a number of dependencies on other python packages which are the 
 - openpyxl>=3.0
 - requests>=2.0.0
 - pandas>=0.20
-- traitlets-pcse==5.0.0.dev
-
-
-The last package in the list is a modified version of the `traitlets`_ package which provides some
-additional functionality used by PCSE.
 
 .. _Enthought Canopy: https://www.enthought.com/products/canopy/
 .. _Anaconda: https://store.continuum.io/cshop/anaconda/
 .. _PythonXY: https://python-xy.github.io/
 .. _HomeBrew: http://brew.sh
-.. _traitlets: https://traitlets.readthedocs.io/en/stable/
 
 Setting up your python environment
 ----------------------------------

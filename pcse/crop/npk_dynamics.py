@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 from .. import exceptions as exc
-from ..traitlets import Float, Int, Instance
+
 from ..decorators import prepare_rates, prepare_states
 from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
-from ..util import AfgenTrait
+from ..util import Afgen
 from .nutrients import NPK_Translocation
 from .nutrients import NPK_Demand_Uptake
 
@@ -132,103 +132,209 @@ class NPK_Crop_Dynamics(SimulationObject):
     =======  =================================== ====================  ==============
     """
 
-    translocation = Instance(SimulationObject)
-    demand_uptake = Instance(SimulationObject)
+    __slots__ = [
+        "translocation",
+        "demand_uptake",
+        "NamountLVI",
+        "NamountSTI",
+        "NamountRTI",
+        "NamountSOI",
+        "PamountLVI",
+        "PamountSTI",
+        "PamountRTI",
+        "PamountSOI",
+        "KamountLVI",
+        "KamountSTI",
+        "KamountRTI",
+        "KamountSOI",
+    ]
 
-    NamountLVI = Float(-99.0)  # initial soil N amount in leaves
-    NamountSTI = Float(-99.0)  # initial soil N amount in stems
-    NamountRTI = Float(-99.0)  # initial soil N amount in roots
-    NamountSOI = Float(-99.0)  # initial soil N amount in storage organs
+    translocation: SimulationObject
+    demand_uptake: SimulationObject
 
-    PamountLVI = Float(-99.0)  # initial soil P amount in leaves
-    PamountSTI = Float(-99.0)  # initial soil P amount in stems
-    PamountRTI = Float(-99.0)  # initial soil P amount in roots
-    PamountSOI = Float(-99.0)  # initial soil P amount in storage organs
+    NamountLVI: float  # initial soil N amount in leaves
+    NamountSTI: float  # initial soil N amount in stems
+    NamountRTI: float  # initial soil N amount in roots
+    NamountSOI: float  # initial soil N amount in storage organs
 
-    KamountLVI = Float(-99.0)  # initial soil K amount in leaves
-    KamountSTI = Float(-99.0)  # initial soil K amount in stems
-    KamountRTI = Float(-99.0)  # initial soil K amount in roots
-    KamountSOI = Float(-99.0)  # initial soil K amount in storage organs
+    PamountLVI: float  # initial soil P amount in leaves
+    PamountSTI: float  # initial soil P amount in stems
+    PamountRTI: float  # initial soil P amount in roots
+    PamountSOI: float  # initial soil P amount in storage organs
+
+    KamountLVI: float  # initial soil K amount in leaves
+    KamountSTI: float  # initial soil K amount in stems
+    KamountRTI: float  # initial soil K amount in roots
+    KamountSOI: float  # initial soil K amount in storage organs
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.NamountLVI = -99.0
+        self.NamountSTI = -99.0
+        self.NamountRTI = -99.0
+        self.NamountSOI = -99.0
+        self.PamountLVI = -99.0
+        self.PamountSTI = -99.0
+        self.PamountRTI = -99.0
+        self.PamountSOI = -99.0
+        self.KamountLVI = -99.0
+        self.KamountSTI = -99.0
+        self.KamountRTI = -99.0
+        self.KamountSOI = -99.0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        DVS_NPK_STOP = Float(-99.0)
-        NMAXLV_TB = AfgenTrait()
-        PMAXLV_TB = AfgenTrait()
-        KMAXLV_TB = AfgenTrait()
-        NMAXST_FR = Float(-99.0)
-        NMAXRT_FR = Float(-99.0)
-        PMAXST_FR = Float(-99.0)
-        PMAXRT_FR = Float(-99.0)
-        KMAXST_FR = Float(-99.0)
-        KMAXRT_FR = Float(-99.0)
-        NRESIDLV = Float(-99.0)  # residual N fraction in leaves [kg N kg-1 dry biomass]
-        NRESIDST = Float(-99.0)  # residual N fraction in stems [kg N kg-1 dry biomass]
-        NRESIDRT = Float(-99.0)  # residual N fraction in roots [kg N kg-1 dry biomass]
-        PRESIDLV = Float(-99.0)  # residual P fraction in leaves [kg P kg-1 dry biomass]
-        PRESIDST = Float(-99.0)  # residual P fraction in stems [kg P kg-1 dry biomass]
-        PRESIDRT = Float(-99.0)  # residual P fraction in roots [kg P kg-1 dry biomass]
-        KRESIDLV = Float(-99.0)  # residual K fraction in leaves [kg K kg-1 dry biomass]
-        KRESIDST = Float(-99.0)  # residual K fraction in stems [kg K kg-1 dry biomass]
-        KRESIDRT = Float(-99.0)  # residual K fraction in roots [kg K kg-1 dry biomass]
+
+        __slots__ = [
+            "DVS_NPK_STOP",
+            "NMAXLV_TB",
+            "PMAXLV_TB",
+            "KMAXLV_TB",
+            "NMAXST_FR",
+            "NMAXRT_FR",
+            "PMAXST_FR",
+            "PMAXRT_FR",
+            "KMAXST_FR",
+            "KMAXRT_FR",
+            "NRESIDLV",
+            "NRESIDST",
+            "NRESIDRT",
+            "PRESIDLV",
+            "PRESIDST",
+            "PRESIDRT",
+            "KRESIDLV",
+            "KRESIDST",
+            "KRESIDRT",
+        ]
+
+        DVS_NPK_STOP: float
+        NMAXLV_TB: Afgen
+        PMAXLV_TB: Afgen
+        KMAXLV_TB: Afgen
+        NMAXST_FR: float
+        NMAXRT_FR: float
+        PMAXST_FR: float
+        PMAXRT_FR: float
+        KMAXST_FR: float
+        KMAXRT_FR: float
+        NRESIDLV: float  # residual N fraction in leaves [kg N kg-1 dry biomass]
+        NRESIDST: float  # residual N fraction in stems [kg N kg-1 dry biomass]
+        NRESIDRT: float  # residual N fraction in roots [kg N kg-1 dry biomass]
+        PRESIDLV: float  # residual P fraction in leaves [kg P kg-1 dry biomass]
+        PRESIDST: float  # residual P fraction in stems [kg P kg-1 dry biomass]
+        PRESIDRT: float  # residual P fraction in roots [kg P kg-1 dry biomass]
+        KRESIDLV: float  # residual K fraction in leaves [kg K kg-1 dry biomass]
+        KRESIDST: float  # residual K fraction in stems [kg K kg-1 dry biomass]
+        KRESIDRT: float  # residual K fraction in roots [kg K kg-1 dry biomass]
 
     class StateVariables(StatesTemplate):
-        NamountLV = Float(-99.0)  # N amount in leaves [kg N ha-1]
-        PamountLV = Float(-99.0)  # P amount in leaves [kg P ]
-        KamountLV = Float(-99.0)  # K amount in leaves [kg K ]
 
-        NamountST = Float(-99.0)  # N amount in stems [kg N ]
-        PamountST = Float(-99.0)  # P amount in stems [kg P ]
-        KamountST = Float(-99.0)  # K amount in stems [kg K ]
+        __slots__ = [
+            "NamountLV",
+            "PamountLV",
+            "KamountLV",
+            "NamountST",
+            "PamountST",
+            "KamountST",
+            "NamountSO",
+            "PamountSO",
+            "KamountSO",
+            "NamountRT",
+            "PamountRT",
+            "KamountRT",
+            "NuptakeTotal",
+            "PuptakeTotal",
+            "KuptakeTotal",
+            "NfixTotal",
+            "NlossesTotal",
+            "PlossesTotal",
+            "KlossesTotal",
+        ]
 
-        NamountSO = Float(-99.0)  # N amount in storage organs [kg N ]
-        PamountSO = Float(-99.0)  # P amount in storage organs [kg P ]
-        KamountSO = Float(-99.0)  # K amount in storage organs [kg K ]
+        NamountLV: float  # N amount in leaves [kg N ha-1]
+        PamountLV: float  # P amount in leaves [kg P ]
+        KamountLV: float  # K amount in leaves [kg K ]
 
-        NamountRT = Float(-99.0)  # N amount in roots [kg N ]
-        PamountRT = Float(-99.0)  # P amount in roots [kg P ]
-        KamountRT = Float(-99.0)  # K amount in roots [kg K ]
+        NamountST: float  # N amount in stems [kg N ]
+        PamountST: float  # P amount in stems [kg P ]
+        KamountST: float  # K amount in stems [kg K ]
 
-        NuptakeTotal = Float(-99.0)  # total absorbed N amount [kg N ]
-        PuptakeTotal = Float(-99.0)  # total absorbed P amount [kg P ]
-        KuptakeTotal = Float(-99.0)  # total absorbed K amount [kg K ]
-        NfixTotal = Float(-99.0)  # total biological fixated N amount [kg N ]
+        NamountSO: float  # N amount in storage organs [kg N ]
+        PamountSO: float  # P amount in storage organs [kg P ]
+        KamountSO: float  # K amount in storage organs [kg K ]
 
-        NlossesTotal = Float(-99.0)
-        PlossesTotal = Float(-99.0)
-        KlossesTotal = Float(-99.0)
+        NamountRT: float  # N amount in roots [kg N ]
+        PamountRT: float  # P amount in roots [kg P ]
+        KamountRT: float  # K amount in roots [kg K ]
+
+        NuptakeTotal: float  # total absorbed N amount [kg N ]
+        PuptakeTotal: float  # total absorbed P amount [kg P ]
+        KuptakeTotal: float  # total absorbed K amount [kg K ]
+        NfixTotal: float  # total biological fixated N amount [kg N ]
+
+        NlossesTotal: float
+        PlossesTotal: float
+        KlossesTotal: float
 
     class RateVariables(RatesTemplate):
-        RNamountLV = Float(-99.0)  # Net rates of NPK in different plant organs
-        RPamountLV = Float(-99.0)
-        RKamountLV = Float(-99.0)
 
-        RNamountST = Float(-99.0)
-        RPamountST = Float(-99.0)
-        RKamountST = Float(-99.0)
+        __slots__ = [
+            "RNamountLV",
+            "RPamountLV",
+            "RKamountLV",
+            "RNamountST",
+            "RPamountST",
+            "RKamountST",
+            "RNamountRT",
+            "RPamountRT",
+            "RKamountRT",
+            "RNamountSO",
+            "RPamountSO",
+            "RKamountSO",
+            "RNdeathLV",
+            "RNdeathST",
+            "RNdeathRT",
+            "RPdeathLV",
+            "RPdeathST",
+            "RPdeathRT",
+            "RKdeathLV",
+            "RKdeathST",
+            "RKdeathRT",
+            "RNloss",
+            "RPloss",
+            "RKloss",
+        ]
 
-        RNamountRT = Float(-99.0)
-        RPamountRT = Float(-99.0)
-        RKamountRT = Float(-99.0)
+        RNamountLV: float  # Net rates of NPK in different plant organs
+        RPamountLV: float
+        RKamountLV: float
 
-        RNamountSO = Float(-99.0)
-        RPamountSO = Float(-99.0)
-        RKamountSO = Float(-99.0)
+        RNamountST: float
+        RPamountST: float
+        RKamountST: float
 
-        RNdeathLV = Float(-99.0)  # N loss rate leaves [kg ha-1 d-1]
-        RNdeathST = Float(-99.0)  # N loss rate stems  [kg ha-1 d-1]
-        RNdeathRT = Float(-99.0)  # N loss rate roots  [kg ha-1 d-1]
+        RNamountRT: float
+        RPamountRT: float
+        RKamountRT: float
 
-        RPdeathLV = Float(-99.0)  # P loss rate leaves [kg ha-1 d-1]
-        RPdeathST = Float(-99.0)  # P loss rate stems  [kg ha-1 d-1]
-        RPdeathRT = Float(-99.0)  # P loss rate roots  [kg ha-1 d-1]
+        RNamountSO: float
+        RPamountSO: float
+        RKamountSO: float
 
-        RKdeathLV = Float(-99.0)  # K loss rate leaves [kg ha-1 d-1]
-        RKdeathST = Float(-99.0)  # K loss rate stems  [kg ha-1 d-1]
-        RKdeathRT = Float(-99.0)  # K loss rate roots  [kg ha-1 d-1]
+        RNdeathLV: float  # N loss rate leaves [kg ha-1 d-1]
+        RNdeathST: float  # N loss rate stems  [kg ha-1 d-1]
+        RNdeathRT: float  # N loss rate roots  [kg ha-1 d-1]
 
-        RNloss = Float(-99.0)
-        RPloss = Float(-99.0)
-        RKloss = Float(-99.0)
+        RPdeathLV: float  # P loss rate leaves [kg ha-1 d-1]
+        RPdeathST: float  # P loss rate stems  [kg ha-1 d-1]
+        RPdeathRT: float  # P loss rate roots  [kg ha-1 d-1]
+
+        RKdeathLV: float  # K loss rate leaves [kg ha-1 d-1]
+        RKdeathST: float  # K loss rate stems  [kg ha-1 d-1]
+        RKdeathRT: float  # K loss rate roots  [kg ha-1 d-1]
+
+        RNloss: float
+        RPloss: float
+        RKloss: float
 
     def initialize(self, day, kiosk, parvalues):
         """

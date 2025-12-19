@@ -1,19 +1,16 @@
 import calendar
 import math
-from math import cos, exp, log, pi, sqrt
+from math import exp
 
 import numpy as np
 
-from .. import exceptions as exc
 from .. import signals
 from ..base import ParamTemplate, RatesTemplate, SimulationObject, StatesTemplate
 from ..db.tillage_parameters import (
-    cult_factor_ranges,
-    cultivation_methods,
     get_tillage_code_params,
 )
 from ..decorators import prepare_rates, prepare_states
-from ..traitlets import Bool, Enum, Float, Instance, Int, List, Unicode
+
 
 # Next steps to improve the efficiency :
 
@@ -29,44 +26,88 @@ class Ensemble_SOC_Indigo(SimulationObject):
     We are also working on adding the soil carbon dynamics.
     """
 
-    Century_SOC_Indigo = Instance(SimulationObject)
-    MillennialV2_SOC_Indigo = Instance(SimulationObject)
-    RothC_SOC_Indigo = Instance(SimulationObject)
-    MIMICS_SOC_Indigo = Instance(SimulationObject)
-    IOM = Float(0.0)
+    __slots__ = [
+        "Century_SOC_Indigo",
+        "MillennialV2_SOC_Indigo",
+        "RothC_SOC_Indigo",
+        "MIMICS_SOC_Indigo",
+        "IOM",
+    ]
+
+    Century_SOC_Indigo: SimulationObject
+    MillennialV2_SOC_Indigo: SimulationObject
+    RothC_SOC_Indigo: SimulationObject
+    MIMICS_SOC_Indigo: SimulationObject
+    IOM: float
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.IOM = 0.0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        Ens_Weights = List()  # Thickness of soil layers (cm)
-        POM0 = Float()  # g C m^-2
-        LMWC0 = Float()  # g C m^-2
-        AGG0 = Float()  # g C m^-2
-        MIC0 = Float()  # g C m^-2
-        MAOM0 = Float()  # g C m^-2
 
-        ACTIVE0 = Float()  # g C m^-2
-        SLOW0 = Float()  # g C m^-2
-        PASSIVE0 = Float()  # g C m^-2
+        __slots__ = [
+            "Ens_Weights",
+            "POM0",
+            "LMWC0",
+            "AGG0",
+            "MIC0",
+            "MAOM0",
+            "ACTIVE0",
+            "SLOW0",
+            "PASSIVE0",
+            "DPM0",
+            "RPM0",
+            "BIO0",
+            "HUM0",
+            "MIC_1_0",
+            "MIC_2_0",
+            "SOM_1_0",
+            "SOM_2_0",
+            "SOM_3_0",
+            "TIsoc",
+        ]
 
-        DPM0 = Float()
-        RPM0 = Float()
-        BIO0 = Float()
-        HUM0 = Float()
+        Ens_Weights: list  # Thickness of soil layers (cm)
+        POM0: float  # g C m^-2
+        LMWC0: float  # g C m^-2
+        AGG0: float  # g C m^-2
+        MIC0: float  # g C m^-2
+        MAOM0: float  # g C m^-2
+
+        ACTIVE0: float  # g C m^-2
+        SLOW0: float  # g C m^-2
+        PASSIVE0: float  # g C m^-2
+
+        DPM0: float
+        RPM0: float
+        BIO0: float
+        HUM0: float
 
         # initialisation values
-        MIC_1_0 = Float()
-        MIC_2_0 = Float()
-        SOM_1_0 = Float()
-        SOM_2_0 = Float()
-        SOM_3_0 = Float()
+        MIC_1_0: float
+        MIC_2_0: float
+        SOM_1_0: float
+        SOM_2_0: float
+        SOM_3_0: float
 
-        TIsoc = Float()  # Total inital soc
+        TIsoc: float  # Total initial soc
 
     class StateVariables(StatesTemplate):
-        Ens_SOC = Float()
-        Century_SOC = Float()
-        MillennialV2_SOC = Float()
-        RothC_SOC = Float()
-        MIMICS_SOC = Float()
+
+        __slots__ = [
+            "Ens_SOC",
+            "Century_SOC",
+            "MillennialV2_SOC",
+            "RothC_SOC",
+            "MIMICS_SOC",
+        ]
+
+        Ens_SOC: float
+        Century_SOC: float
+        MillennialV2_SOC: float
+        RothC_SOC: float
+        MIMICS_SOC: float
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -106,7 +147,7 @@ class Ensemble_SOC_Indigo(SimulationObject):
         )
         M3 = (
             M3_Raw * self.params.Ens_Weights[2]
-        )  # in Initialized the inital pool size is sent for gC/m2 for RothC as well as the others.
+        )  # in Initialized the initial pool size is sent for gC/m2 for RothC as well as the others.
 
         M4_Raw = (
             self.params.MIC_1_0
@@ -139,8 +180,6 @@ class Ensemble_SOC_Indigo(SimulationObject):
         self.RothC_SOC_Indigo.calc_rates(day, drv)
         self.MIMICS_SOC_Indigo.calc_rates(day, drv)
 
-        #
-
     def integrate(self, day, delt=1.0):
 
         self.MillennialV2_SOC_Indigo.integrate(day, delt)
@@ -150,7 +189,7 @@ class Ensemble_SOC_Indigo(SimulationObject):
 
         # We can add the ensemble integration here if needed
         if "POM" in self.kiosk:
-            # MellennialV2
+            # MillennialV2
             M1_Raw = (
                 self.kiosk["POM"]
                 + self.kiosk["LMWC"]
@@ -219,32 +258,76 @@ class MIMICS_SOC_Indigo(SimulationObject):
     adapted for interoperability with the PCSE framework
     """
 
-    tao = Float()
-    Tao_MOD1 = Float()  # Modifier based on net primary productivity
-    fMET = Float()  # Fraction of metabolic response
-    in_crop_cycle = Bool(False)
-    fMET = Float()
-    fPHYS = np.array([np.nan, np.nan])  # fraction to SOMp
-    fCHEM = np.array([np.nan, np.nan])
-    fAVAI = np.array([np.nan, np.nan])
-    desorb = Float()
-    pSCALAR = Float()
-    clayF = Float()
-    MOD1 = np.array([np.nan, np.nan])
-    MOD2 = np.array([np.nan, np.nan])
-    npp_dead_in_season = Float()
-    residue_perc_removed = Float()
+    __slots__ = [
+        "tao",
+        "Tao_MOD1",
+        "fMET",
+        "in_crop_cycle",
+        "fMET",
+        "fPHYS",
+        "fCHEM",
+        "fAVAI",
+        "desorb",
+        "pSCALAR",
+        "clayF",
+        "MOD1",
+        "MOD2",
+        "npp_dead_in_season",
+        "residue_perc_removed",
+        "_increments_SOM1",
+        "_increments_SOM2",
+        "_increments_SOM3",
+        "_increments_MIC1",
+        "_increments_MIC2",
+    ]
 
-    _increments_SOM1 = List()
-    _increments_SOM2 = List()
-    _increments_SOM3 = List()
-    _increments_MIC1 = List()
-    _increments_MIC2 = List()
+    tao: float
+    Tao_MOD1: float  # Modifier based on net primary productivity
+    fMET: float  # Fraction of metabolic response
+    in_crop_cycle: bool
+    fMET: float
+    fPHYS: np.ndarray  # fraction to SOMp
+    fCHEM: np.ndarray
+    fAVAI: np.ndarray
+    desorb: float
+    pSCALAR: float
+    clayF: float
+    MOD1: np.ndarray
+    MOD2: np.ndarray
+    npp_dead_in_season: float
+    residue_perc_removed: float
+
+    _increments_SOM1: list
+    _increments_SOM2: list
+    _increments_SOM3: list
+    _increments_MIC1: list
+    _increments_MIC2: list
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.tao = 0.0
+        self.Tao_MOD1 = 0.0
+        self.fMET = 0.0
+        self.in_crop_cycle = False
+        self.fMET = 0.0
+        self.fPHYS = np.array([np.nan, np.nan])
+        self.fCHEM = np.array([np.nan, np.nan])
+        self.fAVAI = np.array([np.nan, np.nan])
+        self.desorb = 0.0
+        self.pSCALAR = 0.0
+        self.clayF = 0.0
+        self.MOD1 = np.array([np.nan, np.nan])
+        self.MOD2 = np.array([np.nan, np.nan])
+        self.npp_dead_in_season = 0.0
+        self.residue_perc_removed = 0.0
+        self._increments_SOM1 = []
+        self._increments_SOM2 = []
+        self._increments_SOM3 = []
+        self._increments_MIC1 = []
+        self._increments_MIC2 = []
+        super().__init__(day, kiosk, *args, **kwargs)
 
     def _on_manage_residue(self, **kwargs):
         """Apply tillage"""
-        # print everthing inside kwargs
-
         residue_perc = kwargs.get("residue_percent")
         self.residue_perc_removed = residue_perc / 100
 
@@ -255,48 +338,97 @@ class MIMICS_SOC_Indigo(SimulationObject):
         self.in_crop_cycle = False
 
     class Parameters(ParamTemplate):
-        depth = Float()
-        Vslope = List()
-        Vint = Float()
-        Kslope = List()
-        Kint = Float()
-        CUE = List()  # Carbon Use Efficiency array for different processes
-        k = Float()
-        a = Float()
-        cMAX = Float()
-        cMIN = Float()
-        cSLOPE = Float()
-        KO = List()
-        FI = List()
-        aV = Float()  # Modifier for maximum rate of enzymatic activity
-        aK = Float()  # Modifier for the Michaelis constant
-        param_clay = Float()  # Fraction of clay content influencing rates
-        param_pH = Float()  # Soil pH
+
+        __slots__ = [
+            "depth",
+            "Vslope",
+            "Vint",
+            "Kslope",
+            "Kint",
+            "CUE",
+            "k",
+            "a",
+            "cMAX",
+            "cMIN",
+            "cSLOPE",
+            "KO",
+            "FI",
+            "aV",
+            "aK",
+            "param_clay",
+            "param_pH",
+            "MIC_1_0",
+            "MIC_2_0",
+            "SOM_1_0",
+            "SOM_2_0",
+            "SOM_3_0",
+            "ROOT_SHOOT_K",
+        ]
+
+        depth: float
+        Vslope: list
+        Vint: float
+        Kslope: list
+        Kint: float
+        CUE: list  # Carbon Use Efficiency array for different processes
+        k: float
+        a: float
+        cMAX: float
+        cMIN: float
+        cSLOPE: float
+        KO: list
+        FI: list
+        aV: float  # Modifier for maximum rate of enzymatic activity
+        aK: float  # Modifier for the Michaelis constant
+        param_clay: float  # Fraction of clay content influencing rates
+        param_pH: float  # Soil pH
         # initialisation values
-        MIC_1_0 = Float()
-        MIC_2_0 = Float()
-        SOM_1_0 = Float()
-        SOM_2_0 = Float()
-        SOM_3_0 = Float()
-        ROOT_SHOOT_K = Float()
+        MIC_1_0: float
+        MIC_2_0: float
+        SOM_1_0: float
+        SOM_2_0: float
+        SOM_3_0: float
+        ROOT_SHOOT_K: float
 
     class StateVariables(StatesTemplate):
-        LIT_1 = Float()  # Litter pool 1
-        LIT_2 = Float()  # Litter pool 2
-        MIC_1 = Float()  # Microbial biomass pool 1
-        MIC_2 = Float()  # Microbial biomass pool 2
-        SOM_1 = Float()  # Soil organic matter pool 1
-        SOM_2 = Float()  # Soil organic matter pool 2
-        SOM_3 = Float()  # Soil organic matter pool 3
+
+        __slots__ = [
+            "LIT_1",
+            "LIT_2",
+            "MIC_1",
+            "MIC_2",
+            "SOM_1",
+            "SOM_2",
+            "SOM_3",
+        ]
+
+        LIT_1: float  # Litter pool 1
+        LIT_2: float  # Litter pool 2
+        MIC_1: float  # Microbial biomass pool 1
+        MIC_2: float  # Microbial biomass pool 2
+        SOM_1: float  # Soil organic matter pool 1
+        SOM_2: float  # Soil organic matter pool 2
+        SOM_3: float  # Soil organic matter pool 3
 
     class RateVariables(RatesTemplate):
-        dLIT_1 = Float()  # Litter pool 1
-        dLIT_2 = Float()  # Litter pool 2
-        dMIC_1 = Float()  # Microbial biomass pool 1
-        dMIC_2 = Float()  # Microbial biomass pool 2
-        dSOM_1 = Float()  # Soil organic matter pool 1
-        dSOM_2 = Float()  # Soil organic matter pool 2
-        dSOM_3 = Float()  # Soil organic matter pool 3
+
+        __slots__ = [
+            "dLIT_1",
+            "dLIT_2",
+            "dMIC_1",
+            "dMIC_2",
+            "dSOM_1",
+            "dSOM_2",
+            "dSOM_3",
+        ]
+
+        dLIT_1: float  # Litter pool 1
+        dLIT_2: float  # Litter pool 2
+        dMIC_1: float  # Microbial biomass pool 1
+        dMIC_2: float  # Microbial biomass pool 2
+        dSOM_1: float  # Soil organic matter pool 1
+        dSOM_2: float  # Soil organic matter pool 2
+        dSOM_3: float  # Soil organic matter pool 3
 
     def initialize(self, day, kiosk, parametervalues):
         self.params = self.Parameters(parametervalues)
@@ -389,7 +521,7 @@ class MIMICS_SOC_Indigo(SimulationObject):
             forc_npp = 0
         else:
             # DMI comes from WOFOST8 crop model
-            # DMI Total dry matter increase, calculated as ASRC times a weighted conversion efficieny. Y  |kg ha-1 d-1|
+            # DMI Total dry matter increase, calculated as ASRC times a weighted conversion efficiency. Y  |kg ha-1 d-1|
             # 4% dead root and shoot material, 60% of which is C
             forc_npp = (
                 self.kiosk["GASST"]
@@ -405,7 +537,7 @@ class MIMICS_SOC_Indigo(SimulationObject):
         if "DVS" in self.kiosk:
             if "TAGP" in self.kiosk:
                 if not self.in_crop_cycle:
-                    # (total gross assimulation in C - Total respiration in C) - (50% of above ground * 60% to convert to C)
+                    # (total gross assimilation in C - Total respiration in C) - (50% of above ground * 60% to convert to C)
                     # forc_npp += ((self.kiosk['GASST']- self.kiosk['MREST']) - (0.5 * self.kiosk['TAGP'] * 0.6) - (self.npp_dead_in_season*10))  /10 # kg C ha^-1 day^-1 -> t C ha^-1 day^-1  -> residue -> C
                     total_net_assimilated = (
                         self.kiosk["GASST"] - self.kiosk["MREST"]
@@ -424,7 +556,7 @@ class MIMICS_SOC_Indigo(SimulationObject):
 
         forc_npp = (forc_npp,)
         # print(f"{day}: forc_npp {forc_npp} {self.npp_dead_in_season} ---------------------------")
-        # estimarte the rates of change
+        # estimate the rates of change
         diff_eq = self.XEQ_fw(
             y, forc_npp, forc_st
         )  # Use XEQ_fw function to calculate rates
@@ -491,7 +623,7 @@ class MIMICS_SOC_Indigo(SimulationObject):
 
         self.Tao_MOD1 = np.sqrt(
             sum_force_npp * 365 / 100.0
-        )  # basicaily standardize against NWT (forc_npp*365=ANPP (gC/m2/y)) # 365 was cvhanged to 1 to make it daily
+        )  # basically standardize against NWT (forc_npp*365=ANPP (gC/m2/y)) # 365 was changed to 1 to make it daily
         # make sure self.Tao_MOD1 is within the range of 0.8 - 1.2 Table B1. If smaller or larger, set to 0.8 or 1.2
         self.Tao_MOD1 = min(1.2, max(0.8, self.Tao_MOD1))
         tao = (
@@ -651,54 +783,107 @@ class RothC_SOC_Indigo(SimulationObject):
     adapted for interoperability with the PCSE framework
     """
 
-    iom_power = Float(1.255)
-    accTSMD = Float(0.0)
-    t_param = Float(
-        1.0 / 12.0
-    )  # year->month # the K decomposition matrix is multipled by this
-    IOM = Float(0.0)
-    # ----- collectors
-    C_input = Float(0.0)
-    evaps = Float(0.0)  # sum evapotration
-    rain_sum = Float(0.0)  # sum rain
-    temp_avg = Float(0.0)  # Avg temp
-    # Flag indicating crop present or not
-    in_crop_cycle = Bool(False)
-    npp_dead_in_season = Float()
-    residue_perc_removed = Float()
+    __slots__ = [
+        "iom_power",
+        "accTSMD",
+        "t_param",
+        "IOM",
+        "C_input",
+        "evaps",
+        "rain_sum",
+        "temp_avg",
+        "in_crop_cycle",
+        "npp_dead_in_season",
+        "residue_perc_removed",
+        "_increments_DPM",
+        "_increments_RPM",
+        "_increments_BIO",
+        "_increments_HUM",
+        "_increments_IOM",
+    ]
 
-    _increments_DPM = List()
-    _increments_RPM = List()
-    _increments_BIO = List()
-    _increments_HUM = List()
-    _increments_IOM = List()
+    iom_power: float
+    accTSMD: float
+    t_param: float  # year->month # the K decomposition matrix is multipled by this
+    IOM: float
+    # ----- collectors
+    C_input: float
+    evaps: float  # sum evapotration
+    rain_sum: float  # sum rain
+    temp_avg: float  # Avg temp
+    # Flag indicating crop present or not
+    in_crop_cycle: bool
+    npp_dead_in_season: float
+    residue_perc_removed: float
+
+    _increments_DPM: list
+    _increments_RPM: list
+    _increments_BIO: list
+    _increments_HUM: list
+    _increments_IOM: list
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.iom_power = 1.255
+        self.accTSMD = 0.0
+        self.t_param = 1.0 / 12.0
+        self.IOM = 0.0
+        self.C_input = 0.0
+        self.evaps = 0.0
+        self.rain_sum = 0.0
+        self.temp_avg = 0.0
+        self.in_crop_cycle = False
+        self.npp_dead_in_season = 0.0
+        self.residue_perc_removed = 0.0
+        self._increments_DPM = []
+        self._increments_RPM = []
+        self._increments_BIO = []
+        self._increments_HUM = []
+        self._increments_IOM = []
+        super().__init__(day, kiosk, *args, **kwargs)
 
     def _on_manage_residue(self, **kwargs):
         """Apply tillage"""
-        # print everthing inside kwargs
-
         residue_perc = kwargs.get("residue_percent")
         self.residue_perc_removed = residue_perc / 100
 
     class Parameters(ParamTemplate):
-        DPM_RPM_HUM_frac_inputs = List()
-        DPM_RPM_HUM_frac_inputs_EOM = List()
-        c_param = Float()  # c_vegetated = 0.6
-        # t_param = Float() # t_param=1./12. #year->month
-        param_temp_in = Float()  # param_temp_in=18.27 #C
-        param_clay = Float()  # param_claysilt=0.3
+
+        __slots__ = [
+            "DPM_RPM_HUM_frac_inputs",
+            "DPM_RPM_HUM_frac_inputs_EOM",
+            "c_param",
+            "param_temp_in",
+            "param_clay",
+            "DPM0",
+            "RPM0",
+            "BIO0",
+            "HUM0",
+            "kDPM",
+            "kRPM",
+            "kBIO",
+            "kHUM",
+            "TIsoc",
+            "ROOT_SHOOT_K",
+        ]
+
+        DPM_RPM_HUM_frac_inputs: list
+        DPM_RPM_HUM_frac_inputs_EOM: list
+        c_param: float  # c_vegetated = 0.6
+        # t_param: float # t_param=1./12. #year->month
+        param_temp_in: float  # param_temp_in=18.27 #C
+        param_clay: float  # param_claysilt=0.3
         # initialisation values
-        DPM0 = Float()
-        RPM0 = Float()
-        BIO0 = Float()
-        HUM0 = Float()
+        DPM0: float
+        RPM0: float
+        BIO0: float
+        HUM0: float
         # k values
-        kDPM = Float()  # 10.
-        kRPM = Float()  # 0.3
-        kBIO = Float()  # 0.66
-        kHUM = Float()  # 0.02
-        TIsoc = Float()  # Total inital soc
-        ROOT_SHOOT_K = Float()
+        kDPM: float  # 10.
+        kRPM: float  # 0.3
+        kBIO: float  # 0.66
+        kHUM: float  # 0.02
+        TIsoc: float  # Total inital soc
+        ROOT_SHOOT_K: float
 
     def _on_CROP_START(self):
         self.in_crop_cycle = True
@@ -707,17 +892,29 @@ class RothC_SOC_Indigo(SimulationObject):
         self.in_crop_cycle = False
 
     class StateVariables(StatesTemplate):
-        DPM = Float()
-        RPM = Float()
-        BIO = Float()
-        HUM = Float()
-        IOM = Float()
+
+        __slots__ = [
+            "DPM",
+            "RPM",
+            "BIO",
+            "HUM",
+            "IOM",
+        ]
+
+        DPM: float
+        RPM: float
+        BIO: float
+        HUM: float
+        IOM: float
 
     class RateVariables(RatesTemplate):
-        dDPM = Float()
-        dRPM = Float()
-        dBIO = Float()
-        dHUM = Float()
+
+        __slots__ = ["dDPM", "dRPM", "dBIO", "dHUM"]
+
+        dDPM: float
+        dRPM: float
+        dBIO: float
+        dHUM: float
 
     def is_end_of_month(self, date):
         return date.day == calendar.monthrange(date.year, date.month)[1]
@@ -726,7 +923,6 @@ class RothC_SOC_Indigo(SimulationObject):
         """Initialize the model."""
         self.params = self.Parameters(parvalues)
         self.rates = self.RateVariables(kiosk)
-        states = self.states
 
         # Initialize state variables using spinup
         SOC_data_init = self.params.TIsoc  # g C m^-2
@@ -1146,21 +1342,46 @@ class MillennialV2_SOC_Indigo(SimulationObject):
     soil moisture and temperature.
     """
 
-    npp_dead_in_season = Float()
-    porosity = Float(-99.0)
-    param_bulkd = Float(-99.0)
-    in_crop_cycle = Bool(False)
+    __slots__ = [
+        "npp_dead_in_season",
+        "porosity",
+        "param_bulkd",
+        "in_crop_cycle",
+        "_increments_POM",
+        "_increments_LMWC",
+        "_increments_AGG",
+        "_increments_MIC",
+        "_increments_MAOM",
+        "residue_perc_removed",
+    ]
 
-    _increments_POM = List()
-    _increments_LMWC = List()
-    _increments_AGG = List()
-    _increments_MIC = List()
-    _increments_MAOM = List()
-    residue_perc_removed = Float()
+    npp_dead_in_season: float
+    porosity: float
+    param_bulkd: float
+    in_crop_cycle: bool
+
+    _increments_POM: list
+    _increments_LMWC: list
+    _increments_AGG: list
+    _increments_MIC: list
+    _increments_MAOM: list
+    residue_perc_removed: float
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.npp_dead_in_season = 0.0
+        self.porosity = -99.0
+        self.param_bulkd = -99.0
+        self.in_crop_cycle = False
+        self._increments_POM = []
+        self._increments_LMWC = []
+        self._increments_AGG = []
+        self._increments_MIC = []
+        self._increments_MAOM = []
+        self.residue_perc_removed = 0.0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     def _on_manage_residue(self, **kwargs):
         """Apply tillage"""
-        # print everthing inside kwargs
         residue_perc = kwargs.get("residue_percent")
         self.residue_perc_removed = residue_perc / 100
 
@@ -1171,60 +1392,118 @@ class MillennialV2_SOC_Indigo(SimulationObject):
         self.in_crop_cycle = False
 
     class Parameters(ParamTemplate):
-        param_p1 = Float()  # Equation 10
-        param_p2 = Float()  # Equation 10
-        kaff_des = Float()  # day^-1, Equation 10
-        param_pH = Float()  # day^-1, Equation 10
-        param_claysilt = Float()  # Equation 11
-        param_pc = Float()  # Equation 11
-        # porosity = Float()  # mm3/mm3, Equation 4
 
-        lambda_ = Float()  # Equation 15
-        matpot = Float()  # MPa, Equation 15
-        kamin = Float()  # Equation 15
-        alpha_pl = Float()  # umol ug^-1 day^-1, Equation 3
-        eact_pl = Float()  # kJ mol^-1, Equation 3
-        kaff_pl = Float()  # ug C g^-1, Equation 2
-        rate_pa = Float()  # day^-1, Equation 5
-        rate_break = Float()  # day^-1, Equation 6
-        rate_leach = Float()  # day^-1, Equation 8
-        alpha_lb = Float()  # umol ug^-1 day^-1, Equation 14
-        eact_lb = Float()  # kJ mol^-1, Equation 14
-        kaff_lb = Float()  # ug C g^-1, Equation 13
-        rate_bd = Float()  # ug C g^-1 day^-1, Equation 16
-        rate_ma = Float()  # day^-1, Equation 18
-        cue_ref = Float()  # Equation 21
-        cue_t = Float()  # °C^-1, Equation 21
-        tae_ref = Float()  # °C, Equation 21
-        param_pi = Float()  # Equation 1
-        param_pa = Float()  # Equation 1
-        param_pb = Float()  # Equation 19
+        __slots__ = [
+            "param_p1",
+            "param_p2",
+            "kaff_des",
+            "param_pH",
+            "param_claysilt",
+            "param_pc",
+            "lambda_",
+            "matpot",
+            "kamin",
+            "alpha_pl",
+            "eact_pl",
+            "kaff_pl",
+            "rate_pa",
+            "rate_break",
+            "rate_leach",
+            "alpha_lb",
+            "eact_lb",
+            "kaff_lb",
+            "rate_bd",
+            "rate_ma",
+            "cue_ref",
+            "cue_t",
+            "tae_ref",
+            "param_pi",
+            "param_pa",
+            "param_pb",
+            "POM0",
+            "LMWC0",
+            "AGG0",
+            "MIC0",
+            "MAOM0",
+            "NLAYR",
+            "BD",
+            "DS",
+            "ROOT_SHOOT_K",
+        ]
+
+        param_p1: float  # Equation 10
+        param_p2: float  # Equation 10
+        kaff_des: float  # day^-1, Equation 10
+        param_pH: float  # day^-1, Equation 10
+        param_claysilt: float  # Equation 11
+        param_pc: float  # Equation 11
+        # porosity: float  # mm3/mm3, Equation 4
+
+        lambda_: float  # Equation 15
+        matpot: float  # MPa, Equation 15
+        kamin: float  # Equation 15
+        alpha_pl: float  # umol ug^-1 day^-1, Equation 3
+        eact_pl: float  # kJ mol^-1, Equation 3
+        kaff_pl: float  # ug C g^-1, Equation 2
+        rate_pa: float  # day^-1, Equation 5
+        rate_break: float  # day^-1, Equation 6
+        rate_leach: float  # day^-1, Equation 8
+        alpha_lb: float  # umol ug^-1 day^-1, Equation 14
+        eact_lb: float  # kJ mol^-1, Equation 14
+        kaff_lb: float  # ug C g^-1, Equation 13
+        rate_bd: float  # ug C g^-1 day^-1, Equation 16
+        rate_ma: float  # day^-1, Equation 18
+        cue_ref: float  # Equation 21
+        cue_t: float  # °C^-1, Equation 21
+        tae_ref: float  # °C, Equation 21
+        param_pi: float  # Equation 1
+        param_pa: float  # Equation 1
+        param_pb: float  # Equation 19
         # initial values
-        POM0 = Float()  # ug C g^-1
-        LMWC0 = Float()  # ug C g^-1
-        AGG0 = Float()  # ug C g^-1
-        MIC0 = Float()  # ug C g^-1
-        MAOM0 = Float()  # ug C g^-1
+        POM0: float  # ug C g^-1
+        LMWC0: float  # ug C g^-1
+        AGG0: float  # ug C g^-1
+        MIC0: float  # ug C g^-1
+        MAOM0: float  # ug C g^-1
 
-        NLAYR = Int()  # Number of soil layers
-        BD = List()  # Bulk density (g/cm3)
-        DS = List()  # Depth of soil layers (cm)
-        ROOT_SHOOT_K = Float()
+        NLAYR: int  # Number of soil layers
+        BD: list  # Bulk density (g/cm3)
+        DS: list  # Depth of soil layers (cm)
+        ROOT_SHOOT_K: float
 
     class StateVariables(StatesTemplate):
-        POM = Float()  # ug C g^-1
-        LMWC = Float()  # ug C g^-1
-        AGG = Float()  # ug C g^-1
-        MIC = Float()  # ug C g^-1
-        MAOM = Float()  # ug C g^-1
+
+        __slots__ = [
+            "POM",
+            "LMWC",
+            "AGG",
+            "MIC",
+            "MAOM",
+        ]
+
+        POM: float  # ug C g^-1
+        LMWC: float  # ug C g^-1
+        AGG: float  # ug C g^-1
+        MIC: float  # ug C g^-1
+        MAOM: float  # ug C g^-1
 
     class RateVariables(RatesTemplate):
-        dPOM = Float()  # ug C g^-1 day^-1
-        dLMWC = Float()  # ug C g^-1 day^-1
-        dAGG = Float()  # ug C g^-1 day^-1
-        dMIC = Float()  # ug C g^-1 day^-1
-        dMAOM = Float()  # ug C g^-1 day^-1
-        f_MB_atm = Float()  # ug C g^-1 day^-1
+
+        __slots__ = [
+            "dPOM",
+            "dLMWC",
+            "dAGG",
+            "dMIC",
+            "dMAOM",
+            "f_MB_atm",
+        ]
+
+        dPOM: float  # ug C g^-1 day^-1
+        dLMWC: float  # ug C g^-1 day^-1
+        dAGG: float  # ug C g^-1 day^-1
+        dMIC: float  # ug C g^-1 day^-1
+        dMAOM: float  # ug C g^-1 day^-1
+        f_MB_atm: float  # ug C g^-1 day^-1
 
     def initialize(self, day, kiosk, parametervalues):
         self.params = self.Parameters(parametervalues)
@@ -1560,29 +1839,45 @@ class Century_SOC_Indigo(SimulationObject):
     based on environmental conditions.
     """
 
-    AVGDUL = Float(-99.0)
-    in_crop_cycle = Bool(False)
-    npp_dead_in_season = Float()
-    residue_perc_removed = Float()
-    _increments_active = List()
-    _increments_slow = List()
-    _increments_passive = List()
+    __slots__ = [
+        "AVGDUL",
+        "in_crop_cycle",
+        "npp_dead_in_season",
+        "residue_perc_removed",
+        "_increments_active",
+        "_increments_slow",
+        "_increments_passive",
+    ]
+
+    AVGDUL: float
+    in_crop_cycle: bool
+    npp_dead_in_season: float
+    residue_perc_removed: float
+    _increments_active: list
+    _increments_slow: list
+    _increments_passive: list
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.AVGDUL = -99.0
+        self.in_crop_cycle = False
+        self.npp_dead_in_season = 0.0
+        self.residue_perc_removed = 0.0
+        self._increments_active = []
+        self._increments_slow = []
+        self._increments_passive = []
+        super().__init__(day, kiosk, *args, **kwargs)
 
     def _on_manage_residue(self, **kwargs):
         """Apply tillage"""
-        # print everthing inside kwargs
-
         residue_perc = kwargs.get("residue_percent")
         self.residue_perc_removed = residue_perc / 100
 
     def _on_APPLY_TILLAGE(self, **kwargs):
         """Apply tillage"""
-        # print everthing inside kwargs
-
-        mixing = kwargs.get("mixing", 0)
-        depth = kwargs.get("depth", 0)
-        type = kwargs.get("type", 0)
-        day = kwargs.get("day", 0)
+        mixing = kwargs.get("mixing", 0.0)
+        depth = kwargs.get("depth", 0.0)
+        type = kwargs.get("type", 0.0)
+        day = kwargs.get("day", 0.0)
         cultra, cult_factor_key = get_tillage_code_params(
             mixing, depth, type, par="cultra"
         )
@@ -1602,52 +1897,104 @@ class Century_SOC_Indigo(SimulationObject):
         return sum(value_list) / depths[self.params.NLAYR - 1]
 
     class Parameters(ParamTemplate):
-        t1 = Float()  # °C, Equation B1
-        t2 = Float()  # -, Equation B1
-        t3 = Float()  # -, Equation B1
-        t4 = Float()  # -, Equation B1
-        w1 = Float()  # -, Equation B2
-        w2 = Float()  # -, Equation B2
-        c1 = Float()  # -, Equation B3
-        c2 = Float()  # -, Equation B3
-        k_strlitter = Float()  # day^-1
-        k_metlitter = Float()  # day^-1
-        k_active = Float()  # day^-1
-        k_slow = Float()  # day^-1
-        k_passive = Float()  # day^-1
-        LigFrac = Float()  # -
-        input_to_strlitter = Float()  # -
-        strlitter_to_active = Float()  # -
-        metlitter_to_active = Float()  # -
-        slow_to_active = Float()  # -
-        passive_to_active = Float()  # -
-        strlitter_to_slow = Float()  # -
-        active_to_passive = Float()  # -
-        slow_to_passive = Float()  # -
-        ROOT_SHOOT_K = Float()
-        param_clay = Float()  # Equation 11 percent clay and silt
 
-        ACTIVE0 = Float()  # g C m^-2
-        SLOW0 = Float()  # g C m^-2
-        PASSIVE0 = Float()  # g C m^-2
+        __slots__ = [
+            "t1",
+            "t2",
+            "t3",
+            "t4",
+            "w1",
+            "w2",
+            "c1",
+            "c2",
+            "k_strlitter",
+            "k_metlitter",
+            "k_active",
+            "k_slow",
+            "k_passive",
+            "LigFrac",
+            "input_to_strlitter",
+            "strlitter_to_active",
+            "metlitter_to_active",
+            "slow_to_active",
+            "passive_to_active",
+            "strlitter_to_slow",
+            "active_to_passive",
+            "slow_to_passive",
+            "ROOT_SHOOT_K",
+            "param_clay",
+            "ACTIVE0",
+            "SLOW0",
+            "PASSIVE0",
+            "DS",
+            "NLAYR",
+            "DUL",
+        ]
 
-        DS = List()  # Depth of soil layers (cm)
-        NLAYR = Int()  # Number of soil layers
-        DUL = List()  # Lower limit of soil water content (cm3/cm3)
+        t1: float  # °C, Equation B1
+        t2: float  # -, Equation B1
+        t3: float  # -, Equation B1
+        t4: float  # -, Equation B1
+        w1: float  # -, Equation B2
+        w2: float  # -, Equation B2
+        c1: float  # -, Equation B3
+        c2: float  # -, Equation B3
+        k_strlitter: float  # day^-1
+        k_metlitter: float  # day^-1
+        k_active: float  # day^-1
+        k_slow: float  # day^-1
+        k_passive: float  # day^-1
+        LigFrac: float  # -
+        input_to_strlitter: float  # -
+        strlitter_to_active: float  # -
+        metlitter_to_active: float  # -
+        slow_to_active: float  # -
+        passive_to_active: float  # -
+        strlitter_to_slow: float  # -
+        active_to_passive: float  # -
+        slow_to_passive: float  # -
+        ROOT_SHOOT_K: float
+        param_clay: float  # Equation 11 percent clay and silt
+
+        ACTIVE0: float  # g C m^-2
+        SLOW0: float  # g C m^-2
+        PASSIVE0: float  # g C m^-2
+
+        DS: list  # Depth of soil layers (cm)
+        NLAYR: int  # Number of soil layers
+        DUL: list  # Lower limit of soil water content (cm3/cm3)
 
     class StateVariables(StatesTemplate):
-        StrLitter = Float()  # g C m^-2
-        MetLitter = Float()  # g C m^-2
-        SOC_ACTIVE = Float()  # g C m^-2
-        SOC_SLOW = Float()  # g C m^-2
-        SOC_PASSIVE = Float()  # g C m^-2
+
+        __slots__ = [
+            "StrLitter",
+            "MetLitter",
+            "SOC_ACTIVE",
+            "SOC_SLOW",
+            "SOC_PASSIVE",
+        ]
+
+        StrLitter: float  # g C m^-2
+        MetLitter: float  # g C m^-2
+        SOC_ACTIVE: float  # g C m^-2
+        SOC_SLOW: float  # g C m^-2
+        SOC_PASSIVE: float  # g C m^-2
 
     class RateVariables(RatesTemplate):
-        dStrLitter = Float()  # g C m^-2 day^-1
-        dMetLitter = Float()  # g C m^-2 day^-1
-        dACTIVE = Float()  # g C m^-2 day^-1
-        dSLOW = Float()  # g C m^-2 day^-1
-        dPASSIVE = Float()  # g C m^-2 day^-1
+
+        __slots__ = [
+            "dStrLitter",
+            "dMetLitter",
+            "dACTIVE",
+            "dSLOW",
+            "dPASSIVE",
+        ]
+
+        dStrLitter: float  # g C m^-2 day^-1
+        dMetLitter: float  # g C m^-2 day^-1
+        dACTIVE: float  # g C m^-2 day^-1
+        dSLOW: float  # g C m^-2 day^-1
+        dPASSIVE: float  # g C m^-2 day^-1
 
     def initialize(self, day, kiosk, parametervalues):
         # unless this is modified by the signal we remove nothing

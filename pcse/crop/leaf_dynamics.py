@@ -5,9 +5,9 @@ from math import exp
 from collections import deque
 from array import array
 
-from ..traitlets import Float, Int, Instance
+
 from ..decorators import prepare_rates, prepare_states
-from ..util import limit, AfgenTrait
+from ..util import limit, Afgen
 from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 from .. import signals
 
@@ -15,7 +15,7 @@ from .. import signals
 class WOFOST_Leaf_Dynamics(SimulationObject):
     """Leaf dynamics for the WOFOST crop model.
 
-    Implementation of biomass partitioning to leaves, growth and senenscence
+    Implementation of biomass partitioning to leaves, growth and senescence
     of leaves. WOFOST keeps track of the biomass that has been partitioned to
     the leaves for each day (variable `LV`), which is called a leaf class).
     For each leaf class the leaf age (variable 'LVAGE') and specific leaf area
@@ -24,7 +24,7 @@ class WOFOST_Leaf_Dynamics(SimulationObject):
     leaf area is calculated by summing leaf biomass times specific leaf area
     (`LV` * `SLA`).
 
-    Senescense of the leaves can occur as a result of physiological age,
+    Senescence of the leaves can occur as a result of physiological age,
     drought stress or self-shading.
 
     *Simulation parameters* (provide in cropdata dictionary)
@@ -107,44 +107,85 @@ class WOFOST_Leaf_Dynamics(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        RGRLAI = Float(-99.0)
-        SPAN = Float(-99.0)
-        TBASE = Float(-99.0)
-        PERDL = Float(-99.0)
-        TDWI = Float(-99.0)
-        SLATB = AfgenTrait()
-        KDIFTB = AfgenTrait()
+
+        __slots__ = [
+            "RGRLAI",
+            "SPAN",
+            "TBASE",
+            "PERDL",
+            "TDWI",
+            "SLATB",
+            "KDIFTB",
+        ]
+
+        RGRLAI: float
+        SPAN: float
+        TBASE: float
+        PERDL: float
+        TDWI: float
+        SLATB: Afgen
+        KDIFTB: Afgen
 
     class StateVariables(StatesTemplate):
-        LV = Instance(deque)
-        SLA = Instance(deque)
-        LVAGE = Instance(deque)
-        LAIEM = Float(-99.0)
-        LASUM = Float(-99.0)
-        LAIEXP = Float(-99.0)
-        LAIMAX = Float(-99.0)
-        LAI = Float(-99.0)
-        WLV = Float(-99.0)
-        DWLV = Float(-99.0)
-        TWLV = Float(-99.0)
+
+        __slots__ = [
+            "LV",
+            "SLA",
+            "LVAGE",
+            "LAIEM",
+            "LASUM",
+            "LAIEXP",
+            "LAIMAX",
+            "LAI",
+            "WLV",
+            "DWLV",
+            "TWLV",
+        ]
+
+        LV: deque
+        SLA: deque
+        LVAGE: deque
+        LAIEM: float
+        LASUM: float
+        LAIEXP: float
+        LAIMAX: float
+        LAI: float
+        WLV: float
+        DWLV: float
+        TWLV: float
 
     class RateVariables(RatesTemplate):
-        GRLV = Float(-99.0)
-        DSLV1 = Float(-99.0)
-        DSLV2 = Float(-99.0)
-        DSLV3 = Float(-99.0)
-        DSLV = Float(-99.0)
-        DALV = Float(-99.0)
-        DRLV = Float(-99.0)
-        SLAT = Float(-99.0)
-        FYSAGE = Float(-99.0)
-        GLAIEX = Float(-99.0)
-        GLASOL = Float(-99.0)
+
+        __slots__ = [
+            "GRLV",
+            "DSLV1",
+            "DSLV2",
+            "DSLV3",
+            "DSLV",
+            "DALV",
+            "DRLV",
+            "SLAT",
+            "FYSAGE",
+            "GLAIEX",
+            "GLASOL",
+        ]
+
+        GRLV: float
+        DSLV1: float
+        DSLV2: float
+        DSLV3: float
+        DSLV: float
+        DALV: float
+        DRLV: float
+        SLAT: float
+        FYSAGE: float
+        GLAIEX: float
+        GLASOL: float
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """
@@ -366,18 +407,18 @@ class WOFOST_Leaf_Dynamics(SimulationObject):
 
 class CSDM_Leaf_Dynamics(SimulationObject):
     """Leaf dynamics according to the Canopy Structure Dynamic Model.
-    
+
     The only difference is that in the real CSDM the temperature sum is the
     driving variable, while in this case it is simply the day number since \
     the start of the model.
-    
+
     Reference:
     Koetz et al. 2005. Use of coupled canopy structure dynamic and radiative
     transfer models to estimate biophysical canopy characteristics.
     Remote Sensing of Environment. Volume 95, Issue 1, 15 March 2005,
     Pages 115-124. http://dx.doi.org/10.1016/j.rse.2004.11.017
 
-        
+
     For plotting the CSDM model with GNUPLOT the following example code can be used:
 
         td = 150
@@ -391,21 +432,38 @@ class CSDM_Leaf_Dynamics(SimulationObject):
         set xrange [0:200]
         set yrange [-1:8]
         plot CSDM_MIN + CSDM_MAX*(1./(1. + exp(-CSDM_B*(x - CSDM_T1)))**2 - exp(CSDM_A*(x - CSDM_T2)))
-    
+
     """
 
     class Parameters(ParamTemplate):
-        CSDM_MAX = Float()
-        CSDM_MIN = Float()
-        CSDM_A = Float()
-        CSDM_B = Float()
-        CSDM_T1 = Float()
-        CSDM_T2 = Float()
+
+        __slots__ = [
+            "CSDM_MAX",
+            "CSDM_MIN",
+            "CSDM_A",
+            "CSDM_B",
+            "CSDM_T1",
+            "CSDM_T2",
+        ]
+
+        CSDM_MAX: float
+        CSDM_MIN: float
+        CSDM_A: float
+        CSDM_B: float
+        CSDM_T1: float
+        CSDM_T2: float
 
     class StateVariable(StatesTemplate):
-        LAI = Float()
-        DAYNR = Int()
-        LAIMAX = Float()
+
+        __slots__ = [
+            "LAI",
+            "DAYNR",
+            "LAIMAX",
+        ]
+
+        LAI: float
+        DAYNR: int
+        LAIMAX: float
 
     def _CSDM(self, daynr):
         """Returns the LAI value depending on the day number (daynr)
@@ -431,7 +489,7 @@ class CSDM_Leaf_Dynamics(SimulationObject):
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """
@@ -573,50 +631,89 @@ class WOFOST_Leaf_Dynamics_NPK(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        RGRLAI = Float(-99.0)
-        SPAN = Float(-99.0)
-        TBASE = Float(-99.0)
-        PERDL = Float(-99.0)
-        TDWI = Float(-99.0)
-        SLATB = AfgenTrait()
-        KDIFTB = AfgenTrait()
-        RDRLV_NPK = Float(
-            -99.0
-        )  # max. relative death rate of leaves due to nutrient NPK stress
-        NSLA_NPK = Float(
-            -99.0
-        )  # coefficient for the effect of nutrient NPK stress on SLA reduction
-        NLAI_NPK = Float(
-            -99.0
-        )  # coefficient for the reduction due to nutrient NPK stress of the
+
+        __slots__ = [
+            "RGRLAI",
+            "SPAN",
+            "TBASE",
+            "PERDL",
+            "TDWI",
+            "SLATB",
+            "KDIFTB",
+            "RDRLV_NPK",
+            "NSLA_NPK",
+            "NLAI_NPK",
+        ]
+
+        RGRLAI: float
+        SPAN: float
+        TBASE: float
+        PERDL: float
+        TDWI: float
+        SLATB: Afgen
+        KDIFTB: Afgen
+        RDRLV_NPK: float  # max. relative death rate of leaves due to nutrient NPK stress
+        NSLA_NPK: float  # coefficient for the effect of nutrient NPK stress on SLA reduction
+        NLAI_NPK: float  # coefficient for the reduction due to nutrient NPK stress of the
         # LAI increase (during juvenile phase)
 
     class StateVariables(StatesTemplate):
-        LV = Instance(deque)
-        SLA = Instance(deque)
-        LVAGE = Instance(deque)
-        LAIEM = Float(-99.0)
-        LASUM = Float(-99.0)
-        LAIEXP = Float(-99.0)
-        LAIMAX = Float(-99.0)
-        LAI = Float(-99.0)
-        WLV = Float(-99.0)
-        DWLV = Float(-99.0)
-        TWLV = Float(-99.0)
+
+        __slots__ = [
+            "LV",
+            "SLA",
+            "LVAGE",
+            "LAIEM",
+            "LASUM",
+            "LAIEXP",
+            "LAIMAX",
+            "LAI",
+            "WLV",
+            "DWLV",
+            "TWLV",
+        ]
+
+        LV: deque
+        SLA: deque
+        LVAGE: deque
+        LAIEM: float
+        LASUM: float
+        LAIEXP: float
+        LAIMAX: float
+        LAI: float
+        WLV: float
+        DWLV: float
+        TWLV: float
 
     class RateVariables(RatesTemplate):
-        GRLV = Float(-99.0)
-        DSLV1 = Float(-99.0)
-        DSLV2 = Float(-99.0)
-        DSLV3 = Float(-99.0)
-        DSLV4 = Float(-99.0)
-        DSLV = Float(-99.0)
-        DALV = Float(-99.0)
-        DRLV = Float(-99.0)
-        SLAT = Float(-99.0)
-        FYSAGE = Float(-99.0)
-        GLAIEX = Float(-99.0)
-        GLASOL = Float(-99.0)
+
+        __slots__ = [
+            "GRLV",
+            "DSLV1",
+            "DSLV2",
+            "DSLV3",
+            "DSLV4",
+            "DSLV",
+            "DALV",
+            "DRLV",
+            "SLAT",
+            "FYSAGE",
+            "GLAIEX",
+            "GLASOL",
+        ]
+
+        GRLV: float
+        DSLV1: float
+        DSLV2: float
+        DSLV3: float
+        DSLV4: float
+        DSLV: float
+        DALV: float
+        DRLV: float
+        SLAT: float
+        FYSAGE: float
+        GLAIEX: float
+        GLASOL: float
 
     def initialize(self, day, kiosk, cropdata):
         """

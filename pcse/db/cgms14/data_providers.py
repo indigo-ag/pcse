@@ -12,7 +12,6 @@ import datetime as dt
 import os
 import logging
 
-import numpy as np
 import yaml
 from sqlalchemy import MetaData, select, Table, and_
 

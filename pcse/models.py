@@ -151,7 +151,7 @@ class Wofost80_NWLP_FD_beta(Engine):
 
 
 class LINTUL3(Engine):
-    """The LINTUL model (Light INTerception and UtiLisation) is a simple general crop model,
+    """The LINTUL model (Light INTerception and Utilisation) is a simple general crop model,
     which simulates dry matter production as the result of light interception and utilization
     with a constant light use efficiency.
 

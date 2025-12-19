@@ -8,9 +8,9 @@ from math import exp
 
 from ..base import SimulationObject, ParamTemplate, RatesTemplate
 from ..base import StatesWithImplicitRatesTemplate as StateVariables
-from ..traitlets import Float, Instance, Bool
+
 from ..decorators import prepare_rates, prepare_states
-from ..util import limit, AfgenTrait
+from ..util import limit, Afgen
 from ..crop.phenology import DVS_Phenology as Phenology
 from ..exceptions import CarbonBalanceError, NutrientBalanceError
 from .. import signals
@@ -196,140 +196,221 @@ class Lintul3(SimulationObject):
     =========== ================================================= ==== ===============
     """
 
+    __slots__ = [
+        "pheno",
+        "FERTNS",
+        "LAII",
+        "ANLVI",
+        "ANSTI",
+        "ANRTI",
+        "ANSOI",
+    ]
+
     # sub-model components for crop simulation
-    pheno = Instance(SimulationObject)
+    pheno: SimulationObject
     # placeholder for effective N application rate from the _on_APPLY_N event handler.
-    FERTNS = 0.0
+    FERTNS: float
     # placeholder for initial leaf area index
-    LAII = 0.0
+    LAII: float
     # placeholders for initial nitrogen contents for leaves, stems, roots and storage organs
-    ANLVI = 0.0
-    ANSTI = 0.0
-    ANRTI = 0.0
-    ANSOI = 0.0
+    ANLVI: float
+    ANSTI: float
+    ANRTI: float
+    ANSOI: float
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.FERTNS = 0.0
+        self.FLAII = 0.0
+        self.FANLVI = 0.0
+        self.FANSTI = 0.0
+        self.FANRTI = 0.0
+        self.FANSOI = 0.0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     # Parameters, rates and states which are relevant at the main crop simulation level
     class Parameters(ParamTemplate):
-        DVSI = Float(-99.0)  # Development stage at start of the crop
-        DVSDR = Float(
-            -99
-        )  # Development stage above which deathOfLeaves of leaves and roots start.
-        DVSNLT = Float(-99)  # development stage N-limit
-        DVSNT = Float(-99)  # development stage N-threshold
-        FNTRT = Float(
-            -99
-        )  # Nitrogen translocation from roots as a fraction of the total amount of nitrogen translocated from leaves and stem.
-        FRNX = Float(
-            -99
-        )  # Optimal N concentration as the fraction of maximum N concentration.
-        K = Float(-99)  # light extinction coefficient
-        LAICR = Float(
-            -99
-        )  # (oC d)-1, critical LAI above which mutual shading of leaves occurs,
-        LRNR = Float(-99)  #
-        LSNR = Float(-99)  #
-        LUE = Float(-99)  # Light use efficiency.
-        NLAI = Float(
-            -99
-        )  # Coefficient for the effect of N stress on LAI reduction(during juvenile phase)
-        NLUE = Float(
-            -99
-        )  # Extinction coefficient for  Nitrogen distribution down the canopy
-        NMAXSO = Float(-99)  #
-        NPART = Float(
-            -99
-        )  # Coefficient for the effect of N stress on leaf biomass reduction
-        NSLA = Float(-99)  # Coefficient for the effect of N stress on SLA reduction
-        RDRSHM = Float(
-            -99
-        )  # and the maximum relative deathOfLeaves rate of leaves due to shading.
-        RGRL = Float(
-            -99
-        )  # Relative totalGrowthRate rate of LAI at the exponential totalGrowthRate phase
-        RNFLV = Float(-99)  # Residual N concentration in leaves
-        RNFRT = Float(-99)  # Residual N concentration in roots.
-        RNFST = Float(-99)  # Residual N concentration in stem
-        ROOTDM = Float(-99)  # Maximum root depth for a rice crop.
-        RRDMAX = Float(
-            -99
-        )  # Maximum rate of increase in rooting depth (m d-1) for a rice crop.
-        SLAC = Float(-99)  # Specific leaf area constant.
-        TBASE = Float(-99)  # Base temperature for spring wheat crop.
-        TCNT = Float(-99)  # Time coefficient(days) for N translocation.
-        TRANCO = Float(
-            -99
-        )  # Transpiration constant (mm/day) indicating the level of drought tolerance of the wheat crop.
-        TSUMAG = Float(-99)  # Temperature sum for ageing of leaves
-        WCFC = Float(-99)  # Water content at field capacity (0.03 MPa) m3/ m3
-        WCI = Float(-99)  # Initial water content in cm3 of water/(cm3 of soil).
-        WCST = Float(-99)  # Water content at full saturation m3/ m3
-        WCWET = Float(-99)  # Critical Water conten for oxygen stress [m3/m3]
-        WCWP = Float(-99)  # Water content at wilting point (1.5 MPa) m3/ m3
-        WMFAC = Bool(
-            False
-        )  # water management (0 = irrigated up to the field capacity, 1= irrigated up to saturation)
-        RDRNS = Float(-99)  # Relative deathOfLeaves rate of leaves due to N stress.
-        RDRRT = Float(-99)  # Relative deathOfLeaves rate of roots.
-        RDRRT = Float(-99)  # Relative deathOfLeaves rate of roots.
 
-        FLVTB = AfgenTrait()  # Partitioning coefficients
-        FRTTB = AfgenTrait()  # Partitioning coefficients
-        FSOTB = AfgenTrait()  # Partitioning coefficients
-        FSTTB = AfgenTrait()  # Partitioning coefficients
-        NMXLV = (
-            AfgenTrait()
-        )  # Maximum N concentration in the leaves as a function of development stage.
-        RDRT = AfgenTrait()  #
-        SLACF = (
-            AfgenTrait()
-        )  # Leaf area correction function as a function of development stage, DVS.
+        __slots__ = [
+            "DVSI",
+            "DVSDR",
+            "DVSNLT",
+            "DVSNT",
+            "FNTRT",
+            "FRNX",
+            "K",
+            "LAICR",
+            "LRNR",
+            "LSNR",
+            "LUE",
+            "NLAI",
+            "NLUE",
+            "NMAXSO",
+            "NPART",
+            "NSLA",
+            "RDRSHM",
+            "RGRL",
+            "RNFLV",
+            "RNFRT",
+            "RNFST",
+            "ROOTDM",
+            "RRDMAX",
+            "SLAC",
+            "TBASE",
+            "TCNT",
+            "TRANCO",
+            "TSUMAG",
+            "WCFC",
+            "WCI",
+            "WCST",
+            "WCWET",
+            "WCWP",
+            "WMFAC",
+            "RDRNS",
+            "RDRRT",
+            "RDRRT",
+            "FLVTB",
+            "FRTTB",
+            "FSOTB",
+            "FSTTB",
+            "NMXLV",
+            "RDRT",
+            "SLACF",
+            "ROOTDI",
+            "NFRLVI",
+            "NFRRTI",
+            "NFRSTI",
+            "WLVGI",
+            "WSTI",
+            "WRTLI",
+            "WSOI",
+            "RNMIN",
+        ]
 
-        ROOTDI = Float(-99)  # initial rooting depth [m]
-        NFRLVI = Float(-99)  # Initial fraction of N (g N g-1 DM) in leaves.
-        NFRRTI = Float(-99)  # Initial fraction of N (g N g-1 DM) in roots.
-        NFRSTI = Float(-99)  # Initial fraction of N (g N g-1 DM) in stem.
-        WLVGI = Float(-99)  # Initial weight of green leaves
-        WSTI = Float(-99)  # Initial weight of stems
-        WRTLI = Float(-99)  # Initial weight of roots
-        WSOI = Float(-99)  # Initial weight of storage organs
+        DVSI: float  # Development stage at start of the crop
+        DVSDR: float  # Development stage above which deathOfLeaves of leaves and roots start.
+        DVSNLT: float  # development stage N-limit
+        DVSNT: float  # development stage N-threshold
+        FNTRT: float  # Nitrogen translocation from roots as a fraction of the total amount of nitrogen translocated from leaves and stem.
+        FRNX: float  # Optimal N concentration as the fraction of maximum N concentration.
+        K: float  # light extinction coefficient
+        LAICR: float  # (oC d)-1, critical LAI above which mutual shading of leaves occurs,
+        LRNR: float  #
+        LSNR: float  #
+        LUE: float  # Light use efficiency.
+        NLAI: float  # Coefficient for the effect of N stress on LAI reduction(during juvenile phase)
+        NLUE: float  # Extinction coefficient for  Nitrogen distribution down the canopy
+        NMAXSO: float  #
+        NPART: float  # Coefficient for the effect of N stress on leaf biomass reduction
+        NSLA: float  # Coefficient for the effect of N stress on SLA reduction
+        RDRSHM: float  # and the maximum relative deathOfLeaves rate of leaves due to shading.
+        RGRL: float  # Relative totalGrowthRate rate of LAI at the exponential totalGrowthRate phase
+        RNFLV: float  # Residual N concentration in leaves
+        RNFRT: float  # Residual N concentration in roots.
+        RNFST: float  # Residual N concentration in stem
+        ROOTDM: float  # Maximum root depth for a rice crop.
+        RRDMAX: float  # Maximum rate of increase in rooting depth (m d-1) for a rice crop.
+        SLAC: float  # Specific leaf area constant.
+        TBASE: float  # Base temperature for spring wheat crop.
+        TCNT: float  # Time coefficient(days) for N translocation.
+        TRANCO: float  # Transpiration constant (mm/day) indicating the level of drought tolerance of the wheat crop.
+        TSUMAG: float  # Temperature sum for ageing of leaves
+        WCFC: float  # Water content at field capacity (0.03 MPa) m3/ m3
+        WCI: float  # Initial water content in cm3 of water/(cm3 of soil).
+        WCST: float  # Water content at full saturation m3/ m3
+        WCWET: float  # Critical Water conten for oxygen stress [m3/m3]
+        WCWP: float  # Water content at wilting point (1.5 MPa) m3/ m3
+        WMFAC: bool  # water management (0 = irrigated up to the field capacity, 1= irrigated up to saturation)
+        RDRNS: float  # Relative deathOfLeaves rate of leaves due to N stress.
+        RDRRT: float  # Relative deathOfLeaves rate of roots.
+        RDRRT: float  # Relative deathOfLeaves rate of roots.
 
-        RNMIN = Float(-99)  # Rate of soil mineratilation (g N/m2/day
+        FLVTB: Afgen  # Partitioning coefficients
+        FRTTB: Afgen  # Partitioning coefficients
+        FSOTB: Afgen  # Partitioning coefficients
+        FSTTB: Afgen  # Partitioning coefficients
+        NMXLV: Afgen  # Maximum N concentration in the leaves as a function of development stage.
+        RDRT: Afgen  #
+        SLACF: Afgen  # Leaf area correction function as a function of development stage, DVS.
+
+        ROOTDI: float  # initial rooting depth [m]
+        NFRLVI: float  # Initial fraction of N (g N g-1 DM) in leaves.
+        NFRRTI: float  # Initial fraction of N (g N g-1 DM) in roots.
+        NFRSTI: float  # Initial fraction of N (g N g-1 DM) in stem.
+        WLVGI: float  # Initial weight of green leaves
+        WSTI: float  # Initial weight of stems
+        WRTLI: float  # Initial weight of roots
+        WSOI: float  # Initial weight of storage organs
+
+        RNMIN: float  # Rate of soil mineratilation (g N/m2/day
 
     class Lintul3States(StateVariables):
-        LAI = Float(-99.0)  # leaf area index
-        ANLV = Float(-99.0)  # Actual N content in leaves
-        ANST = Float(-99.0)  # Actual N content in stem
-        ANRT = Float(-99.0)  # Actual N content in root
-        ANSO = Float(-99.0)  # Actual N content in storage organs
-        NUPTT = Float(-99.0)  # Total uptake of N over time (g N m-2)
-        NLOSSL = Float(-99.0)  # total N loss by leaves
-        NLOSSR = Float(-99.0)  # total N loss by roots
-        WLVG = Float(-99.0)  # Weight of green leaves
-        WLVD = Float(-99.0)  # Weight of dead leaves
-        WST = Float(-99.0)  # Weight of stem
-        WSO = Float(-99.0)  # Weight of storage organs
-        WRT = Float(-99.0)  # Weight of roots
-        ROOTD = Float(-99.0)  # Actual root depth [m]
-        TGROWTH = Float(-99.0)  # Total growth
-        WDRT = Float(-99.0)  # weight of dead roots
-        CUMPAR = Float(-99.0)
-        TNSOIL = Float(-99.0)  # Amount of inorganic N available for crop uptake.
-        TAGBM = Float(-99.0)  # Total aboveground biomass [g /m-2)
-        NNI = Float(-99)  # Nitrogen nutrition index
+
+        __slots__ = [
+            "LAI",
+            "ANLV",
+            "ANST",
+            "ANRT",
+            "ANSO",
+            "NUPTT",
+            "NLOSSL",
+            "NLOSSR",
+            "WLVG",
+            "WLVD",
+            "WST",
+            "WSO",
+            "WRT",
+            "ROOTD",
+            "TGROWTH",
+            "WDRT",
+            "CUMPAR",
+            "TNSOIL",
+            "TAGBM",
+            "NNI",
+        ]
+
+        LAI: float  # leaf area index
+        ANLV: float  # Actual N content in leaves
+        ANST: float  # Actual N content in stem
+        ANRT: float  # Actual N content in root
+        ANSO: float  # Actual N content in storage organs
+        NUPTT: float  # Total uptake of N over time (g N m-2)
+        NLOSSL: float  # total N loss by leaves
+        NLOSSR: float  # total N loss by roots
+        WLVG: float  # Weight of green leaves
+        WLVD: float  # Weight of dead leaves
+        WST: float  # Weight of stem
+        WSO: float  # Weight of storage organs
+        WRT: float  # Weight of roots
+        ROOTD: float  # Actual root depth [m]
+        TGROWTH: float  # Total growth
+        WDRT: float  # weight of dead roots
+        CUMPAR: float
+        TNSOIL: float  # Amount of inorganic N available for crop uptake.
+        TAGBM: float  # Total aboveground biomass [g /m-2)
+        NNI: float  # Nitrogen nutrition index
 
     # These are some rates which are not directly connected to a state (PEVAP, TRAN) of which must be published
     # (RROOTD) for the water balance module. Therefore, we explicitly define them here.
     class Lintul3Rates(RatesTemplate):
-        PEVAP = Float()
-        PTRAN = Float()
-        TRAN = Float()
-        TRANRF = Float()
-        RROOTD = Float()
+
+        __slots__ = [
+            "PEVAP",
+            "PTRAN",
+            "TRAN",
+            "TRANRF",
+            "RROOTD",
+        ]
+
+        PEVAP: float
+        PTRAN: float
+        TRAN: float
+        TRANRF: float
+        RROOTD: float
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """
@@ -407,14 +488,14 @@ class Lintul3(SimulationObject):
 
         """
         Crop phenology
-        
-        Crop development, i.e. the order and rate of appearance of vegetative and 
-        reproductive organs, is defined in terms of phenological developmental stage 
-        (DVS) as a function of heat sum, which is the cumulative daily effective 
-        temperature. Daily effective temperature is the average temperature above a 
+
+        Crop development, i.e. the order and rate of appearance of vegetative and
+        reproductive organs, is defined in terms of phenological developmental stage
+        (DVS) as a function of heat sum, which is the cumulative daily effective
+        temperature. Daily effective temperature is the average temperature above a
         crop-specific base temperature (for rice 8C). Some crop or crop varieties are
-        photoperiodsensitive, i.e. flowering depends on the length of the light period 
-        during the day in addition to the temperature during the vegetative stage. 
+        photoperiodsensitive, i.e. flowering depends on the length of the light period
+        during the day in addition to the temperature during the vegetative stage.
         """
         self.pheno.calc_rates(day, drv)
         crop_stage = self.pheno.get_variable("STAGE")

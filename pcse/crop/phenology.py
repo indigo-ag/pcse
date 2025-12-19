@@ -5,20 +5,19 @@
 
 Classes defined here:
 - DVS_Phenology: Implements the algorithms for phenologic development
-- Vernalisation: 
+- Vernalisation:
 """
 import datetime
 
-from ..traitlets import Float, Int, Instance, Enum, Bool
+
 from ..decorators import prepare_rates, prepare_states
 
-from ..util import limit, daylength, AfgenTrait
+from ..util import limit, daylength, Afgen
 from ..base import (
     ParamTemplate,
     StatesTemplate,
     RatesTemplate,
     SimulationObject,
-    VariableKiosk,
 )
 from .. import signals
 from .. import exceptions as exc
@@ -103,31 +102,55 @@ class Vernalisation(SimulationObject):
     ============ =============================== ========================== =====
     """
 
+    __slots__ = ["_force_vernalisation"]
+
     # Helper variable to indicate that DVS > VERNDVS
-    _force_vernalisation = Bool(False)
+    _force_vernalisation: bool
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self._force_vernalisation = False
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        VERNSAT = Float(-99.0)  # Saturated vernalisation requirements
-        VERNBASE = Float(-99.0)  # Base vernalisation requirements
-        VERNRTB = AfgenTrait()  # Vernalisation temperature response
-        VERNDVS = Float(-99.0)  # Critical DVS for vernalisation fulfillment
+
+        __slots__ = [
+            "VERNSAT",
+            "VERNBASE",
+            "VERNRTB",
+            "VERNDVS",
+        ]
+
+        VERNSAT: float  # Saturated vernalisation requirements
+        VERNBASE: float  # Base vernalisation requirements
+        VERNRTB: Afgen  # Vernalisation temperature response
+        VERNDVS: float  # Critical DVS for vernalisation fulfillment
 
     class RateVariables(RatesTemplate):
-        VERNR = Float(-99.0)  # Rate of vernalisation
-        VERNFAC = Float(-99.0)  # Red. factor for phenol. devel.
+
+        __slots__ = ["VERNR", "VERNFAC"]
+
+        VERNR: float  # Rate of vernalisation
+        VERNFAC: float  # Red. factor for phenol. devel.
 
     class StateVariables(StatesTemplate):
-        VERN = Float(-99.0)  # Vernalisation state
-        DOV = Instance(datetime.date)  # Day when vernalisation
+
+        __slots__ = [
+            "VERN",
+            "DOV",
+            "ISVERNALISED",
+        ]
+
+        VERN: float  # Vernalisation state
+        DOV: datetime.date  # Day when vernalisation
         # requirements are fulfilled
-        ISVERNALISED = Bool()  # True when VERNSAT is reached and
+        ISVERNALISED: bool  # True when VERNSAT is reached and
         # Forced when DVS > VERNDVS
 
     # ---------------------------------------------------------------------------
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param cropdata: dictionary with WOFOST cropdata key/value pairs
 
         """
@@ -284,49 +307,114 @@ class DVS_Phenology(SimulationObject):
 
     """
 
+    __slots__ = ["vernalisation"]
+
     # Placeholder for start/stop types and vernalisation module
-    vernalisation = Instance(Vernalisation)
+    vernalisation: Vernalisation
 
     class Parameters(ParamTemplate):
-        TSUMEM = Float(-99.0)  # Temp. sum for emergence
-        TBASEM = Float(-99.0)  # Base temp. for emergence
-        TEFFMX = Float(-99.0)  # Max eff temperature for emergence
-        TSUM1 = Float(-99.0)  # Temperature sum emergence to anthesis
-        TSUM2 = Float(-99.0)  # Temperature sum anthesis to maturity
-        IDSL = Float(-99.0)  # Switch for photoperiod (1) and vernalisation (2)
-        DLO = Float(-99.0)  # Optimal day length for phenol. development
-        DLC = Float(-99.0)  # Critical day length for phenol. development
-        DVSI = Float(-99.0)  # Initial development stage
-        DVSEND = Float(-99.0)  # Final development stage
-        DTSMTB = AfgenTrait()  # Temperature response function for phenol.
-        # development.
-        CROP_START_TYPE = Enum(["sowing", "emergence"])
-        CROP_END_TYPE = Enum(["maturity", "harvest", "earliest"])
+
+        __slots__ = [
+            "TSUMEM",
+            "TBASEM",
+            "TEFFMX",
+            "TSUM1",
+            "TSUM2",
+            "IDSL",
+            "DLO",
+            "DLC",
+            "DVSI",
+            "DVSEND",
+            "DTSMTB",
+            "CROP_START_TYPE",
+            "CROP_END_TYPE",
+        ]
+
+        TSUMEM: float  # Temp. sum for emergence
+        TBASEM: float  # Base temp. for emergence
+        TEFFMX: float  # Max eff temperature for emergence
+        TSUM1: float  # Temperature sum emergence to anthesis
+        TSUM2: float  # Temperature sum anthesis to maturity
+        IDSL: float  # Switch for photoperiod (1) and vernalisation (2)
+        DLO: float  # Optimal day length for phenol. development
+        DLC: float  # Critical day length for phenol. development
+        DVSI: float  # Initial development stage
+        DVSEND: float  # Final development stage
+        DTSMTB: Afgen  # Temperature response function for phenol development.
+        #: ["sowing", "emergence"]
+        CROP_START_TYPE: str
+        #: ["maturity", "harvest", "earliest"]
+        CROP_END_TYPE: str
+
+        def __setattr__(self, name, value):
+            # These attributes used the Enum traitlet to limit the possible values
+            # We mimic that behavior here
+            attr_expected_values = {
+                "CROP_START_TYPE": ["sowing", "emergence"],
+                "CROP_END_TYPE": ["maturity", "harvest", "earliest"],
+            }
+
+            if name in attr_expected_values:
+                expected_values = attr_expected_values[name]
+                if value not in expected_values:
+                    raise ValueError(f"{name} must be one of {expected_values}")
+
+            return super().__setattr__(name, value)
 
     # -------------------------------------------------------------------------------
     class RateVariables(RatesTemplate):
-        DTSUME = Float(-99.0)  # increase in temperature sum for emergence
-        DTSUM = Float(-99.0)  # increase in temperature sum
-        DVR = Float(-99.0)  # development rate
+
+        __slots__ = [
+            "DTSUME",
+            "DTSUM",
+            "DVR",
+        ]
+
+        DTSUME: float  # increase in temperature sum for emergence
+        DTSUM: float  # increase in temperature sum
+        DVR: float  # development rate
 
     # -------------------------------------------------------------------------------
     class StateVariables(StatesTemplate):
-        DVS = Float(-99.0)  # Development stage
-        TSUM = Float(-99.0)  # Temperature sum state
-        TSUME = Float(-99.0)  # Temperature sum for emergence state
+
+        __slots__ = [
+            "DVS",
+            "TSUM",
+            "TSUME",
+            "DOS",
+            "DOE",
+            "DOA",
+            "DOM",
+            "DOH",
+            "STAGE",
+        ]
+
+        DVS: float  # Development stage
+        TSUM: float  # Temperature sum state
+        TSUME: float  # Temperature sum for emergence state
         # States which register phenological events
-        DOS = Instance(datetime.date)  # Day of sowing
-        DOE = Instance(datetime.date)  # Day of emergence
-        DOA = Instance(datetime.date)  # Day of anthesis
-        DOM = Instance(datetime.date)  # Day of maturity
-        DOH = Instance(datetime.date)  # Day of harvest
-        STAGE = Enum(["emerging", "vegetative", "reproductive", "mature"])
+        DOS: datetime.date | None  # Day of sowing
+        DOE: datetime.date | None  # Day of emergence
+        DOA: datetime.date | None  # Day of anthesis
+        DOM: datetime.date | None  # Day of maturity
+        DOH: datetime.date | None  # Day of harvest
+        #: ["emerging", "vegetative", "reproductive", "mature"]
+        STAGE: str
+
+        def __setattr__(self, name, value):
+            # This attribute used the Enum traitlet to limit the possible values
+            # We mimic that behavior here
+            expected_stages = ["emerging", "vegetative", "reproductive", "mature"]
+            if name == "STAGE" and value not in expected_stages:
+                raise ValueError(f"{name} must be one of {expected_stages}")
+
+            return super().__setattr__(name, value)
 
     # ---------------------------------------------------------------------------
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """

@@ -7,9 +7,8 @@ from __future__ import print_function
 from math import sqrt, exp, cos, pi
 from collections import deque
 
-from ..traitlets import Instance, Float
 
-from ..util import limit, astro, doy, AfgenTrait
+from ..util import astro, doy, Afgen
 from ..base import ParamTemplate, SimulationObject, RatesTemplate
 
 try:
@@ -199,17 +198,31 @@ class WOFOST_Assimilation(SimulationObject):
     =======  =================================== =================  ============
     """
 
-    _TMNSAV = Instance(deque)
+    __slots__ = ["_TMNSAV"]
+
+    _TMNSAV: deque
 
     class Parameters(ParamTemplate):
-        AMAXTB = AfgenTrait()
-        EFFTB = AfgenTrait()
-        KDIFTB = AfgenTrait()
-        TMPFTB = AfgenTrait()
-        TMNFTB = AfgenTrait()
+
+        __slots__ = [
+            "AMAXTB",
+            "EFFTB",
+            "KDIFTB",
+            "TMPFTB",
+            "TMNFTB",
+        ]
+
+        AMAXTB: Afgen
+        EFFTB: Afgen
+        KDIFTB: Afgen
+        TMPFTB: Afgen
+        TMNFTB: Afgen
 
     class RateVariables(RatesTemplate):
-        PGASS = Float(-99.0)
+
+        __slots__ = ["PGASS"]
+
+        PGASS: float
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -354,17 +367,31 @@ class WOFOST_Assimilation2(SimulationObject):
     =======  =================================== =================  ============
     """
 
-    _TMNSAV = Instance(deque)
+    __slots__ = ["_TMNSAV"]
+
+    _TMNSAV: deque
 
     class Parameters(ParamTemplate):
-        AMAXTB = AfgenTrait()
-        EFFTB = AfgenTrait()
-        KDIFTB = AfgenTrait()
-        TMPFTB = AfgenTrait()
-        TMNFTB = AfgenTrait()
-        CO2AMAXTB = AfgenTrait()
-        CO2EFFTB = AfgenTrait()
-        CO2 = Float(-99.0)
+
+        __slots__ = [
+            "AMAXTB",
+            "EFFTB",
+            "KDIFTB",
+            "TMPFTB",
+            "TMNFTB",
+            "CO2AMAXTB",
+            "CO2EFFTB",
+            "CO2",
+        ]
+
+        AMAXTB: Afgen
+        EFFTB: Afgen
+        KDIFTB: Afgen
+        TMPFTB: Afgen
+        TMNFTB: Afgen
+        CO2AMAXTB: Afgen
+        CO2EFFTB: Afgen
+        CO2: float
 
     def initialize(self, day, kiosk, cropdata):
         """

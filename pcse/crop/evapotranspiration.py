@@ -5,22 +5,22 @@ from math import exp
 
 import array
 
-from ..traitlets import Float, Int, Instance, Bool, List
+
 from ..decorators import prepare_rates, prepare_states
 from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
-from ..util import limit, merge_dict, AfgenTrait
+from ..util import limit, Afgen
 
 
 def SWEAF(ET0, DEPNR):
     """Calculates the Soil Water Easily Available Fraction (SWEAF).
 
-    :param ET0: The evapotranpiration from a reference crop.
+    :param ET0: The evapotranspiration from a reference crop.
     :param DEPNR: The crop dependency number.
 
     The fraction of easily available soil water between field capacity and
     wilting point is a function of the potential evapotranspiration rate
     (for a closed canopy) in cm/day, ET0, and the crop group number, DEPNR
-    (from 1 (=drought-sensitive) to 5 (=drought-resistent)). The function
+    (from 1 (=drought-sensitive) to 5 (=drought-resistant)). The function
     SWEAF describes this relationship given in tabular form by Doorenbos &
     Kassam (1979) and by Van Keulen & Wolf (1986; p.108, table 20)
     http://edepot.wur.nl/168025.
@@ -109,42 +109,79 @@ class Evapotranspiration(SimulationObject):
     =======  =================================== =================  ============
     """
 
+    __slots__ = ["_IDWST", "_IDOST"]
+
     # helper variable for Counting total days with water and oxygen
     # stress (IDWST, IDOST)
-    _IDWST = Int(0)
-    _IDOST = Int(0)
+    _IDWST: int
+    _IDOST: int
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self._IDWST = 0
+        self._IDOST = 0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        CFET = Float(-99.0)
-        DEPNR = Float(-99.0)
-        KDIFTB = AfgenTrait()
-        IAIRDU = Float(-99.0)
-        IOX = Float(-99.0)
-        CRAIRC = Float(-99.0)
-        SM0 = Float(-99.0)
-        SMW = Float(-99.0)
-        SMFCF = Float(-99.0)
+
+        __slots__ = [
+            "CFET",
+            "DEPNR",
+            "KDIFTB",
+            "IAIRDU",
+            "IOX",
+            "CRAIRC",
+            "SM0",
+            "SMW",
+            "SMFCF",
+        ]
+
+        CFET: float
+        DEPNR: float
+        KDIFTB: Afgen
+        IAIRDU: float
+        IOX: float
+        CRAIRC: float
+        SM0: float
+        SMW: float
+        SMFCF: float
 
     class RateVariables(RatesTemplate):
-        EVWMX = Float(-99.0)
-        EVSMX = Float(-99.0)
-        TRAMX = Float(-99.0)
-        TRA = Float(-99.0)
-        IDOS = Bool(False)
-        IDWS = Bool(False)
-        RFWS = Float(-99.0)
-        RFOS = Float(-99.0)
-        RFTRA = Float(-99.0)
-        ET0_CROP = Float(-99.0)
+
+        __slots__ = [
+            "EVWMX",
+            "EVSMX",
+            "TRAMX",
+            "TRA",
+            "IDOS",
+            "IDWS",
+            "RFWS",
+            "RFOS",
+            "RFTRA",
+            "ET0_CROP",
+        ]
+
+        EVWMX: float
+        EVSMX: float
+        TRAMX: float
+        TRA: float
+        IDOS: bool
+        IDWS: bool
+        RFWS: float
+        RFOS: float
+        RFTRA: float
+        ET0_CROP: float
 
     class StateVariables(StatesTemplate):
-        IDOST = Int(-99)
-        IDWST = Int(-99)
+
+        __slots__ = ["IDOST", "IDWST"]
+
+        IDOST: int
+        IDWST: int
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """
@@ -255,40 +292,77 @@ class EvapotranspirationLayered(SimulationObject):
     =======  =================================== =================  ============
     """
 
+    __slots__ = [
+        "_DSOS",
+        "_IDWST",
+        "_IDOST",
+    ]
+
     # helper variable for Counting days since oxygen stress (DSOS)
     # and total days with water and oxygen stress (IDWST, IDOST)
-    _DSOS = Int(-99)
-    _IDWST = Int(-99)
-    _IDOST = Int(-99)
+    _DSOS: int
+    _IDWST: int
+    _IDOST: int
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self._DSOS = -99
+        self._IDWST = -99
+        self._IDOST = -99
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        CFET = Float(-99.0)
-        DEPNR = Float(-99.0)
-        KDIFTB = AfgenTrait()
-        IAIRDU = Float(-99.0)
-        IOX = Float(-99.0)
-        CRAIRC = Float(-99.0)
-        SM0 = Float(-99.0)
-        SMW = Float(-99.0)
-        SMFCF = Float(-99.0)
+
+        __slots__ = [
+            "CFET",
+            "DEPNR",
+            "KDIFTB",
+            "IAIRDU",
+            "IOX",
+            "CRAIRC",
+            "SM0",
+            "SMW",
+            "SMFCF",
+        ]
+
+        CFET: float
+        DEPNR: float
+        KDIFTB: Afgen
+        IAIRDU: float
+        IOX: float
+        CRAIRC: float
+        SM0: float
+        SMW: float
+        SMFCF: float
 
     class RateVariables(RatesTemplate):
-        EVWMX = Float(-99.0)
-        EVSMX = Float(-99.0)
-        TRAMX = Float(-99.0)
-        TRA = Float(-99.0)
-        # TRALY = Instance(array.array)
-        IDOS = Bool(False)
-        IDWS = Bool(False)
+
+        __slots__ = [
+            "EVWMX",
+            "EVSMX",
+            "TRAMX",
+            "TRA",
+            "IDOS",
+            "IDWS",
+        ]
+
+        EVWMX: float
+        EVSMX: float
+        TRAMX: float
+        TRA: float
+        IDOS: bool
+        IDWS: bool
 
     class StateVariables(StatesTemplate):
-        IDOST = Int(-99)
-        IDWST = Int(-99)
+
+        __slots__ = ["IDOST", "IDWST"]
+
+        IDOST: int
+        IDWST: int
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """
@@ -315,13 +389,12 @@ class EvapotranspirationLayered(SimulationObject):
     def __call__(self, day, drv):
         p = self.params
         r = self.rates
-        s = self.states
 
         DVS = self.kiosk["DVS"]
         LAI = self.kiosk["LAI"]
         NSL = self.kiosk.get("NSL", 0)
         SM = self.kiosk["SM"]
-        SOIL_LAYERS = self.kiosk.get("SOIL_LAYERS", Instance(list))
+        SOIL_LAYERS = self.kiosk.get("SOIL_LAYERS", [])
 
         KGLOB = 0.75 * p.KDIFTB(DVS)
 
@@ -506,56 +579,101 @@ class EvapotranspirationCO2(SimulationObject):
     =======  =================================== =================  ============
     """
 
-    def take_avg(self, values, depths):
-        """Calculate average value of soil properties"""
-        value_list = [
-            values[L] * (depths[L] - depths[L - 1]) for L in range(1, self.params.NLAYR)
-        ]
-        value_list.append(values[0] * depths[0])
-        return sum(value_list) / depths[self.params.NLAYR - 1]
+    __slots__ = [
+        "_IDWST",
+        "_IDOST",
+        "AVGDUL",
+        "AVGLL",
+        "AVGBD",
+        "AVGPROS",
+    ]
 
     # helper variable for counting total days with water and oxygen
     # stress (IDWST, IDOST)
-    _IDWST = Int(0)
-    _IDOST = Int(0)
-    AVGDUL = Float(-99.0)
-    AVGLL = Float(-99.0)
-    AVGBD = Float(-99.0)
-    AVGPROS = Float(-99.0)
+    _IDWST: int
+    _IDOST: int
+    AVGDUL: float
+    AVGLL: float
+    AVGBD: float
+    AVGPROS: float
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self._IDWST = 0
+        self._IDOST = 0
+        self.AVGDUL = -99.0
+        self.AVGLL = -99.0
+        self.AVGBD = -99.0
+        self.AVGPROS = -99.0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        CFET = Float(-99.0)
-        DEPNR = Float(-99.0)
-        KDIFTB = AfgenTrait()
-        IAIRDU = Float(-99.0)
-        IOX = Float(-99.0)
-        CRAIRC = Float(-99.0)
 
-        CO2 = Float(-99.0)
-        CO2TRATB = AfgenTrait()
+        __slots__ = [
+            "CFET",
+            "DEPNR",
+            "KDIFTB",
+            "IAIRDU",
+            "IOX",
+            "CRAIRC",
+            "CO2",
+            "CO2TRATB",
+            "NLAYR",
+            "BD",
+            "DS",
+            "LL",
+            "DUL",
+            "DLAYR",
+        ]
 
-        NLAYR = Int()  # Number of soil layers
-        BD = List()  # Bulk density (g/cm3)
-        DS = List()  # Depth of soil layers (cm)
-        LL = List()  # Lower limit of soil water content (cm3/cm3)
-        DUL = List()  # Lower limit of soil water content (cm3/cm3)
-        DLAYR = List()  # Thickness of soil layers (cm)
+        CFET: float
+        DEPNR: float
+        KDIFTB: Afgen
+        IAIRDU: float
+        IOX: float
+        CRAIRC: float
+
+        CO2: float
+        CO2TRATB: Afgen
+
+        NLAYR: int  # Number of soil layers
+        BD: list  # Bulk density (g/cm3)
+        DS: list  # Depth of soil layers (cm)
+        LL: list  # Lower limit of soil water content (cm3/cm3)
+        DUL: list  # Lower limit of soil water content (cm3/cm3)
+        DLAYR: list  # Thickness of soil layers (cm)
 
     class RateVariables(RatesTemplate):
-        EVWMX = Float(-99.0)
-        EVSMX = Float(-99.0)
-        TRAMX = Float(-99.0)
-        TRA = Float(-99.0)
-        TRALY = Instance(array.array)
-        IDOS = Bool(False)
-        IDWS = Bool(False)
-        RFWS = Float(-99.0)
-        RFOS = Float(-99.0)
-        RFTRA = Float(-99.0)
+
+        __slots__ = [
+            "EVWMX",
+            "EVSMX",
+            "TRAMX",
+            "TRA",
+            "TRALY",
+            "IDOS",
+            "IDWS",
+            "RFWS",
+            "RFOS",
+            "RFTRA",
+        ]
+
+        EVWMX: float
+        EVSMX: float
+        TRAMX: float
+        TRA: float
+        TRALY: array.array
+        IDOS: bool
+        IDWS: bool
+        RFWS: float
+        RFOS: float
+        RFTRA: float
 
     class StateVariables(StatesTemplate):
-        IDOST = Int(-99)
-        IDWST = Int(-99)
+
+        __slots__ = ["IDOST", "IDWST"]
+
+        IDOST: int
+        IDWST: int
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -579,6 +697,14 @@ class EvapotranspirationCO2(SimulationObject):
         self.AVGPROS = (
             1 - self.AVGBD / 2.65
         )  # Average porosity (-) which is 2.65 g/cm3 for soil
+
+    def take_avg(self, values, depths):
+        """Calculate average value of soil properties"""
+        value_list = [
+            values[L] * (depths[L] - depths[L - 1]) for L in range(1, self.params.NLAYR)
+        ]
+        value_list.append(values[0] * depths[0])
+        return sum(value_list) / depths[self.params.NLAYR - 1]
 
     @prepare_rates
     def __call__(self, day, drv):
@@ -690,20 +816,35 @@ class Simple_Evapotranspiration(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        SMFCF = Float(-99.0)
-        CFET = Float(-99.0)
-        DEPNR = Float(-99.0)
+
+        __slots__ = [
+            "SMFCF",
+            "CFET",
+            "DEPNR",
+        ]
+
+        SMFCF: float
+        CFET: float
+        DEPNR: float
 
     class RateVariables(RatesTemplate):
-        EVWMX = Float(-99.0)
-        EVSMX = Float(-99.0)
-        TRAMX = Float(-99.0)
-        TRA = Float(-99.0)
+
+        __slots__ = [
+            "EVWMX",
+            "EVSMX",
+            "TRAMX",
+            "TRA",
+        ]
+
+        EVWMX: float
+        EVSMX: float
+        TRAMX: float
+        TRA: float
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param soildata: dictionary with WOFOST soildata key/value pairs
         """
 

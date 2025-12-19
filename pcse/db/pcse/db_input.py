@@ -2,7 +2,7 @@
 # Copyright (c) 2004-2014 Alterra, Wageningen-UR
 # Allard de Wit (allard.dewit@wur.nl), April 2014
 """Routines for retrieving data from the PCSE demo database.
- 
+
 Implements the following functions:
     - fetch_cropdata()
     - fetch_sitedata()
@@ -20,14 +20,12 @@ Implements the following exceptions:
     - SoildataError
     - TimerdataError
 """
-import sys, os
-import datetime as dt
 import logging
 import copy
 import array
 from math import log10
 
-from sqlalchemy import create_engine, MetaData, select, Table, and_, join
+from sqlalchemy import MetaData, select, Table, and_
 import yaml
 
 from ...util import wind10to2, Afgen, check_date

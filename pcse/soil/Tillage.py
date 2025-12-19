@@ -1,17 +1,10 @@
-from math import sqrt, pi, exp, log, cos
-import numpy as np
 import math
-from ..traitlets import Float, Int, Instance, Enum, Unicode, Bool, List
+
 from ..decorators import prepare_rates, prepare_states
-from ..util import limit, Afgen, merge_dict, AfgenTrait
+from ..util import limit
 from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 from .. import signals
-from .. import exceptions as exc
-from .snowmaus import SnowMAUS
-from array import array
 from ..db.tillage_parameters import (
-    cult_factor_ranges,
-    cultivation_methods,
     get_tillage_code_params,
 )
 
@@ -19,33 +12,49 @@ from ..db.tillage_parameters import (
 class TillageSignal(SimulationObject):
     """Handles tillage operations as signals in PCSE."""
 
-    cfitb = Float()  # Cultivation fit parameter B
-    XEFCLTE = Float()  # Cultivation effect factor
+    __slots__ = ["cfitb", "XEFCLTE"]
+
+    cfitb: float  # Cultivation fit parameter B
+    XEFCLTE: float  # Cultivation effect factor
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.cfitb = 0.0
+        self.XEFCLTE = 0.0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     def _on_APPLY_TILLAGE(self, **kwargs):
         """Apply tillage"""
-        # print everthing inside kwargs
+        # print everything inside kwargs
 
-        mixing = kwargs.get("mixing", 0)
-        depth = kwargs.get("depth", 0)
-        type = kwargs.get("type", 0)
-        day = kwargs.get("day", 0)
+        mixing = kwargs.get("mixing", 0.0)
+        depth = kwargs.get("depth", 0.0)
+        type = kwargs.get("type", 0.0)
+        day = kwargs.get("day", 0.0)
 
         self._apply_tillage_effect(type, mixing, depth, day)
 
     class Parameters(ParamTemplate):
-        XEFCLTEF = Float()  # Cultivation effect factor
-        MAXCLTEF = Float()  # Maximum cultivation effect
-        CFITA = Float()  # Cultivation fit parameter A
-        TEFF = List()
+
+        __slots__ = ["XEFCLTEF", "MAXCLTEF", "CFITA", "TEFF"]
+
+        XEFCLTEF: float  # Cultivation effect factor
+        MAXCLTEF: float  # Maximum cultivation effect
+        CFITA: float  # Cultivation fit parameter A
+        TEFF: list
 
     class StateVariables(StatesTemplate):
-        CLTFAC = List()  # Cultivation factor for each soil layer
-        CULTCNT = Int()
-        # CULTRA = List()
+
+        __slots__ = ["CLTFAC", "CULTCNT"]
+
+        CLTFAC: list  # Cultivation factor for each soil layer
+        CULTCNT: int
+        # CULTRA: list = []
 
     class RateVariables(RatesTemplate):
-        bgdefac = Float()  # g C m^-2 day^-1
+
+        __slots__ = ["bgdefac"]
+
+        bgdefac: float  # g C m^-2 day^-1
 
     def initialize(self, day, kiosk, parvalues):
         """

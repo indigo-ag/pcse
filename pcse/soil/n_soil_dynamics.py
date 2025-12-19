@@ -3,7 +3,6 @@
 # Allard de Wit and Iwan Supit (allard.dewit@wur.nl), July 2015
 # Approach based on LINTUL N made by Joost Wolf
 
-from pcse.traitlets import Float
 from pcse.decorators import prepare_rates, prepare_states
 from pcse.base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 from pcse import signals
@@ -16,7 +15,10 @@ class N_PotentialProduction(SimulationObject):
     """
 
     class StateVariables(StatesTemplate):
-        NAVAIL = Float(-99.0)  # total mineral N from soil and fertiliser  kg N ha-1
+
+        __slots__ = ["NAVAIL"]
+
+        NAVAIL: float  # total mineral N from soil and fertiliser  kg N ha-1
 
     def initialize(self, day, kiosk, parvalues):
         """
@@ -106,28 +108,44 @@ class N_Soil_Dynamics(SimulationObject):
     =========  =================================== ===================  ==============
     """
 
-    NSOILI = Float(-99.0)  # initial soil N amount
+    __slots__ = ["NSOILI", "_FERT_N_SUPPLY"]
+
+    NSOILI: float  # initial soil N amount
     # placeholders for FERT_N/P/K_SUPPLY
-    _FERT_N_SUPPLY = Float(0.0)
+    _FERT_N_SUPPLY: float
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.NSOILI = -99.0
+        self._FERT_N_SUPPLY = 0.0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        NSOILBASE = Float(
-            -99.0
-        )  # total mineral soil N available at start of growth period [kg N/ha]
-        NSOILBASE_FR = Float(
-            -99.0
-        )  # fraction of soil mineral N coming available per day [day-1]
-        BG_N_SUPPLY = Float()  # Background rates of N/P/K supply [kg/ha/day]
+
+        __slots__ = ["NSOILBASE", "NSOILBASE_FR", "BG_N_SUPPLY"]
+
+        NSOILBASE: float  # total mineral soil N available at start of growth period [kg N/ha]
+        NSOILBASE_FR: float  # fraction of soil mineral N coming available per day [day-1]
+        BG_N_SUPPLY: float  # Background rates of N/P/K supply [kg/ha/day]
 
     class StateVariables(StatesTemplate):
-        NSOIL = Float(-99.0)  # mineral N available from soil for crop    kg N ha-1
-        NAVAIL = Float(-99.0)  # total mineral N from soil and fertiliser  kg N ha-1
+
+        __slots__ = ["NSOIL", "NAVAIL"]
+
+        NSOIL: float  # mineral N available from soil for crop    kg N ha-1
+        NAVAIL: float  # total mineral N from soil and fertiliser  kg N ha-1
 
     class RateVariables(RatesTemplate):
-        RNSOIL = Float(-99.0)
-        RNAVAIL = Float(-99.0)
+
+        __slots__ = [
+            "RNSOIL",
+            "RNAVAIL",
+            "FERT_N_SUPPLY",
+        ]
+
+        RNSOIL: float
+        RNAVAIL: float
         # Rate of fertilizer supply for N [kg/ha/day]
-        FERT_N_SUPPLY = Float()
+        FERT_N_SUPPLY: float
 
     def initialize(self, day, kiosk, parvalues):
         """

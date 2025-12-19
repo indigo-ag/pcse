@@ -9,21 +9,7 @@ a class for testing STU suitability for a given crop.
 Data providers for CGMS18 are mostly compatible with a CGMS 14 database schema
 some differences are implemented here.
 """
-import datetime as dt
-import os
-
-import numpy as np
-import yaml
-from sqlalchemy import MetaData, select, Table, and_
-
-from ... import exceptions as exc
-from ...base import WeatherDataContainer, WeatherDataProvider
-from ...util import wind10to2, safe_float, check_date, reference_ET
-from ... import settings
-from .. import wofost_parameters
-
 from ..cgms14.data_providers import SoilDataIterator as SoilDataIterator14
-from ..cgms14.data_providers import SoilDataProviderSingleLayer
 
 
 class SoilDataIterator(SoilDataIterator14):

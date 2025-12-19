@@ -9,9 +9,9 @@ from collections import deque
 from array import array
 import datetime as dt
 
-from ..traitlets import Instance, Float, Enum, Unicode
+
 from .assimilation import totass
-from ..util import limit, astro, doy, daylength, AfgenTrait
+from ..util import limit, astro, daylength, Afgen
 from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 from ..decorators import prepare_rates, prepare_states
 from .. import signals
@@ -20,13 +20,19 @@ from .. import exceptions as exc
 
 class Respiration(SimulationObject):
     class Parameters(ParamTemplate):
-        Q10 = Float()
-        MSOTB = AfgenTrait()
-        MLVTB = AfgenTrait()
-        MRTTB = AfgenTrait()
+
+        __slots__ = ["Q10", "MSOTB", "MLVTB", "MRTTB"]
+
+        Q10: float
+        MSOTB: Afgen
+        MLVTB: Afgen
+        MRTTB: Afgen
 
     class RateVariables(RatesTemplate):
-        MAINT = Float()
+
+        __slots__ = ["MAINT"]
+
+        MAINT: float
 
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)
@@ -51,14 +57,26 @@ class Respiration(SimulationObject):
 
 class Assimilation(SimulationObject):
     class Parameters(ParamTemplate):
-        AMX = Float()
-        EFF = Float()
-        KDIF = Float()
-        AMDVST = AfgenTrait()
-        AMTMPT = AfgenTrait()
+
+        __slots__ = [
+            "AMX",
+            "EFF",
+            "KDIF",
+            "AMDVST",
+            "AMTMPT",
+        ]
+
+        AMX: float
+        EFF: float
+        KDIF: float
+        AMDVST: Afgen
+        AMTMPT: Afgen
 
     class RateVariables(RatesTemplate):
-        GPHOT = Float()
+
+        __slots__ = ["GPHOT"]
+
+        GPHOT: float
 
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)
@@ -92,14 +110,25 @@ class Assimilation(SimulationObject):
 
 class Partitioning(SimulationObject):
     class Parameters(ParamTemplate):
-        FLVTB = AfgenTrait()
-        FSHTB = AfgenTrait()
+
+        __slots__ = ["FLVTB", "FSHTB"]
+
+        FLVTB: Afgen
+        FSHTB: Afgen
 
     class RateVariables(RatesTemplate):
-        FSH = Float()
-        FLV = Float()
-        FSO = Float()
-        FRT = Float()
+
+        __slots__ = [
+            "FSH",
+            "FLV",
+            "FSO",
+            "FRT",
+        ]
+
+        FSH: float
+        FLV: float
+        FSO: float
+        FRT: float
 
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)
@@ -118,35 +147,82 @@ class Partitioning(SimulationObject):
 
 class Phenology(SimulationObject):
     class Parameters(ParamTemplate):
-        TBAS = Float()
-        DAGTB = AfgenTrait()
-        RVRTB = AfgenTrait()
-        BOL50 = Float()
-        FALL50 = Float()
-        TSOPK = Float()  # TSUM until emergence (tsum opkomst)
-        TBASE = Float()
-        CROP_START_TYPE = Unicode()
-        CROP_END_TYPE = Unicode()
+
+        __slots__ = [
+            "TBAS",
+            "DAGTB",
+            "RVRTB",
+            "BOL50",
+            "FALL50",
+            "TSOPK",
+            "TBASE",
+            "CROP_START_TYPE",
+            "CROP_END_TYPE",
+        ]
+
+        TBAS: float
+        DAGTB: Afgen
+        RVRTB: Afgen
+        BOL50: float
+        FALL50: float
+        TSOPK: float  # TSUM until emergence (tsum opkomst)
+        TBASE: float
+        CROP_START_TYPE: str
+        CROP_END_TYPE: str
 
     class StateVariables(StatesTemplate):
-        DVS = Float()
-        BULBSUM = Float()
-        BULB = Float()
-        EMERGE = Float()
-        DOS = Instance(dt.date)
-        DOE = Instance(dt.date)
-        DOB50 = Instance(dt.date)
-        DOF50 = Instance(dt.date)
-        STAGE = Enum(["emerging", "vegetative", "reproductive", "mature"])
+
+        __slots__ = [
+            "DVS",
+            "BULBSUM",
+            "BULB",
+            "EMERGE",
+            "DOS",
+            "DOE",
+            "DOB50",
+            "DOF50",
+            "STAGE",
+        ]
+
+        DVS: float
+        BULBSUM: float
+        BULB: float
+        EMERGE: float
+        DOS: dt.date | None
+        DOE: dt.date | None
+        DOB50: dt.date | None
+        DOF50: dt.date | None
+        #: ["emerging", "vegetative", "reproductive", "mature"]
+        STAGE: str
+
+        def __setattr__(self, name, value):
+            # This attribute used the Enum traitlet to limit the possible values
+            # We mimic that behavior here
+            expected_stages = ["emerging", "vegetative", "reproductive", "mature"]
+            if name == "STAGE" and value not in expected_stages:
+                raise ValueError(f"{name} must be one of {expected_stages}")
+
+            return super().__setattr__(name, value)
 
     class RateVariables(RatesTemplate):
-        DTDEV = Float()
-        DAYFAC = Float()
-        RFR = Float()
-        RFRFAC = Float()
-        DVR = Float()
-        DTSUM = Float()
-        DEMERGE = Float()
+
+        __slots__ = [
+            "DTDEV",
+            "DAYFAC",
+            "RFR",
+            "RFRFAC",
+            "DVR",
+            "DTSUM",
+            "DEMERGE",
+        ]
+
+        DTDEV: float
+        DAYFAC: float
+        RFR: float
+        RFRFAC: float
+        DVR: float
+        DTSUM: float
+        DEMERGE: float
 
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)
@@ -331,57 +407,117 @@ class LeafDynamics(SimulationObject):
     ======== ============================== =============================== ===========
     """
 
+    __slots__ = [
+        "LAII",
+        "SLAN",
+        "SLAR",
+    ]
+
     # parameter for initial LAI as function of plant density
-    LAII = Float(-99)
-    SLAN = Float(-99)
-    SLAR = Float(-99)
+    LAII: float
+    SLAN: float
+    SLAR: float
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self.LAII = -99.0
+        self.SLAN = -99.0
+        self.SLAR = -99.0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        SLANTB = AfgenTrait()
-        SLARTB = AfgenTrait()
-        AGECOR = Float(-99)
-        METCOR = Float(-99)
-        AGEA = Float(-99)
-        AGEB = Float(-99)
-        AGEC = Float(-99)
-        AGED = Float(-99)
-        LAGR = Float(-99.0)  # Grens tot waar LAI berekend wordt met exp. functie
-        GEGR = Float(-99.0)  # Totaal droge stof bij LAGR
-        LA0 = Float(-99)  # LAI bij opkomst afhankelijk van plantdichtheid (NPL)
-        NPL = Float(-99)  # Plant dichtheid
-        RGRL = Float(-99)
-        GTSLA = Float(-99)
-        TTOP = Float(-99)
-        TBASE = Float(-99)
-        CORFAC = Float(-99)
-        TBAS = Float(-99)
+
+        __slots__ = [
+            "SLANTB",
+            "SLARTB",
+            "AGECOR",
+            "METCOR",
+            "AGEA",
+            "AGEB",
+            "AGEC",
+            "AGED",
+            "LAGR",
+            "GEGR",
+            "LA0",
+            "NPL",
+            "RGRL",
+            "GTSLA",
+            "TTOP",
+            "TBASE",
+            "CORFAC",
+            "TBAS",
+        ]
+
+        SLANTB: Afgen
+        SLARTB: Afgen
+        AGECOR: float
+        METCOR: float
+        AGEA: float
+        AGEB: float
+        AGEC: float
+        AGED: float
+        LAGR: float
+        GEGR: float
+        LA0: float
+        NPL: float
+        RGRL: float
+        GTSLA: float
+        TTOP: float
+        TBASE: float
+        CORFAC: float
+        TBAS: float
 
     class StateVariables(StatesTemplate):
-        LV = Instance(deque)
-        SLABC = Instance(deque)
-        LVAGE = Instance(deque)
-        SPAN = Instance(deque)
-        LAIMAX = Float(-99.0)
-        LAI = Float(-99.0)
-        WLVG = Float(-99.0)
-        WLVD = Float(-99.0)
-        WLV = Float(-99.0)
-        TSUMEM = Float(-99)
+
+        __slots__ = [
+            "LV",
+            "SLABC",
+            "LVAGE",
+            "SPAN",
+            "LAIMAX",
+            "LAI",
+            "WLVG",
+            "WLVD",
+            "WLV",
+            "TSUMEM",
+        ]
+
+        LV: deque
+        SLABC: deque
+        LVAGE: deque
+        SPAN: deque
+        LAIMAX: float
+        LAI: float
+        WLVG: float
+        WLVD: float
+        WLV: float
+        TSUMEM: float
 
     class RateVariables(RatesTemplate):
-        GLV = Float(-99.0)
-        GLAD = Float(-99.0)
-        GLA = Float(-99.0)
-        DLV = Float(-99.0)
-        SLAT = Float(-99.0)
-        FYSAGE = Float(-99.0)
-        SPANT = Float(-99.0)
-        DTSUMM = Float(-99)
+
+        __slots__ = [
+            "GLV",
+            "GLAD",
+            "GLA",
+            "DLV",
+            "SLAT",
+            "FYSAGE",
+            "SPANT",
+            "DTSUMM",
+        ]
+
+        GLV: float
+        GLAD: float
+        GLA: float
+        DLV: float
+        SLAT: float
+        FYSAGE: float
+        SPANT: float
+        DTSUMM: float
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """
@@ -562,10 +698,16 @@ class LeafDynamics(SimulationObject):
 
 class RootDynamics(SimulationObject):
     class RateVariables(RatesTemplate):
-        GRT = Float()
+
+        __slots__ = ["GRT"]
+
+        GRT: float
 
     class StateVariables(StatesTemplate):
-        WRT = Float()
+
+        __slots__ = ["WRT"]
+
+        WRT: float
 
     def initialize(self, day, kiosk, parvalues):
         self.rates = self.RateVariables(kiosk, publish=["GRT"])
@@ -586,10 +728,16 @@ class RootDynamics(SimulationObject):
 
 class BulbDynamics(SimulationObject):
     class RateVariables(RatesTemplate):
-        GSO = Float()
+
+        __slots__ = ["GSO"]
+
+        GSO: float
 
     class StateVariables(StatesTemplate):
-        WSO = Float()
+
+        __slots__ = ["WSO"]
+
+        WSO: float
 
     def initialize(self, day, kiosk, parvalues):
         self.rates = self.RateVariables(kiosk, publish=["GSO"])
@@ -612,24 +760,44 @@ class BulbDynamics(SimulationObject):
 
 
 class ALCEPAS(SimulationObject):
-    leafdynamics = Instance(SimulationObject)
-    phenology = Instance(SimulationObject)
-    partitioning = Instance(SimulationObject)
-    assimilation = Instance(SimulationObject)
-    respiration = Instance(SimulationObject)
-    rootdynamics = Instance(SimulationObject)
-    bulbdynamics = Instance(SimulationObject)
+
+    __slots__ = [
+        "leafdynamics",
+        "phenology",
+        "partitioning",
+        "assimilation",
+        "respiration",
+        "rootdynamics",
+        "bulbdynamics",
+    ]
+
+    leafdynamics: SimulationObject
+    phenology: SimulationObject
+    partitioning: SimulationObject
+    assimilation: SimulationObject
+    respiration: SimulationObject
+    rootdynamics: SimulationObject
+    bulbdynamics: SimulationObject
 
     class Parameters(ParamTemplate):
-        ASRQSO = Float()
-        ASRQRT = Float()
-        ASRQLV = Float()
+
+        __slots__ = ["ASRQSO", "ASRQRT", "ASRQLV"]
+
+        ASRQSO: float
+        ASRQRT: float
+        ASRQLV: float
 
     class RateVariables(RatesTemplate):
-        GTW = Float()
+
+        __slots__ = ["GTW"]
+
+        GTW: float
 
     class StateVariables(StatesTemplate):
-        TADRW = Float()
+
+        __slots__ = ["TADRW"]
+
+        TADRW: float
 
     def initialize(self, day, kiosk, parvalues):
         self.leafdynamics = LeafDynamics(day, kiosk, parvalues)

@@ -14,11 +14,9 @@ models can have methods that deal with specific characteristics of a model.
 This kind of functionality cannot be implemented in the Engine because
 the model details are not known beforehand.
 """
-import os, sys
 import datetime
-import gc
+from typing import Any
 
-from .traitlets import Instance, Bool, List, Dict
 from .base import (
     VariableKiosk,
     WeatherDataProvider,
@@ -89,38 +87,63 @@ class Engine(BaseEngine):
 
     """
 
+    __slots__ = [
+        "mconf",
+        "parameterprovider",
+        "crop",
+        "soil",
+        "agromanager",
+        "weatherdataprovider",
+        "drv",
+        "kiosk",
+        "timer",
+        "day",
+        "flag_terminate",
+        "flag_crop_finish",
+        "flag_crop_start",
+        "flag_crop_delete",
+        "flag_output",
+        "flag_summary_output",
+        "_saved_output",
+        "_saved_summary_output",
+        "_saved_terminal_output",
+    ]
+
     # system configuration
-    mconf = Instance(ConfigurationLoader)
-    parameterprovider = Instance(ParameterProvider)
+    mconf: ConfigurationLoader
+    parameterprovider: ParameterProvider
 
     # sub components for simulation
-    crop = Instance(SimulationObject)
-    soil = Instance(SimulationObject)
-    agromanager = Instance(AncillaryObject)
-    weatherdataprovider = Instance(WeatherDataProvider)
-    drv = None
-    kiosk = Instance(VariableKiosk)
-    timer = Instance(Timer)
-    day = Instance(datetime.date)
+    crop: SimulationObject | None
+    soil: SimulationObject | None
+    agromanager: AncillaryObject
+    weatherdataprovider: WeatherDataProvider
+    drv: Any
+    kiosk: VariableKiosk
+    timer: Timer
+    day: datetime.date
 
     # flags that are being set by signals
-    flag_terminate = Bool(False)
-    flag_crop_finish = Bool(False)
-    flag_crop_start = Bool(False)
-    flag_crop_delete = Bool(False)
-    flag_output = Bool(False)
-    flag_summary_output = Bool(False)
+    flag_terminate: bool
+    flag_crop_finish: bool
+    flag_crop_start: bool
+    flag_crop_delete: bool
+    flag_output: bool
+    flag_summary_output: bool
 
     # placeholders for variables saved during model execution
-    _saved_output = List()
-    _saved_summary_output = List()
-    _saved_terminal_output = Dict()
+    _saved_output: list
+    _saved_summary_output: list
+    _saved_terminal_output: dict
 
     def __init__(
         self, parameterprovider, weatherdataprovider, agromanagement, config=None
     ):
 
         BaseEngine.__init__(self)
+
+        self.crop = None
+        self.soil = None
 
         # Load the model configuration
         self.mconf = ConfigurationLoader(config)
@@ -129,10 +152,17 @@ class Engine(BaseEngine):
         # Variable kiosk for registering and publishing variables
         self.kiosk = VariableKiosk()
 
+        self.flag_terminate = False
+        self.flag_crop_finish = False
+        self.flag_crop_start = False
+        self.flag_crop_delete = False
+        self.flag_output = False
+        self.flag_summary_output = False
+
         # Placeholder for variables to be saved during a model run
-        self._saved_output = list()
-        self._saved_summary_output = list()
-        self._saved_terminal_output = dict()
+        self._saved_output = []
+        self._saved_summary_output = []
+        self._saved_terminal_output = {}
 
         # register handlers for starting/finishing the crop simulation, for
         # handling output and terminating the system
@@ -468,9 +498,18 @@ class CGMSEngine(Engine):
     5. run() and run_till_terminate() are not supported, only run_till() is supported.
     """
 
-    flag_crop_finish = False
+    __slots__ = ["flag_crop_finish", "flag_crop_delete"]
+
+    flag_crop_finish: bool
     # Because of the intended behaviour of CGMSEngine flag_crop_delete is always False
-    flag_crop_delete = False
+    flag_crop_delete: bool
+
+    def __init__(
+        self, parameterprovider, weatherdataprovider, agromanagement, config=None
+    ):
+        self.flag_crop_finish = False
+        self.flag_crop_delete = False
+        super().__init__(parameterprovider, weatherdataprovider, agromanagement, config)
 
     def run(self, days=1):
         msg = "run() is not supported in the CGMSEngine, use: run_till(<date>)"

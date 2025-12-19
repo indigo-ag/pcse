@@ -1,4 +1,4 @@
-from pcse.base import SimulationObject, ParamTemplate, AncillaryObject
+from pcse.base import SimulationObject, AncillaryObject
 from pcse.decorators import prepare_rates, prepare_states
 
 
@@ -7,10 +7,12 @@ class EmptyModel(SimulationObject):
     dummy model: NoOp
     """
 
+    __slots__ = []
+
     def initialize(self, day, kiosk, *args, **kwargs):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """

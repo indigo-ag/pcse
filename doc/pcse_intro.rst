@@ -103,9 +103,4 @@ from other open source projects:
 * the `pydispatch` module obtained from http://pydispatcher.sourceforge.net/
   which is distributed under a BSD style license.
 
-* The `traitlets` module which was taken and adapted from the
-  `IPython` project (https://ipython.org/) which are distributed under a
-  BSD style license. A PCSE specific version of `traitlets` was created
-  and is available `here <https://pypi.org/project/traitlets-pcse/>`_
-
 See the project pages of both projects for exact license terms.

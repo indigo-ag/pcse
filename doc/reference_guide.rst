@@ -273,15 +273,24 @@ The skeleton of a SimulationObject looks like this:
     class CropProcess(SimulationObject):
 
         class Parameters(ParamTemplate):
-            PAR1 = Float()
+
+            __slots__ = ["PAR1"]
+
+            PAR1: float
             # more parameters defined here
 
         class StateVariables(StatesTemplate):
-            STATE1 = Float()
+
+            __slots__ = ["STATE1"]
+
+            STATE1: float
             # more state variables defined here
 
         class RateVariables(RatesTemplate):
-            RATE1 = Float()
+
+            __slots__ = ["RATE1"]
+
+            RATE1: float
             # more rate variables defined here
 
         def initialize(self, day, kiosk, parametervalues):
@@ -521,7 +530,7 @@ An example of an agromanagement definition file::
 Crop calendars
 --------------
 
-The crop calendar definition will be passed on to a `CropCalendar` object which is 
+The crop calendar definition will be passed on to a `CropCalendar` object which is
 responsible for storing, checking, starting and ending the crop cycle during a PCSE simulation.
 At each time step the instance of `CropCalendar` is called
 and at the dates defined by its parameters it initiates the appropriate actions:
@@ -743,7 +752,7 @@ simulation, etc.
 Signals in PCSE are defined in the `signals` module which can be easily imported by
 any module that needs access to signals. Signals are simply defined as strings but
 any hashable object type would do. Most of the work for dealing with signals is in
-setting up a receiver. A receiver is usually a method on a SimulationObject that 
+setting up a receiver. A receiver is usually a method on a SimulationObject that
 will be called when the signal is broadcasted. This method will then be connected
 to the signal during the initialization of the object. This is easy to describe
 with an example::

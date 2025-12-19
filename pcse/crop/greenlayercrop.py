@@ -3,7 +3,7 @@
 # Allard de Wit (allard.dewit@wur.nl), April 2014
 import datetime
 
-from ..traitlets import Float, Instance
+
 from ..decorators import prepare_rates, prepare_states
 from ..base import StatesTemplate, SimulationObject
 from .. import signals
@@ -52,18 +52,34 @@ class GreenLayerCrop(SimulationObject):
     None
     """
 
+    __slots__ = [
+        "evtra",
+        "lv_dynamics",
+        "ro_dynamics",
+    ]
+
     # sub-model components for crop simulation
-    evtra = Instance(SimulationObject)
-    lv_dynamics = Instance(SimulationObject)
-    ro_dynamics = Instance(SimulationObject)
+    evtra: SimulationObject
+    lv_dynamics: SimulationObject
+    ro_dynamics: SimulationObject
 
     class StateVariables(StatesTemplate):
-        CTRAT = Float(-99.0)  # Crop total transpiration
-        DOF = Instance(datetime.date)
-        FINISH = Instance(str)
-        WRSI = Float()
-        SumPET = Float()  # Sum of potential crop evapotranspiration
-        SumAET = Float()  # Sum of actual crop evapotranspiration
+
+        __slots__ = [
+            "CTRAT",
+            "DOF",
+            "FINISH",
+            "WRSI",
+            "SumPET",
+            "SumAET",
+        ]
+
+        CTRAT: float  # Crop total transpiration
+        DOF: datetime.date
+        FINISH: str
+        WRSI: float
+        SumPET: float  # Sum of potential crop evapotranspiration
+        SumAET: float  # Sum of actual crop evapotranspiration
 
     def initialize(self, day, kiosk, parvalues):
         """

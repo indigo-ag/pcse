@@ -4,15 +4,14 @@
 # Approach based on LINTUL N/P/K made by Joost Wolf
 """
 Class to calculate various nutrient relates stress factors:
-    NNI      nitrogen nutrition index   
+    NNI      nitrogen nutrition index
     PNI      phosphorous nutrition index
     KNI      potassium nutrition index
     NPKI     NPK nutrition index (= minimum of N/P/K-index)
     NPKREF   assimilation reduction factor based on NPKI
 """
 
-from ...traitlets import Float
-from ...util import limit, AfgenTrait
+from ...util import limit, Afgen
 from ...base import ParamTemplate, SimulationObject, RatesTemplate
 from ...decorators import prepare_rates
 
@@ -101,7 +100,7 @@ class NPK_Stress(SimulationObject):
     PNI       Nitrogen nutrition index                          N     -
     KNI       Nitrogen nutrition index                          N     -
     NPKI      Minimum of NNI, PNI, KNI                          Y     -
-    RFNPK     Reduction factor for |CO2| assimlation            N     -
+    RFNPK     Reduction factor for |CO2| assimilation           N     -
               based on NPKI and the parameter NLUE_NPK
     =======  ================================================= ==== ==============
 
@@ -124,52 +123,64 @@ class NPK_Stress(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        NMAXLV_TB = AfgenTrait()  # maximum N concentration in leaves as function of dvs
-        PMAXLV_TB = AfgenTrait()  # maximum P concentration in leaves as function of dvs
-        KMAXLV_TB = AfgenTrait()  # maximum P concentration in leaves as function of dvs
-        NCRIT_FR = Float(
-            -99.0
-        )  # optimal N concentration as fraction of maximum N concentration
-        PCRIT_FR = Float(
-            -99.0
-        )  # optimal P concentration as fraction of maximum P concentration
-        KCRIT_FR = Float(
-            -99.0
-        )  # optimal K concentration as fraction of maximum K concentration
-        NMAXRT_FR = Float(
-            -99.0
-        )  # maximum N concentration in roots as fraction of maximum N concentration in leaves
-        NMAXST_FR = Float(
-            -99.0
-        )  # maximum N concentration in stems as fraction of maximum N concentration in leaves
-        PMAXST_FR = Float(
-            -99.0
-        )  # maximum P concentration in roots as fraction of maximum P concentration in leaves
-        PMAXRT_FR = Float(
-            -99.0
-        )  # maximum P concentration in stems as fraction of maximum P concentration in leaves
-        KMAXRT_FR = Float(
-            -99.0
-        )  # maximum K concentration in roots as fraction of maximum K concentration in leaves
-        KMAXST_FR = Float(
-            -99.0
-        )  # maximum K concentration in stems as fraction of maximum K concentration in leaves
-        NRESIDLV = Float(-99.0)  # residual N fraction in leaves [kg N kg-1 dry biomass]
-        NRESIDST = Float(-99.0)  # residual N fraction in stems [kg N kg-1 dry biomass]
-        PRESIDLV = Float(-99.0)  # residual P fraction in leaves [kg P kg-1 dry biomass]
-        PRESIDST = Float(-99.0)  # residual P fraction in stems [kg P kg-1 dry biomass]
-        KRESIDLV = Float(-99.0)  # residual K fraction in leaves [kg K kg-1 dry biomass]
-        KRESIDST = Float(-99.0)  # residual K fraction in stems [kg K kg-1 dry biomass]
-        NLUE_NPK = Float(
-            -99.0
-        )  # coefficient for the reduction of RUE due to nutrient (N-P-K) stress
+
+        __slots__ = [
+            "NMAXLV_TB",
+            "PMAXLV_TB",
+            "KMAXLV_TB",
+            "NCRIT_FR",
+            "PCRIT_FR",
+            "KCRIT_FR",
+            "NMAXRT_FR",
+            "NMAXST_FR",
+            "PMAXST_FR",
+            "PMAXRT_FR",
+            "KMAXRT_FR",
+            "KMAXST_FR",
+            "NRESIDLV",
+            "NRESIDST",
+            "PRESIDLV",
+            "PRESIDST",
+            "KRESIDLV",
+            "KRESIDST",
+            "NLUE_NPK",
+        ]
+
+        NMAXLV_TB: Afgen  # maximum N concentration in leaves as function of dvs
+        PMAXLV_TB: Afgen  # maximum P concentration in leaves as function of dvs
+        KMAXLV_TB: Afgen  # maximum P concentration in leaves as function of dvs
+        NCRIT_FR: float  # optimal N concentration as fraction of maximum N concentration
+        PCRIT_FR: float  # optimal P concentration as fraction of maximum P concentration
+        KCRIT_FR: float  # optimal K concentration as fraction of maximum K concentration
+        NMAXRT_FR: float  # maximum N concentration in roots as fraction of maximum N concentration in leaves
+        NMAXST_FR: float  # maximum N concentration in stems as fraction of maximum N concentration in leaves
+        PMAXST_FR: float  # maximum P concentration in roots as fraction of maximum P concentration in leaves
+        PMAXRT_FR: float  # maximum P concentration in stems as fraction of maximum P concentration in leaves
+        KMAXRT_FR: float  # maximum K concentration in roots as fraction of maximum K concentration in leaves
+        KMAXST_FR: float  # maximum K concentration in stems as fraction of maximum K concentration in leaves
+        NRESIDLV: float  # residual N fraction in leaves [kg N kg-1 dry biomass]
+        NRESIDST: float  # residual N fraction in stems [kg N kg-1 dry biomass]
+        PRESIDLV: float  # residual P fraction in leaves [kg P kg-1 dry biomass]
+        PRESIDST: float  # residual P fraction in stems [kg P kg-1 dry biomass]
+        KRESIDLV: float  # residual K fraction in leaves [kg K kg-1 dry biomass]
+        KRESIDST: float  # residual K fraction in stems [kg K kg-1 dry biomass]
+        NLUE_NPK: float  # coefficient for the reduction of RUE due to nutrient (N-P-K) stress
 
     class RateVariables(RatesTemplate):
-        NNI = Float()
-        PNI = Float()
-        KNI = Float()
-        NPKI = Float()
-        RFNPK = Float()
+
+        __slots__ = [
+            "NNI",
+            "PNI",
+            "KNI",
+            "NPKI",
+            "RFNPK",
+        ]
+
+        NNI: float
+        PNI: float
+        KNI: float
+        NPKI: float
+        RFNPK: float
 
     def initialize(self, day, kiosk, parvalues):
         """

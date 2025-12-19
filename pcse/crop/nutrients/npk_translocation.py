@@ -3,7 +3,6 @@
 # Allard de Wit and Iwan Supit (allard.dewit@wur.nl), July 2015
 # Approach based on LINTUL N/P/K made by Joost Wolf
 
-from ...traitlets import Float, Instance
 from ...decorators import prepare_rates, prepare_states
 from ...base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
 
@@ -20,7 +19,7 @@ class NPK_Translocation(SimulationObject):
     stems, roots and leaves and published as the state variables
     Ntranslocatable, Ptranslocatable and Ktranslocatable.
 
-    The overal translocation rate is calculated as the minimum of supply (the
+    The overall translocation rate is calculated as the minimum of supply (the
     translocatable amount) and demand from the storage organs as calculated in
     the component on Demand_Uptake.
     The actual rate of N/P/K translocation from the different plant organs is
@@ -112,79 +111,94 @@ class NPK_Translocation(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        NRESIDLV = Float(-99.0)  # residual N fraction in leaves [kg N kg-1 dry biomass]
-        NRESIDST = Float(-99.0)  # residual N fraction in stems [kg N kg-1 dry biomass]
-        NRESIDRT = Float(-99.0)  # residual N fraction in roots [kg N kg-1 dry biomass]
 
-        PRESIDLV = Float(-99.0)  # residual P fraction in leaves [kg P kg-1 dry biomass]
-        PRESIDST = Float(-99.0)  # residual P fraction in stems [kg P kg-1 dry biomass]
-        PRESIDRT = Float(-99.0)  # residual P fraction in roots [kg P kg-1 dry biomass]
+        __slots__ = [
+            "NRESIDLV",
+            "NRESIDST",
+            "NRESIDRT",
+            "PRESIDLV",
+            "PRESIDST",
+            "PRESIDRT",
+            "KRESIDLV",
+            "KRESIDST",
+            "KRESIDRT",
+            "NPK_TRANSLRT_FR",
+        ]
 
-        KRESIDLV = Float(-99.0)  # residual K fraction in leaves [kg P kg-1 dry biomass]
-        KRESIDST = Float(-99.0)  # residual K fraction in stems [kg P kg-1 dry biomass]
-        KRESIDRT = Float(-99.0)  # residual K fraction in roots [kg P kg-1 dry biomass]
+        NRESIDLV: float  # residual N fraction in leaves [kg N kg-1 dry biomass]
+        NRESIDST: float  # residual N fraction in stems [kg N kg-1 dry biomass]
+        NRESIDRT: float  # residual N fraction in roots [kg N kg-1 dry biomass]
 
-        NPK_TRANSLRT_FR = Float(-99.0)  # NPK translocation from roots as a fraction of
+        PRESIDLV: float  # residual P fraction in leaves [kg P kg-1 dry biomass]
+        PRESIDST: float  # residual P fraction in stems [kg P kg-1 dry biomass]
+        PRESIDRT: float  # residual P fraction in roots [kg P kg-1 dry biomass]
+
+        KRESIDLV: float  # residual K fraction in leaves [kg P kg-1 dry biomass]
+        KRESIDST: float  # residual K fraction in stems [kg P kg-1 dry biomass]
+        KRESIDRT: float  # residual K fraction in roots [kg P kg-1 dry biomass]
+
+        NPK_TRANSLRT_FR: float  # NPK translocation from roots as a fraction of
         # resp. total NPK amounts translocated from leaves
         # and stems
 
     class RateVariables(RatesTemplate):
-        RNtranslocationLV = Float(
-            -99.0
-        )  # N translocation rate from leaves [kg ha-1 d-1]
-        RNtranslocationST = Float(
-            -99.0
-        )  # N translocation rate from stems [kg ha-1 d-1]
-        RNtranslocationRT = Float(
-            -99.0
-        )  # N translocation rate from roots [kg ha-1 d-1]
 
-        RPtranslocationLV = Float(
-            -99.0
-        )  # P translocation rate from leaves [kg ha-1 d-1]
-        RPtranslocationST = Float(
-            -99.0
-        )  # P translocation rate from stems [kg ha-1 d-1]
-        RPtranslocationRT = Float(
-            -99.0
-        )  # P translocation rate from roots [kg ha-1 d-1]
+        __slots__ = [
+            "RNtranslocationLV",
+            "RNtranslocationST",
+            "RNtranslocationRT",
+            "RPtranslocationLV",
+            "RPtranslocationST",
+            "RPtranslocationRT",
+            "RKtranslocationLV",
+            "RKtranslocationST",
+            "RKtranslocationRT",
+        ]
 
-        RKtranslocationLV = Float(
-            -99.0
-        )  # K translocation rate from leaves [kg ha-1 d-1]
-        RKtranslocationST = Float(
-            -99.0
-        )  # K translocation rate from stems [kg ha-1 d-1]
-        RKtranslocationRT = Float(
-            -99.0
-        )  # K translocation rate from roots [kg ha-1 d-1]
+        RNtranslocationLV: float  # N translocation rate from leaves [kg ha-1 d-1]
+        RNtranslocationST: float  # N translocation rate from stems [kg ha-1 d-1]
+        RNtranslocationRT: float  # N translocation rate from roots [kg ha-1 d-1]
+
+        RPtranslocationLV: float  # P translocation rate from leaves [kg ha-1 d-1]
+        RPtranslocationST: float  # P translocation rate from stems [kg ha-1 d-1]
+        RPtranslocationRT: float  # P translocation rate from roots [kg ha-1 d-1]
+
+        RKtranslocationLV: float  # K translocation rate from leaves [kg ha-1 d-1]
+        RKtranslocationST: float  # K translocation rate from stems [kg ha-1 d-1]
+        RKtranslocationRT: float  # K translocation rate from roots [kg ha-1 d-1]
 
     class StateVariables(StatesTemplate):
-        NtranslocatableLV = Float(
-            -99.0
-        )  # translocatable N amount in leaves [kg N ha-1]
-        NtranslocatableST = Float(-99.0)  # translocatable N amount in stems [kg N ha-1]
-        NtranslocatableRT = Float(-99.0)  # translocatable N amount in roots [kg N ha-1]
 
-        PtranslocatableLV = Float(
-            -99.0
-        )  # translocatable P amount in leaves [kg N ha-1]
-        PtranslocatableST = Float(-99.0)  # translocatable P amount in stems [kg N ha-1]
-        PtranslocatableRT = Float(-99.0)  # translocatable P amount in roots [kg N ha-1]
+        __slots__ = [
+            "NtranslocatableLV",
+            "NtranslocatableST",
+            "NtranslocatableRT",
+            "PtranslocatableLV",
+            "PtranslocatableST",
+            "PtranslocatableRT",
+            "KtranslocatableLV",
+            "KtranslocatableST",
+            "KtranslocatableRT",
+            "Ntranslocatable",
+            "Ptranslocatable",
+            "Ktranslocatable",
+        ]
 
-        KtranslocatableLV = Float(-99.0)  # translocatable K amount in leaves [kg N ha-1
-        KtranslocatableST = Float(-99.0)  # translocatable K amount in stems [kg N ha-1]
-        KtranslocatableRT = Float(-99.0)  # translocatable K amount in roots [kg N ha-1]
+        NtranslocatableLV: float  # translocatable N amount in leaves [kg N ha-1]
+        NtranslocatableST: float  # translocatable N amount in stems [kg N ha-1]
+        NtranslocatableRT: float  # translocatable N amount in roots [kg N ha-1]
 
-        Ntranslocatable = Float(
-            -99.0
-        )  # Total N amount that can be translocated to the storage organs [kg N ha-1]
-        Ptranslocatable = Float(
-            -99.0
-        )  # Total P amount that can be translocated to the storage organs [kg P ha-1]
-        Ktranslocatable = Float(
-            -99.0
-        )  # Total K amount that can be translocated to the storage organs [kg K ha-1]
+        PtranslocatableLV: float  # translocatable P amount in leaves [kg N ha-1]
+        PtranslocatableST: float  # translocatable P amount in stems [kg N ha-1]
+        PtranslocatableRT: float  # translocatable P amount in roots [kg N ha-1]
+
+        KtranslocatableLV: float  # translocatable K amount in leaves [kg N ha-1
+        KtranslocatableST: float  # translocatable K amount in stems [kg N ha-1]
+        KtranslocatableRT: float  # translocatable K amount in roots [kg N ha-1]
+
+        Ntranslocatable: float  # Total N amount that can be translocated to the storage organs [kg N ha-1]
+        Ptranslocatable: float  # Total P amount that can be translocated to the storage organs [kg P ha-1]
+        Ktranslocatable: float  # Total K amount that can be translocated to the storage organs [kg K ha-1]
 
     def initialize(self, day, kiosk, parvalues):
         """

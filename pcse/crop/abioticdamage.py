@@ -2,28 +2,26 @@
 # Copyright (c) 2004-2014 Alterra, Wageningen-UR
 # Allard de Wit (allard.dewit@wur.nl), April 2014
 """
-Components for modelling of abiotic damage to crops. 
+Components for modelling of abiotic damage to crops.
 
 The following components are available:
 * Frost damage:
-  - FROSTOL: models LT50 to estimate leaf and crop death 
+  - FROSTOL: models LT50 to estimate leaf and crop death
   - CERES_WinterKill: models a hardening index to estimate leaf and crop death
 """
 
 #!/usr/bin/env python
-import os
 from math import exp
 
-from ..traitlets import Float, Int, Instance, Enum, Bool
+
 from ..decorators import prepare_rates, prepare_states
 
-from ..util import limit, merge_dict
+from ..util import limit
 from ..base import (
     ParamTemplate,
     StatesTemplate,
     RatesTemplate,
     SimulationObject,
-    VariableKiosk,
 )
 from .. import signals
 from .. import exceptions as exc
@@ -102,27 +100,47 @@ class CrownTemperature(SimulationObject):
     ============ =============================== ========================== =====
      Name        Description                         Provided by             Unit
     ============ =============================== ========================== =====
-    SNOWDEPTH    Depth of snow cover.             Prescibed by driving       |cm|
+    SNOWDEPTH    Depth of snow cover.             Prescribed by driving       |cm|
                                                   variables or simulated
                                                   by snow cover module and
                                                   taken from kiosk
     ============ =============================== ========================== =====
     """
 
+    __slots__ = ["_testing_"]
+
     # This setting is only used when running the unit tests for FROSTOL.
     # For unit testing, FROSTOL should not rely on the CrownTemperature model,
     # but instead use the prescribed crown temperature directly.
-    _testing_ = Bool(False)
+    _testing_: bool
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self._testing_ = False
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        CROWNTMPA = Float()
-        CROWNTMPB = Float()
-        ISNOWSRC = Float()
+
+        __slots__ = [
+            "CROWNTMPA",
+            "CROWNTMPB",
+            "ISNOWSRC",
+        ]
+
+        CROWNTMPA: float
+        CROWNTMPB: float
+        ISNOWSRC: float
 
     class RateVariables(RatesTemplate):
-        TEMP_CROWN = Float()
-        TMIN_CROWN = Float()
-        TMAX_CROWN = Float()
+
+        __slots__ = [
+            "TEMP_CROWN",
+            "TMIN_CROWN",
+            "TMAX_CROWN",
+        ]
+
+        TEMP_CROWN: float
+        TMIN_CROWN: float
+        TMAX_CROWN: float
 
     def initialize(self, day, kiosk, parvalues, testing=False):
         self.kiosk = kiosk
@@ -236,27 +254,47 @@ class CrownTemperatureJRC(SimulationObject):
     ============ =============================== ========================== =====
      Name        Description                         Provided by             Unit
     ============ =============================== ========================== =====
-    SNOWDEPTH    Depth of snow cover.             Prescibed by driving       |cm|
+    SNOWDEPTH    Depth of snow cover.             Prescribed by driving       |cm|
                                                   variables or simulated
                                                   by snow cover module and
                                                   taken from kiosk
     ============ =============================== ========================== =====
     """
 
+    __slots__ = ["_testing_"]
+
     # This setting is only used when running the unit tests for FROSTOL.
     # For unit testing, FROSTOL should not rely on the CrownTemperature model,
     # but instead use the prescribed crown temperature directly.
-    _testing_ = Bool(False)
+    _testing_: bool
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self._testing_ = False
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        JRCCROWNTMPA = Float()
-        JRCCROWNTMPB = Float()
-        ISNOWSRC = Float()
+
+        __slots__ = [
+            "JRCCROWNTMPA",
+            "JRCCROWNTMPB",
+            "ISNOWSRC",
+        ]
+
+        JRCCROWNTMPA: float
+        JRCCROWNTMPB: float
+        ISNOWSRC: float
 
     class RateVariables(RatesTemplate):
-        TEMP_CROWN = Float()
-        TMIN_CROWN = Float()
-        TMAX_CROWN = Float()
+
+        __slots__ = [
+            "TEMP_CROWN",
+            "TMIN_CROWN",
+            "TMAX_CROWN",
+        ]
+
+        TEMP_CROWN: float
+        TMIN_CROWN: float
+        TMAX_CROWN: float
 
     def initialize(self, day, kiosk, parvalues, testing=False):
         self.kiosk = kiosk
@@ -392,34 +430,72 @@ class FROSTOL(SimulationObject):
     http://dx.doi.org/10.1016/j.eja.2007.10.002
     """
 
+    __slots__ = ["_CROP_FRACTION_REMAINING"]
+
     # Helper variable for remaining crop fraction as a result of frost kill
-    _CROP_FRACTION_REMAINING = Float(1.0)
+    _CROP_FRACTION_REMAINING: float
+
+    def __init__(self, day, kiosk, *args, **kwargs):
+        self._CROP_FRACTION_REMAINING = 1.0
+        super().__init__(day, kiosk, *args, **kwargs)
 
     class Parameters(ParamTemplate):
-        IDSL = Float(-99.0)
-        LT50C = Float(-99.0)
-        FROSTOL_H = Float(-99.0)
-        FROSTOL_D = Float(-99.0)
-        FROSTOL_S = Float(-99.0)
-        FROSTOL_R = Float(-99.0)
-        FROSTOL_SDBASE = Float(-99.0)
-        FROSTOL_SDMAX = Float(-99.0)
-        FROSTOL_KILLCF = Float(-99)
-        ISNOWSRC = Float(-99)
+
+        __slots__ = [
+            "IDSL",
+            "LT50C",
+            "FROSTOL_H",
+            "FROSTOL_D",
+            "FROSTOL_S",
+            "FROSTOL_R",
+            "FROSTOL_SDBASE",
+            "FROSTOL_SDMAX",
+            "FROSTOL_KILLCF",
+            "ISNOWSRC",
+        ]
+
+        IDSL: float
+        LT50C: float
+        FROSTOL_H: float
+        FROSTOL_D: float
+        FROSTOL_S: float
+        FROSTOL_R: float
+        FROSTOL_SDBASE: float
+        FROSTOL_SDMAX: float
+        FROSTOL_KILLCF: float
+        ISNOWSRC: float
 
     class RateVariables(RatesTemplate):
-        RH = Float(-99.0)
-        RDH_TEMP = Float(-99.0)
-        RDH_RESP = Float(-99.0)
-        RDH_TSTR = Float(-99.0)
-        IDFS = Int(-99)
-        RF_FROST = Float(-99.0)
+
+        __slots__ = [
+            "RH",
+            "RDH_TEMP",
+            "RDH_RESP",
+            "RDH_TSTR",
+            "IDFS",
+            "RF_FROST",
+        ]
+
+        RH: float
+        RDH_TEMP: float
+        RDH_RESP: float
+        RDH_TSTR: float
+        IDFS: int
+        RF_FROST: float
 
     class StateVariables(StatesTemplate):
-        LT50T = Float(-99.0)
-        LT50I = Float(-99.0)
-        IDFST = Int(-99)
-        RF_FROST_T = Float(-99)
+
+        __slots__ = [
+            "LT50T",
+            "LT50I",
+            "IDFST",
+            "RF_FROST_T",
+        ]
+
+        LT50T: float
+        LT50I: float
+        IDFST: int
+        RF_FROST_T: float
 
     # ---------------------------------------------------------------------------
     def initialize(self, day, kiosk, parvalues, testing=False):
@@ -580,19 +656,40 @@ class CERES_WinterKill(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        CWWK_HC_S1 = Float(-99.0)  # Hardening coefficient stage 1
-        CWWK_HC_S2 = Float(-99.0)  # Hardening coefficient stage 2
-        CWWK_DHC = Float(-99.0)  # De-hardening coefficient
-        CWWK_KILLTEMP = Float(-99.0)  # Initial Killing temperature
+
+        __slots__ = [
+            "CWWK_HC_S1",
+            "CWWK_HC_S2",
+            "CWWK_DHC",
+            "CWWK_KILLTEMP",
+        ]
+
+        CWWK_HC_S1: float  # Hardening coefficient stage 1
+        CWWK_HC_S2: float  # Hardening coefficient stage 2
+        CWWK_DHC: float  # De-hardening coefficient
+        CWWK_KILLTEMP: float  # Initial Killing temperature
 
     class StateVariables(StatesTemplate):
-        HARDINDEX = Float(-99.0)  # Hardening Index
-        HIKILLTEMP = Float(-99.0)  # Kill temperature given Hardening Index
+
+        __slots__ = [
+            "HARDINDEX",
+            "HIKILLTEMP",
+        ]
+
+        HARDINDEX: float  # Hardening Index
+        HIKILLTEMP: float  # Kill temperature given Hardening Index
 
     class RateVariables(RatesTemplate):
-        RH = Float(-99.0)
-        RDH = Float(-99.0)
-        HIKILLFACTOR = Float(-99.0)
+
+        __slots__ = [
+            "RH",
+            "RDH",
+            "HIKILLFACTOR",
+        ]
+
+        RH: float
+        RDH: float
+        HIKILLFACTOR: float
 
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)

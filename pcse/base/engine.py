@@ -6,20 +6,23 @@
 In general these classes are not to be used directly, but are to be subclassed
 when creating PCSE simulation units.
 """
-import types
 import logging
 
-from ..traitlets import HasTraits, List, Float, Int, Instance, Dict, Bool, All
+
 from .dispatcher import DispatcherObject
 from .simulationobject import SimulationObject
 
 
-class BaseEngine(HasTraits, DispatcherObject):
+class BaseEngine(DispatcherObject):
     """Base Class for Engine to inherit from"""
 
+    __slots__ = ["_sub_sim_attrs"]
+
+    _sub_sim_attrs: dict
+
     def __init__(self):
-        HasTraits.__init__(self)
         DispatcherObject.__init__(self)
+        self._sub_sim_attrs = {}
 
     @property
     def logger(self):
@@ -27,39 +30,25 @@ class BaseEngine(HasTraits, DispatcherObject):
         return logging.getLogger(loggername)
 
     def __setattr__(self, attr, value):
-        # __setattr__ has been modified  to enforce that class attributes
-        # must be defined before they can be assigned. There are a few
-        # exceptions:
-        # 1 if an attribute name starts with '_'  it will be assigned directly.
-        # 2 if the attribute value is a  function (e.g. types.FunctionType) it
-        #   will be assigned directly. This is needed because the
-        #   'prepare_states' and 'prepare_rates' decorators assign the wrapped
-        #   functions 'calc_rates', 'integrate' and optionally 'finalize' to
-        #   the Simulation Object. This will collide with __setattr__ because
-        #   these class methods are not defined attributes.
-        #
-        # Finally, if the value assigned to an attribute is a SimulationObject
-        #   or if the existing attribute value is a SimulationObject than
-        #   rebuild the list of sub-SimulationObjects.
+        # Need to safely grab this because we may not have fully
+        # initialized our class before setting some variables
+        sub_sim_attrs = getattr(self, "_sub_sim_attrs", None)
 
-        if attr.startswith("_") or type(value) is types.FunctionType:
-            HasTraits.__setattr__(self, attr, value)
-        elif hasattr(self, attr):
-            HasTraits.__setattr__(self, attr, value)
-        else:
-            msg = "Assignment to non-existing attribute '%s' prevented." % attr
-            raise AttributeError(msg)
+        if isinstance(value, SimulationObject):
+            if sub_sim_attrs is None:
+                raise AttributeError(
+                    "Class is not yet initialized before receiving a SimulationObject"
+                )
+            self._sub_sim_attrs[attr] = value
+        elif sub_sim_attrs is not None and attr in sub_sim_attrs:
+            del self._sub_sim_attrs[attr]
+
+        super().__setattr__(attr, value)
 
     @property
     def subSimObjects(self):
         """Find SimulationObjects embedded within self."""
-
-        subSimObjects = []
-        defined_traits = self.__dict__["_trait_values"]
-        for attr in defined_traits.values():
-            if isinstance(attr, SimulationObject):
-                subSimObjects.append(attr)
-        return subSimObjects
+        return list(self._sub_sim_attrs.values())
 
     def get_variable(self, varname):
         """Return the value of the specified state or rate variable.
@@ -96,6 +85,5 @@ class BaseEngine(HasTraits, DispatcherObject):
     def zerofy(self):
         """Zerofy the value of all rate variables of any sub-SimulationObjects."""
         # Walk over possible sub-simulation objects.
-        if self.subSimObjects is not None:
-            for simobj in self.subSimObjects:
-                simobj.zerofy()
+        for simobj in self.subSimObjects:
+            simobj.zerofy()

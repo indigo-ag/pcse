@@ -1,14 +1,6 @@
-from math import sqrt, pi, exp, log, cos
-import numpy as np
 import math
-from ..traitlets import Float, Int, Instance, Enum, Unicode, Bool, List
-from ..decorators import prepare_rates, prepare_states
-from ..util import limit, Afgen, merge_dict, AfgenTrait
-from ..base import ParamTemplate, StatesTemplate, RatesTemplate, SimulationObject
-from .. import signals
-from .. import exceptions as exc
-from .snowmaus import SnowMAUS
-from array import array
+
+from ..base import ParamTemplate, StatesTemplate, SimulationObject
 
 
 class SoilTemperature(SimulationObject):
@@ -87,19 +79,34 @@ class SoilTemperature(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        NLAYR = Int()  # Number of soil layers
-        TAMP = Float()  # Amplitude of temperature function (°C)
-        TAV = Float()  # Average annual soil temperature (°C)
-        MSALB = Float()  # Soil albedo with mulch and soil water effects (fraction)
 
-        BD = List()  # Bulk density (g/cm3)
-        DS = List()  # Depth of soil layers (cm)
-        LL = List()  # Lower limit of soil water content (cm3/cm3)
-        DLAYR = List()  # Thickness of soil layers (cm)
+        __slots__ = [
+            "NLAYR",
+            "TAMP",
+            "TAV",
+            "MSALB",
+            "BD",
+            "DS",
+            "LL",
+            "DLAYR",
+        ]
+
+        NLAYR: int  # Number of soil layers
+        TAMP: float  # Amplitude of temperature function (°C)
+        TAV: float  # Average annual soil temperature (°C)
+        MSALB: float  # Soil albedo with mulch and soil water effects (fraction)
+
+        BD: list  # Bulk density (g/cm3)
+        DS: list  # Depth of soil layers (cm)
+        LL: list  # Lower limit of soil water content (cm3/cm3)
+        DLAYR: list  # Thickness of soil layers (cm)
 
     class StateVariables(StatesTemplate):
-        ST = List()  # Soil temperature for each layer (°C)
-        SRFTEMP = Float()  # Temperature of the soil surface litter (°C)
+
+        __slots__ = ["ST", "SRFTEMP"]
+
+        ST: list  # Soil temperature for each layer (°C)
+        SRFTEMP: float  # Temperature of the soil surface litter (°C)
 
     def initialize(self, day, kiosk, parvalues):
         self.params = self.Parameters(parvalues)

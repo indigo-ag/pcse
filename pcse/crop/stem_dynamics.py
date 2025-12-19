@@ -2,15 +2,14 @@
 # Copyright (c) 2004-2014 Alterra, Wageningen-UR
 # Allard de Wit (allard.dewit@wur.nl), April 2014
 
-from ..traitlets import Float, Int, Instance
+
 from ..decorators import prepare_rates, prepare_states
-from ..util import limit, AfgenTrait
+from ..util import Afgen
 from ..base import (
     ParamTemplate,
     StatesTemplate,
     RatesTemplate,
     SimulationObject,
-    VariableKiosk,
 )
 
 
@@ -79,25 +78,34 @@ class WOFOST_Stem_Dynamics(SimulationObject):
     """
 
     class Parameters(ParamTemplate):
-        RDRSTB = AfgenTrait()
-        SSATB = AfgenTrait()
-        TDWI = Float(-99.0)
+
+        __slots__ = ["RDRSTB", "SSATB", "TDWI"]
+
+        RDRSTB: Afgen
+        SSATB: Afgen
+        TDWI: float
 
     class StateVariables(StatesTemplate):
-        WST = Float(-99.0)
-        DWST = Float(-99.0)
-        TWST = Float(-99.0)
-        SAI = Float(-99.0)  # Stem Area Index
+
+        __slots__ = ["WST", "DWST", "TWST", "SAI"]
+
+        WST: float
+        DWST: float
+        TWST: float
+        SAI: float  # Stem Area Index
 
     class RateVariables(RatesTemplate):
-        GRST = Float(-99.0)
-        DRST = Float(-99.0)
-        GWST = Float(-99.0)
+
+        __slots__ = ["GRST", "DRST", "GWST"]
+
+        GRST: float
+        DRST: float
+        GWST: float
 
     def initialize(self, day, kiosk, parvalues):
         """
         :param day: start date of the simulation
-        :param kiosk: variable kiosk of this PCSE  instance
+        :param kiosk: variable kiosk of this PCSE instance
         :param parvalues: `ParameterProvider` object providing parameters as
                 key/value pairs
         """
