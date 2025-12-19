@@ -31,7 +31,7 @@ from __future__ import print_function
 __author__ = "Allard de Wit <allard.dewit@wur.nl>"
 __license__ = "European Union Public License"
 __stable__ = True
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 # WARNING: Avoid heavy imports or side-effects at import time.
 # This module now initializes lazily to prevent requiring optional

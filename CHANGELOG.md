@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.7.0 (2025-12-19)
+### Feature
+* **ST-4246:** Dask extra ([#37](https://github.com/indigo-ag/indigo-pcse/issues/37)) ([`add496c`](https://github.com/indigo-ag/indigo-pcse/commit/add496c47df52aff8da9be4afb56154b6f8130a8))
+
 ## v0.6.0 (2025-12-19)
 ### Feature
 * **ST-1099:** Crop parameter cache ([#30](https://github.com/indigo-ag/indigo-pcse/issues/30)) ([`7a2911b`](https://github.com/indigo-ag/indigo-pcse/commit/7a2911b823ad18706a5d9be32bb0e41b7584930a))
