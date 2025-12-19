@@ -2,35 +2,24 @@
 # Copyright (c) 2004-2022 Wageningen Environmental Research, Wageningen-UR
 # Allard de Wit (allard.dewit@wur.nl), August 2022
 import logging
-import os, sys
-
-v = sys.version_info
-if v.major == 3:
-    # For Python 3.0 and later
-    from urllib.request import urlopen
-    from urllib.error import URLError
-    import pickle
-else:
-    # Fall back to Python 2's urllib2
-    from urllib2 import urlopen, URLError
-    import cPickle as pickle
+import os
 
 import yaml
+from cachetools import Cache, cachedmethod
+from copy import deepcopy
 
 from ..base import MultiCropDataProvider
 from .. import exceptions as exc
-from .. import settings
 from ..util import version_tuple
+
+
+_CROP_PARAMETER_CACHE = Cache(maxsize=30)
 
 
 class YAMLCropDataProvider(MultiCropDataProvider):
     """A crop data provider for reading crop parameter sets stored in the YAML format.
 
         :param fpath: full path to directory containing YAML files
-        :param repository: URL to repository containing YAML files. This url should be
-         the *raw* content (e.g. starting with 'https://raw.githubusercontent.com')
-        :param force_reload: If set to True, the cache file is ignored and al
-         parameters are reloaded (default False).
 
     This crop data provider can read and store the parameter sets for multiple
     crops which is different from most other crop data providers that only can
@@ -38,12 +27,10 @@ class YAMLCropDataProvider(MultiCropDataProvider):
     for running crop rotations with different crop types as the data provider
     can switch the active crop.
 
-    The most basic use is to call YAMLCropDataProvider with no parameters. It will
-    than pull the crop parameters from my github repository at
-    https://github.com/ajwdewit/WOFOST_crop_parameters::
+    YAML parameter files are loaded from your local file system:
 
         >>> from pcse.fileinput import YAMLCropDataProvider
-        >>> p = YAMLCropDataProvider()
+        >>> p = YAMLCropDataProvider(fpath=r"D:\\UserData\\sources\\WOFOST_crop_parameters")
         >>> print(p)
         YAMLCropDataProvider - crop and variety not set: no activate crop parameter set!
 
@@ -60,156 +47,25 @@ class YAMLCropDataProvider(MultiCropDataProvider):
          ...
          'TSUM2': 1194, 'TSUM1': 543, 'TSUMEM': 120}
 
-    Additionally, it is possible to load YAML parameter files from your local file system::
-
-        >>> p = YAMLCropDataProvider(fpath=r"D:\\UserData\\sources\\WOFOST_crop_parameters")
-        >>> print(p)
-        YAMLCropDataProvider - crop and variety not set: no activate crop parameter set!
-
-    Finally, it is possible to pull data from your fork of my github repository by specifying
-    the URL to that repository::
-
-        >>> p = YAMLCropDataProvider(repository=\"https://raw.githubusercontent.com/<your_account>/WOFOST_crop_parameters/master/\")
-
-    To increase performance of loading parameters, the YAMLCropDataProvider will create a
-    cache file that can be restored much quicker compared to loading the YAML files.
-    When reading YAML files from the local file system, care is taken to ensure that the
-    cache file is re-created when updates to the local YAML are made. However, it should
-    be stressed that this is *not* possible when parameters are retrieved from a URL
-    and there is a risk that parameters are loaded from an outdated cache file. In that
-    case use `force_reload=True` to force loading the parameters from the URL.
+    To increase performance of loading parameters, the YAMLCropDataProvider will cache files
+    in memory after the initial read.
     """
 
-    default_repository = (
-        "https://raw.githubusercontent.com/ajwdewit/WOFOST_crop_parameters/master/"
-    )
-
-    HTTP_OK = 200
     current_crop_name = None
     current_variety_name = None
 
     # Compatibility of data provider with YAML parameter file version
     compatible_version = "1.0.0"
 
-    def __init__(self, fpath=None, repository=None, force_reload=False):
+    def __init__(self, fpath, force_reload=False):
         MultiCropDataProvider.__init__(self)
 
-        if (
-            force_reload is True or self._load_cache(fpath) is False
-        ):  # either force a reload or load cache fails
-            # enforce a clear state
+        if force_reload:
+            _CROP_PARAMETER_CACHE.clear()
             self.clear()
             self._store.clear()
 
-            if fpath is not None:
-                self.read_local_repository(fpath)
-
-            elif repository is not None:
-                self.read_remote_repository(repository)
-
-            else:
-                msg = (
-                    f"No path or URL specified where to find YAML crop parameter files, "
-                    f"using default at {self.default_repository}"
-                )
-                self.logger.info(msg)
-                self.read_remote_repository(self.default_repository)
-
-            # TODO (ST-1099): Re-instantiate pickling when in-memory provider is ready
-            # Temporarily removing cache pickling due to permissions issues when importing as a package
-            # with open(self._get_cache_fname(fpath), "wb") as fp:
-            #     pickle.dump(
-            #         (self.compatible_version, self._store), fp, pickle.HIGHEST_PROTOCOL
-            #     )
-
-    def read_local_repository(self, fpath):
-        """Reads the crop YAML files on the local file system
-
-        :param fpath: the location of the YAML files on the filesystem
-        """
-        yaml_file_names = self._get_yaml_files(fpath)
-        for crop_name, yaml_fname in yaml_file_names.items():
-            with open(yaml_fname) as fp:
-                parameters = yaml.safe_load(fp)
-            self._check_version(parameters, crop_fname=yaml_fname)
-            self._add_crop(crop_name, parameters)
-
-    def read_remote_repository(self, repository):
-        """Reads the crop files from a remote git repository
-
-        :param repository: The url of the repository pointing to the URL where the raw inputs can be obtained.
-            E.g. for github this is https://raw.githubusercontent.com/ajwdewit/WOFOST_crop_parameters/master
-        :return:
-        """
-
-        if not repository.endswith("/"):
-            repository += "/"
-        self.repository = repository
-        try:
-            url = self.repository + "crops.yaml"
-            response = urlopen(url)
-            self.crop_types = yaml.safe_load(response)["available_crops"]
-        except URLError as e:
-            msg = "Unable to find crops.yaml at '%s' due to: %s" % (url, e)
-            raise exc.PCSEError(msg)
-
-        for crop_name in self.crop_types:
-            url = self.repository + crop_name + ".yaml"
-            try:
-                response = urlopen(url)
-            except URLError as e:
-                msg = "Unable to open '%s' due to: %s" % (url, e)
-                raise exc.PCSEError(msg)
-            parameters = yaml.safe_load(response)
-            self._check_version(parameters, crop_name)
-            self._add_crop(crop_name, parameters)
-
-    def _get_cache_fname(self, fpath):
-        """Returns the name of the cache file for the CropDataProvider."""
-        cache_fname = "%s.pkl" % self.__class__.__name__
-        if fpath is None:
-            cache_fname_fp = os.path.join(settings.METEO_CACHE_DIR, cache_fname)
-        else:
-            cache_fname_fp = os.path.join(fpath, cache_fname)
-        return cache_fname_fp
-
-    def _load_cache(self, fpath):
-        """Loads the cache file if possible and returns True, else False."""
-        try:
-            cache_fname_fp = self._get_cache_fname(fpath)
-            if os.path.exists(cache_fname_fp):
-
-                # First we check that the cache file reflects the contents of the YAML files.
-                # This only works for files not for github repos
-                # TODO (ST-1099): This probably gets removed altogether when we switch to an in-memory
-                # provider?
-                # if fpath is not None:
-                #     yaml_file_names = self._get_yaml_files(fpath)
-                #     yaml_file_dates = [
-                #         os.stat(fn).st_mtime for crop, fn in yaml_file_names.items()
-                #     ]
-                #     # retrieve modification date of cache file
-                #     cache_date = os.stat(cache_fname_fp).st_mtime
-                #     # Ensure cache file is more recent then any of the YAML files
-                #     if any([d > cache_date for d in yaml_file_dates]):
-                #         return False
-
-                # Now start loading the cache file
-                with open(cache_fname_fp, "rb") as fp:
-                    version, store = pickle.load(fp)
-                if version_tuple(version) != version_tuple(self.compatible_version):
-                    msg = (
-                        "Cache file is from a different version of YAMLCropDataProvider"
-                    )
-                    raise exc.PCSEError(msg)
-                self._store = store
-                return True
-
-        except Exception as e:
-            msg = "%s - Failed to load cache file: %s" % (self.__class__.__name__, e)
-            print(msg)
-
-        return False
+        self.read_local_repository(fpath)
 
     def _check_version(self, parameters, crop_fname):
         """Checks the version of the parameter input with the version supported by this data provider.
@@ -235,6 +91,26 @@ class YAMLCropDataProvider(MultiCropDataProvider):
         except Exception as e:
             msg = f"Version check failed on crop parameter file: {crop_fname}"
             raise exc.PCSEError(msg)
+
+    @cachedmethod(lambda self: _CROP_PARAMETER_CACHE)
+    def _read_crop_parameter_yaml_file(self, yaml_fname):
+        with open(yaml_fname) as fp:
+            parameters = yaml.safe_load(fp)
+
+        self._check_version(parameters, crop_fname=yaml_fname)
+
+        return parameters
+
+    def read_local_repository(self, fpath):
+        """Reads the crop YAML files on the local file system
+
+        :param fpath: the location of the YAML files on the filesystem
+        """
+        yaml_file_names = self._get_yaml_files(fpath)
+        for crop_name, yaml_fname in yaml_file_names.items():
+            # Deepcopy just to ensure that nothing mutates them
+            parameters = deepcopy(self._read_crop_parameter_yaml_file(yaml_fname))
+            self._add_crop(crop_name, parameters)
 
     def _add_crop(self, crop_name, parameters):
         """Store the parameter sets for the different varieties for the given crop."""
