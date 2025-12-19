@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.6.0 (2025-12-19)
+### Feature
+* **ST-1099:** Crop parameter cache ([#30](https://github.com/indigo-ag/indigo-pcse/issues/30)) ([`7a2911b`](https://github.com/indigo-ag/indigo-pcse/commit/7a2911b823ad18706a5d9be32bb0e41b7584930a))
+
 ## v0.5.0 (2025-12-19)
 ### Feature
 * **ST-4317:** Remove traitlets ([#32](https://github.com/indigo-ag/indigo-pcse/issues/32)) ([`200dd07`](https://github.com/indigo-ag/indigo-pcse/commit/200dd07c3ec64f7ad0a146270daa183cf3bef2e7))
