@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.0 (2025-12-19)
+### Feature
+* **ST-4317:** Remove traitlets ([#32](https://github.com/indigo-ag/indigo-pcse/issues/32)) ([`200dd07`](https://github.com/indigo-ag/indigo-pcse/commit/200dd07c3ec64f7ad0a146270daa183cf3bef2e7))
+
 ## v0.4.7 (2025-12-15)
 ### Fix
 * **ST-4779:** Add license text ([#35](https://github.com/indigo-ag/indigo-pcse/issues/35)) ([`45697c8`](https://github.com/indigo-ag/indigo-pcse/commit/45697c85d210d93cf4a6ef5b6a2799d32e1f1d45))
