@@ -88,6 +88,8 @@ workflows:
               - master
     - release:
         context: org-global
+        requires:
+          - test
         filters:
           branches:
             only:
