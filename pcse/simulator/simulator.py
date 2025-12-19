@@ -15,11 +15,9 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
-import dask
 import numpy as np
 import pandas as pd
 import yaml
-from dask.distributed import Client, progress
 from pcse.base import ParameterProvider
 from pcse.fileinput import (
     CABOFileReader,
@@ -32,6 +30,21 @@ from tqdm import tqdm as tqdm_func
 from tqdm.auto import tqdm
 
 logger = logging.getLogger(__name__)
+
+try:
+    import dask
+    from dask.distributed import Client, progress
+
+    DASK_INSTALLED = True
+except ImportError:
+    logger.debug("Dask is not installed")
+    dask = Client = progress = None
+    DASK_INSTALLED = False
+
+
+def _guard_dask_installed():
+    if not DASK_INSTALLED:
+        raise RuntimeError("Dask is not installed. Install it with the `dask` extra")
 
 
 def calculate_soc_pool_fractions(clay_silt_percent, maom_modifier=1.0):
@@ -139,6 +152,7 @@ def calculate_soc_pools(total_soc, clay_percent):
 
 
 def run_simulations_dask(simulations):
+    _guard_dask_installed()
     futures = [dask.delayed(sim.run_simulation)() for sim in simulations]
     return dask.compute(*futures)
 
@@ -1760,6 +1774,7 @@ class MultiSiteSimulator:
         :param n_workers: Number of Dask workers to use. If None, Dask will use all available cores.
         :param threads_per_worker: Number of threads per worker. Default is 1 to avoid GIL contention.
         """
+        _guard_dask_installed()
         start_time = time.time()
 
         print(

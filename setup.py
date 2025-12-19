@@ -46,10 +46,15 @@ setup(
         'requests>=2.0.0',
         'pandas>=0.25',
         'tqdm>=4.0.0',
-        'dask>=2024.8.0',
         'scipy>=1.0.0',
         'numpy>=1.26.4',
     ],
+    extras_require={
+        # Used for managing simulations across many sites at once
+        'dask': [
+            'dask[distributed]>=2024.8.0',
+        ],
+    },
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,
     long_description=long_description,

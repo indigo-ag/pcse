@@ -5,6 +5,6 @@ openpyxl==3.1.5
 requests==2.32.3
 pandas==2.2.3
 tqdm==4.67.1
-dask==2024.8.0
+dask[distributed]==2024.8.0
 scipy==1.13.1
 numpy==1.26.4
