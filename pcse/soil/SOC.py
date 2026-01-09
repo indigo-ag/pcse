@@ -68,7 +68,7 @@ class Ensemble_SOC_Indigo(SimulationObject):
             "TIsoc",
         ]
 
-        Ens_Weights: list  # Thickness of soil layers (cm)
+        Ens_Weights: list  # Weights for averaging the SOC models in the ensemble
         POM0: float  # g C m^-2
         LMWC0: float  # g C m^-2
         AGG0: float  # g C m^-2
