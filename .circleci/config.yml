@@ -60,16 +60,6 @@ jobs:
             . local-env/bin/activate
             yarn lint
 
-  release:
-    executor:
-      name: shared/language-executor
-      language: python
-      version: '3.10'
-    resource_class: small
-    steps:
-      - checkout
-      - shared/semantic_release_publish
-
 workflows:
   version: 2
   build_and_test:
@@ -85,12 +75,4 @@ workflows:
         filters:
           branches:
             ignore:
-              - master
-    - release:
-        context: org-global
-        requires:
-          - test
-        filters:
-          branches:
-            only:
               - master
